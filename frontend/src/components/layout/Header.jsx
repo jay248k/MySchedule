@@ -10,6 +10,7 @@ import {
   LogOut,
   UserPlus,
   ShieldCheck,
+  UploadCloud,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -199,6 +200,19 @@ export function Header() {
           <Calendar size={15} color="var(--primary-color)" />
           <span>{formattedToday}</span>
         </div>
+
+        {/* Quick Bulk Import Button */}
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => openModal('bulk-import', { type: 'tasks' })}
+          id="btn-header-bulk-import"
+          title="Bulk Import Tasks, Goals, or Categories"
+          style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+        >
+          <UploadCloud size={15} />
+          <span>Import</span>
+        </button>
 
         {/* Quick Add Button */}
         <button

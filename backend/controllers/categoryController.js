@@ -56,6 +56,53 @@ exports.createCategory = async (req, res, next) => {
   }
 };
 
+exports.bulkCreateCategories = async (req, res, next) => {
+  try {
+    const rawCategories = Array.isArray(req.body)
+      ? req.body
+      : req.body.categories || [];
+
+    if (!Array.isArray(rawCategories) || rawCategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No categories provided for bulk import',
+      });
+    }
+
+    const validCategories = [];
+    for (const item of rawCategories) {
+      if (!item || !item.name || !item.name.trim()) continue;
+      validCategories.push({
+        id: item.id || undefined,
+        name: item.name.trim(),
+        color: item.color || '#1769FF',
+        icon: item.icon || 'Tag',
+        description: item.description ? item.description.trim() : null,
+        userId: req.userId || item.userId || null,
+      });
+    }
+
+    if (validCategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid category records found (name is required for each category)',
+      });
+    }
+
+    const created = await Category.bulkCreate(validCategories, {
+      returning: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      count: created.length,
+      data: created,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.updateCategory = async (req, res, next) => {
   try {
     const where = { id: req.params.id };

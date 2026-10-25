@@ -6,6 +6,7 @@ const { optionalAuth } = require('../middleware/auth');
 router.use(optionalAuth);
 
 router.get('/', categoryController.getAllCategories);
+router.post('/bulk', categoryController.bulkCreateCategories);
 router.get('/:id', categoryController.getCategoryById);
 router.post('/', categoryController.createCategory);
 router.put('/:id', categoryController.updateCategory);

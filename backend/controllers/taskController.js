@@ -123,6 +123,115 @@ exports.createTask = async (req, res, next) => {
   }
 };
 
+exports.bulkCreateTasks = async (req, res, next) => {
+  try {
+    const rawTasks = Array.isArray(req.body) ? req.body : req.body.tasks || [];
+
+    if (!Array.isArray(rawTasks) || rawTasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No tasks provided for bulk import',
+      });
+    }
+
+    // Pre-fetch categories and goals for fast mapping by name
+    const categories = await Category.findAll({
+      attributes: ['id', 'name'],
+    });
+    const categoryMap = new Map();
+    categories.forEach((cat) => {
+      categoryMap.set(cat.name.toLowerCase().trim(), cat.id);
+      categoryMap.set(cat.id, cat.id);
+    });
+
+    const goals = await Goal.findAll({
+      attributes: ['id', 'title'],
+    });
+    const goalMap = new Map();
+    goals.forEach((g) => {
+      goalMap.set(g.title.toLowerCase().trim(), g.id);
+      goalMap.set(g.id, g.id);
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    const validTasks = [];
+
+    for (const item of rawTasks) {
+      if (!item || !item.title || !item.title.trim()) continue;
+
+      let resolvedCategoryId = item.categoryId || null;
+      if (!resolvedCategoryId && item.category) {
+        const catKey = typeof item.category === 'string'
+          ? item.category.toLowerCase().trim()
+          : item.category?.name?.toLowerCase()?.trim();
+        if (catKey && categoryMap.has(catKey)) {
+          resolvedCategoryId = categoryMap.get(catKey);
+        }
+      }
+
+      let resolvedGoalId = item.goalId || null;
+      if (!resolvedGoalId && item.goal) {
+        const goalKey = typeof item.goal === 'string'
+          ? item.goal.toLowerCase().trim()
+          : item.goal?.title?.toLowerCase()?.trim();
+        if (goalKey && goalMap.has(goalKey)) {
+          resolvedGoalId = goalMap.get(goalKey);
+        }
+      }
+
+      let status = item.status ? String(item.status).toLowerCase().trim() : 'pending';
+      if (!['pending', 'in-progress', 'completed', 'overdue'].includes(status)) {
+        status = 'pending';
+      }
+
+      validTasks.push({
+        id: item.id || undefined,
+        title: item.title.trim(),
+        description: item.description ? item.description.trim() : null,
+        date: item.date || today,
+        startTime: item.startTime || null,
+        endTime: item.endTime || null,
+        categoryId: resolvedCategoryId,
+        priority: normalizePriority(item.priority),
+        goalId: resolvedGoalId,
+        status: status,
+        userId: req.userId || item.userId || null,
+      });
+    }
+
+    if (validTasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid task records found (title is required for each task)',
+      });
+    }
+
+    const created = await Task.bulkCreate(validTasks, { returning: true });
+
+    // Fetch created tasks with associations included
+    const createdIds = created.map((t) => t.id);
+    const populated = await Task.findAll({
+      where: { id: createdIds },
+      include: [
+        { model: Category, as: 'category' },
+        { model: Goal, as: 'goal' },
+      ],
+      order: [
+        ['date', 'ASC'],
+        ['startTime', 'ASC'],
+      ],
+    });
+
+    res.status(201).json({
+      success: true,
+      count: populated.length,
+      data: populated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.updateTask = async (req, res, next) => {
   try {
     const where = { id: req.params.id };

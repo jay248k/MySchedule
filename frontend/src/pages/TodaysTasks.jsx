@@ -13,6 +13,7 @@ import {
   Moon,
   Calendar as CalendarIcon,
   List,
+  UploadCloud,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
@@ -196,15 +197,28 @@ export function TodaysTasks() {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => openModal('task', { date: selectedDate })}
-            id="btn-add-today-task"
-          >
-            <Plus size={16} />
-            Add Task
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => openModal('bulk-import', { type: 'tasks' })}
+              id="btn-bulk-import-tasks"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <UploadCloud size={16} />
+              <span>Bulk Import</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => openModal('task', { date: selectedDate })}
+              id="btn-add-today-task"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={16} />
+              <span>Add Task</span>
+            </button>
+          </div>
         </div>
       </div>
 

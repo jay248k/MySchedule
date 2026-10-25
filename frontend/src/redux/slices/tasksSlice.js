@@ -32,6 +32,16 @@ const tasksSlice = createSlice({
       state.items.unshift(newTask);
       storageService.saveTasks(state.items);
     },
+    addTasks: (state, action) => {
+      const itemsToAdd = (Array.isArray(action.payload) ? action.payload : []).map((task, idx) => ({
+        id: task.id || `task-${Date.now()}-${idx}`,
+        status: task.status || 'pending',
+        createdAt: new Date().toISOString(),
+        ...task,
+      }));
+      state.items.unshift(...itemsToAdd);
+      storageService.saveTasks(state.items);
+    },
     updateTask: (state, action) => {
       const index = state.items.findIndex((t) => t.id === action.payload.id);
       if (index !== -1) {
@@ -90,6 +100,7 @@ const tasksSlice = createSlice({
 export const {
   setTasks,
   addTask,
+  addTasks,
   updateTask,
   deleteTask,
   toggleTaskComplete,

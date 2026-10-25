@@ -6,6 +6,7 @@ const { optionalAuth } = require('../middleware/auth');
 router.use(optionalAuth);
 
 router.get('/', taskController.getAllTasks);
+router.post('/bulk', taskController.bulkCreateTasks);
 router.get('/:id', taskController.getTaskById);
 router.post('/', taskController.createTask);
 router.put('/:id', taskController.updateTask);

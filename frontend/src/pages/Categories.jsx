@@ -14,6 +14,7 @@ import {
   Layers,
   Award,
   Sparkles,
+  UploadCloud,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -167,15 +168,28 @@ export function Categories() {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => openModal('category')}
-            id="btn-add-category"
-          >
-            <Plus size={16} />
-            Create Category
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => openModal('bulk-import', { type: 'categories' })}
+              id="btn-bulk-import-categories"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <UploadCloud size={16} />
+              <span>Bulk Import</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => openModal('category')}
+              id="btn-add-category"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Plus size={16} />
+              <span>Create Category</span>
+            </button>
+          </div>
         </div>
       </div>
 

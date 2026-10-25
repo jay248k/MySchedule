@@ -7,6 +7,7 @@ import { TaskModal } from '../tasks/TaskModal';
 import { EventModal } from '../events/EventModal';
 import { GoalModal } from '../goals/GoalModal';
 import { CategoryModal } from '../categories/CategoryModal';
+import { BulkImportModal } from '../common/BulkImportModal';
 import { ConfirmDialog, ToastContainer } from '../common/ConfirmDialog';
 
 export function AppLayout() {
@@ -32,6 +33,7 @@ export function AppLayout() {
       <EventModal />
       <GoalModal />
       <CategoryModal />
+      <BulkImportModal />
 
       {/* Global Feedback Dialogs & Notifications */}
       <ConfirmDialog />

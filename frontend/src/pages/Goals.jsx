@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Sparkles,
+  UploadCloud,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate } from '../utils/dateUtils';
@@ -86,15 +87,28 @@ export function Goals() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => openModal('goal')}
-          id="btn-add-goal"
-        >
-          <Plus size={16} />
-          Create Goal
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => openModal('bulk-import', { type: 'goals' })}
+            id="btn-bulk-import-goals"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <UploadCloud size={16} />
+            <span>Bulk Import</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => openModal('goal')}
+            id="btn-add-goal"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Plus size={16} />
+            <span>Create Goal</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary Filter Bar */}

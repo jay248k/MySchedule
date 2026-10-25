@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import {
   setTasks,
   addTask as addTaskAction,
+  addTasks as addTasksAction,
   updateTask as updateTaskAction,
   deleteTask as deleteTaskAction,
   toggleTaskComplete as toggleTaskCompleteAction,
@@ -17,12 +18,14 @@ import {
 import {
   setCategories,
   addCategory as addCategoryAction,
+  addCategories as addCategoriesAction,
   updateCategory as updateCategoryAction,
   deleteCategory as deleteCategoryAction,
 } from '../redux/slices/categoriesSlice';
 import {
   setGoals,
   addGoal as addGoalAction,
+  addGoals as addGoalsAction,
   updateGoal as updateGoalAction,
   deleteGoal as deleteGoalAction,
   linkTaskToGoal as linkTaskToGoalAction,
@@ -99,16 +102,24 @@ export function AppProvider({ children }) {
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
-        dispatch(setTasks(tasksRes.data));
+        const serverIds = new Set(tasksRes.data.map((t) => t.id));
+        const localTasks = storageService.getTasks().filter((t) => !serverIds.has(t.id));
+        dispatch(setTasks([...tasksRes.data, ...localTasks]));
       }
       if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
-        dispatch(setCategories(categoriesRes.data));
+        const serverIds = new Set(categoriesRes.data.map((c) => c.id));
+        const localCats = storageService.getCategories().filter((c) => !serverIds.has(c.id));
+        dispatch(setCategories([...categoriesRes.data, ...localCats]));
       }
       if (goalsRes?.data && Array.isArray(goalsRes.data)) {
-        dispatch(setGoals(goalsRes.data));
+        const serverIds = new Set(goalsRes.data.map((g) => g.id));
+        const localGoals = storageService.getGoals().filter((g) => !serverIds.has(g.id));
+        dispatch(setGoals([...goalsRes.data, ...localGoals]));
       }
       if (eventsRes?.data && Array.isArray(eventsRes.data)) {
-        dispatch(setEvents(eventsRes.data));
+        const serverIds = new Set(eventsRes.data.map((e) => e.id));
+        const localEvents = storageService.getEvents().filter((e) => !serverIds.has(e.id));
+        dispatch(setEvents([...eventsRes.data, ...localEvents]));
       }
     } catch (err) {
       console.warn('Backend sync warning:', err);
@@ -312,6 +323,42 @@ export function AppProvider({ children }) {
     [dispatch]
   );
 
+  const bulkImportTasks = useCallback(
+    async (items) => {
+      try {
+        const res = await api.bulkCreateTasks(items);
+        const created = res?.data || items.map((t, i) => ({ id: `task-${Date.now()}-${i}`, ...t }));
+        dispatch(addTasksAction(created));
+        showToast({
+          type: 'success',
+          title: 'Tasks Imported',
+          message: `Successfully imported ${created.length} tasks.`,
+        });
+        return { success: true, count: created.length, data: created };
+      } catch (err) {
+        console.warn('Backend bulk task creation failed, trying individual creations:', err);
+        const createdList = [];
+        for (const task of items) {
+          try {
+            const indRes = await api.createTask(task);
+            if (indRes?.data) createdList.push(indRes.data);
+            else createdList.push({ id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...task });
+          } catch {
+            createdList.push({ id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...task });
+          }
+        }
+        dispatch(addTasksAction(createdList));
+        showToast({
+          type: 'success',
+          title: 'Tasks Imported',
+          message: `Imported ${createdList.length} tasks.`,
+        });
+        return { success: true, count: createdList.length, data: createdList };
+      }
+    },
+    [dispatch, showToast]
+  );
+
   // Goal Actions (Connected to Cloud Backend)
   const addGoal = useCallback(
     async (goalData) => {
@@ -411,6 +458,42 @@ export function AppProvider({ children }) {
         title: 'Task Unlinked',
         message: 'Task removed from goal.',
       });
+    },
+    [dispatch, showToast]
+  );
+
+  const bulkImportGoals = useCallback(
+    async (items) => {
+      try {
+        const res = await api.bulkCreateGoals(items);
+        const created = res?.data || items.map((g, i) => ({ id: `goal-${Date.now()}-${i}`, ...g }));
+        dispatch(addGoalsAction(created));
+        showToast({
+          type: 'success',
+          title: 'Goals Imported',
+          message: `Successfully imported ${created.length} goals.`,
+        });
+        return { success: true, count: created.length, data: created };
+      } catch (err) {
+        console.warn('Backend bulk goal creation failed, trying individual creations:', err);
+        const createdList = [];
+        for (const goal of items) {
+          try {
+            const indRes = await api.createGoal(goal);
+            if (indRes?.data) createdList.push(indRes.data);
+            else createdList.push({ id: `goal-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...goal });
+          } catch {
+            createdList.push({ id: `goal-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...goal });
+          }
+        }
+        dispatch(addGoalsAction(createdList));
+        showToast({
+          type: 'success',
+          title: 'Goals Imported',
+          message: `Imported ${createdList.length} goals.`,
+        });
+        return { success: true, count: createdList.length, data: createdList };
+      }
     },
     [dispatch, showToast]
   );
@@ -548,6 +631,42 @@ export function AppProvider({ children }) {
       });
     },
     [categories, tasks, requestConfirm, dispatch, showToast]
+  );
+
+  const bulkImportCategories = useCallback(
+    async (items) => {
+      try {
+        const res = await api.bulkCreateCategories(items);
+        const created = res?.data || items.map((c, i) => ({ id: `cat-${Date.now()}-${i}`, ...c }));
+        dispatch(addCategoriesAction(created));
+        showToast({
+          type: 'success',
+          title: 'Categories Imported',
+          message: `Successfully imported ${created.length} categories.`,
+        });
+        return { success: true, count: created.length, data: created };
+      } catch (err) {
+        console.warn('Backend bulk category creation failed, trying individual creations:', err);
+        const createdList = [];
+        for (const cat of items) {
+          try {
+            const indRes = await api.createCategory(cat);
+            if (indRes?.data) createdList.push(indRes.data);
+            else createdList.push({ id: `cat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...cat });
+          } catch {
+            createdList.push({ id: `cat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, ...cat });
+          }
+        }
+        dispatch(addCategoriesAction(createdList));
+        showToast({
+          type: 'success',
+          title: 'Categories Imported',
+          message: `Imported ${createdList.length} categories.`,
+        });
+        return { success: true, count: createdList.length, data: createdList };
+      }
+    },
+    [dispatch, showToast]
   );
 
   // Daily Work Reporting
@@ -700,6 +819,7 @@ export function AppProvider({ children }) {
         showToast,
         removeToast: handleRemoveToast,
         addTask,
+        bulkImportTasks,
         updateTask,
         deleteTask,
         toggleTaskComplete,
@@ -708,11 +828,13 @@ export function AppProvider({ children }) {
         updateEvent,
         deleteEvent,
         addGoal,
+        bulkImportGoals,
         updateGoal,
         deleteGoal,
         linkTaskToGoal,
         unlinkTaskFromGoal,
         addCategory,
+        bulkImportCategories,
         updateCategory,
         deleteCategory,
         resetDemoData,

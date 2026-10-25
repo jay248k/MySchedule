@@ -65,6 +65,63 @@ exports.createGoal = async (req, res, next) => {
   }
 };
 
+exports.bulkCreateGoals = async (req, res, next) => {
+  try {
+    const rawGoals = Array.isArray(req.body) ? req.body : req.body.goals || [];
+
+    if (!Array.isArray(rawGoals) || rawGoals.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No goals provided for bulk import',
+      });
+    }
+
+    const validGoals = [];
+    const today = new Date().toISOString().split('T')[0];
+
+    for (const item of rawGoals) {
+      if (!item || !item.title || !item.title.trim()) continue;
+
+      const progressVal = item.progress !== undefined ? Number(item.progress) : 0;
+      const validProgress = isNaN(progressVal) ? 0 : Math.min(100, Math.max(0, progressVal));
+
+      let status = item.status ? String(item.status).toLowerCase().trim() : 'in-progress';
+      if (!['in-progress', 'completed', 'behind'].includes(status)) {
+        status = validProgress >= 100 ? 'completed' : 'in-progress';
+      }
+
+      validGoals.push({
+        id: item.id || undefined,
+        title: item.title.trim(),
+        description: item.description ? item.description.trim() : null,
+        targetDate: item.targetDate || today,
+        progress: validProgress,
+        status: status,
+        category: item.category ? item.category.trim() : null,
+        relatedTaskIds: Array.isArray(item.relatedTaskIds) ? item.relatedTaskIds : [],
+        userId: req.userId || item.userId || null,
+      });
+    }
+
+    if (validGoals.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid goal records found (title is required for each goal)',
+      });
+    }
+
+    const created = await Goal.bulkCreate(validGoals, { returning: true });
+
+    res.status(201).json({
+      success: true,
+      count: created.length,
+      data: created,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.updateGoal = async (req, res, next) => {
   try {
     const where = { id: req.params.id };

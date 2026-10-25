@@ -27,6 +27,18 @@ const goalsSlice = createSlice({
       state.items.unshift(newGoal);
       storageService.saveGoals(state.items);
     },
+    addGoals: (state, action) => {
+      const itemsToAdd = (Array.isArray(action.payload) ? action.payload : []).map((goal, idx) => ({
+        id: goal.id || `goal-${Date.now()}-${idx}`,
+        progress: goal.progress !== undefined ? Number(goal.progress) : 0,
+        status: goal.status || 'in-progress',
+        relatedTaskIds: goal.relatedTaskIds || [],
+        createdAt: new Date().toISOString(),
+        ...goal,
+      }));
+      state.items.unshift(...itemsToAdd);
+      storageService.saveGoals(state.items);
+    },
     updateGoal: (state, action) => {
       const index = state.items.findIndex((g) => g.id === action.payload.id);
       if (index !== -1) {
@@ -88,6 +100,7 @@ const goalsSlice = createSlice({
 export const {
   setGoals,
   addGoal,
+  addGoals,
   updateGoal,
   deleteGoal,
   linkTaskToGoal,

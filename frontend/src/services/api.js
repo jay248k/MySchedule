@@ -86,6 +86,8 @@ export const api = {
   getCategories: () => apiClient.get('/categories'),
   getCategory: (id) => apiClient.get(`/categories/${id}`),
   createCategory: (payload) => apiClient.post('/categories', payload),
+  bulkCreateCategories: (payload) =>
+    apiClient.post('/categories/bulk', Array.isArray(payload) ? { categories: payload } : payload),
   updateCategory: (id, payload) => apiClient.put(`/categories/${id}`, payload),
   deleteCategory: (id) => apiClient.delete(`/categories/${id}`),
 
@@ -93,6 +95,8 @@ export const api = {
   getTasks: (params = {}) => apiClient.get('/tasks', { params }),
   getTask: (id) => apiClient.get(`/tasks/${id}`),
   createTask: (payload) => apiClient.post('/tasks', payload),
+  bulkCreateTasks: (payload) =>
+    apiClient.post('/tasks/bulk', Array.isArray(payload) ? { tasks: payload } : payload),
   updateTask: (id, payload) => apiClient.put(`/tasks/${id}`, payload),
   toggleTaskComplete: (id) => apiClient.patch(`/tasks/${id}/toggle-complete`),
   deleteTask: (id) => apiClient.delete(`/tasks/${id}`),
@@ -108,6 +112,8 @@ export const api = {
   getGoals: () => apiClient.get('/goals'),
   getGoal: (id) => apiClient.get(`/goals/${id}`),
   createGoal: (payload) => apiClient.post('/goals', payload),
+  bulkCreateGoals: (payload) =>
+    apiClient.post('/goals/bulk', Array.isArray(payload) ? { goals: payload } : payload),
   updateGoal: (id, payload) => apiClient.put(`/goals/${id}`, payload),
   deleteGoal: (id) => apiClient.delete(`/goals/${id}`),
 

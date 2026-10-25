@@ -6,6 +6,7 @@ const { optionalAuth } = require('../middleware/auth');
 router.use(optionalAuth);
 
 router.get('/', goalController.getAllGoals);
+router.post('/bulk', goalController.bulkCreateGoals);
 router.get('/:id', goalController.getGoalById);
 router.post('/', goalController.createGoal);
 router.put('/:id', goalController.updateGoal);
