@@ -2,9 +2,11 @@ const { Setting } = require('../models');
 
 exports.getSettings = async (req, res, next) => {
   try {
+    const where = req.userId ? { userId: req.userId } : { id: 1 };
     let [setting] = await Setting.findOrCreate({
-      where: { id: 1 },
+      where,
       defaults: {
+        userId: req.userId || null,
         theme: 'light',
         accentColor: '#1769FF',
         weekStartsOnSunday: true,
@@ -23,9 +25,12 @@ exports.getSettings = async (req, res, next) => {
 
 exports.updateSettings = async (req, res, next) => {
   try {
+    const where = req.userId ? { userId: req.userId } : { id: 1 };
     let [setting] = await Setting.findOrCreate({
-      where: { id: 1 },
-      defaults: {},
+      where,
+      defaults: {
+        userId: req.userId || null,
+      },
     });
 
     await setting.update(req.body);

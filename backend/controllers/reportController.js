@@ -2,7 +2,13 @@ const { DailyReport } = require('../models');
 
 exports.getAllReports = async (req, res, next) => {
   try {
+    const where = {};
+    if (req.userId) {
+      where.userId = req.userId;
+    }
+
     const reports = await DailyReport.findAll({
+      where,
       order: [['date', 'DESC']],
     });
     res.json({ success: true, count: reports.length, data: reports });
@@ -14,7 +20,10 @@ exports.getAllReports = async (req, res, next) => {
 exports.getReportByDate = async (req, res, next) => {
   try {
     const { date } = req.params;
-    const report = await DailyReport.findOne({ where: { date } });
+    const where = { date };
+    if (req.userId) where.userId = req.userId;
+
+    const report = await DailyReport.findOne({ where });
     if (!report) {
       return res.status(404).json({ success: false, message: 'Report not found for this date' });
     }
@@ -45,9 +54,11 @@ exports.saveReport = async (req, res, next) => {
     }
 
     const reportTitle = title || `Daily Work Report - ${date}`;
+    const userId = req.userId || req.body.userId || null;
+    const reportId = userId ? `report-${userId}-${date}` : `report-${date}`;
 
     const [report] = await DailyReport.upsert({
-      id: `report-${date}`,
+      id: reportId,
       date,
       title: reportTitle,
       accomplishments: accomplishments || null,
@@ -59,6 +70,7 @@ exports.saveReport = async (req, res, next) => {
       mood: mood || 'productive',
       tasksCompletedCount: tasksCompletedCount || 0,
       tasksTotalCount: tasksTotalCount || 0,
+      userId,
       submittedAt: new Date(),
     });
 
@@ -71,7 +83,10 @@ exports.saveReport = async (req, res, next) => {
 exports.deleteReport = async (req, res, next) => {
   try {
     const { date } = req.params;
-    const report = await DailyReport.findOne({ where: { date } });
+    const where = { date };
+    if (req.userId) where.userId = req.userId;
+
+    const report = await DailyReport.findOne({ where });
     if (!report) {
       return res.status(404).json({ success: false, message: 'Report not found' });
     }

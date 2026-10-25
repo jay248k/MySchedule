@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const goalController = require('../controllers/goalController');
+const { optionalAuth } = require('../middleware/auth');
+
+router.use(optionalAuth);
 
 router.get('/', goalController.getAllGoals);
 router.get('/:id', goalController.getGoalById);

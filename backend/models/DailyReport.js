@@ -61,12 +61,20 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
+      userId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
     },
     {
       tableName: 'daily_reports',
       timestamps: true,
     }
   );
+
+  DailyReport.associate = (models) => {
+    DailyReport.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  };
 
   return DailyReport;
 };

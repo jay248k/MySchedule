@@ -16,6 +16,10 @@ exports.getAllEvents = async (req, res, next) => {
       where.categoryId = categoryId;
     }
 
+    if (req.userId) {
+      where.userId = req.userId;
+    }
+
     const events = await Event.findAll({
       where,
       include: [{ model: Category, as: 'category' }],
@@ -80,7 +84,9 @@ exports.createEvent = async (req, res, next) => {
 
 exports.updateEvent = async (req, res, next) => {
   try {
-    const event = await Event.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const event = await Event.findOne({ where });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }
@@ -109,7 +115,9 @@ exports.updateEvent = async (req, res, next) => {
 
 exports.deleteEvent = async (req, res, next) => {
   try {
-    const event = await Event.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const event = await Event.findOne({ where });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }

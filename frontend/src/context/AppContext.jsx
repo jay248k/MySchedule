@@ -41,6 +41,7 @@ import {
   updateSettings as updateSettingsAction,
 } from '../redux/slices/uiSlice';
 import { storageService } from '../services/storageService';
+import { api } from '../services/api';
 
 const AppContext = createContext(null);
 
@@ -86,6 +87,37 @@ export function AppProvider({ children }) {
   useEffect(() => {
     dispatch(syncGoalProgressWithTasks(tasks));
   }, [tasks, dispatch]);
+
+  // Real-time backend data synchronization across Web & Mobile
+  const fetchAllData = useCallback(async () => {
+    try {
+      const [tasksRes, categoriesRes, goalsRes, eventsRes] = await Promise.all([
+        api.getTasks().catch(() => null),
+        api.getCategories().catch(() => null),
+        api.getGoals().catch(() => null),
+        api.getEvents().catch(() => null),
+      ]);
+
+      if (tasksRes?.data && Array.isArray(tasksRes.data)) {
+        dispatch(setTasks(tasksRes.data));
+      }
+      if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
+        dispatch(setCategories(categoriesRes.data));
+      }
+      if (goalsRes?.data && Array.isArray(goalsRes.data)) {
+        dispatch(setGoals(goalsRes.data));
+      }
+      if (eventsRes?.data && Array.isArray(eventsRes.data)) {
+        dispatch(setEvents(eventsRes.data));
+      }
+    } catch (err) {
+      console.warn('Backend sync warning:', err);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData, authUser]);
 
   // Toast System
   const showToast = useCallback(
@@ -151,36 +183,53 @@ export function AppProvider({ children }) {
     [dispatch]
   );
 
-  // Task Actions
+  // Task Actions (Connected to Cloud Backend)
   const addTask = useCallback(
-    (taskData) => {
-      const id = taskData.id || `task-${Date.now()}`;
+    async (taskData) => {
       const payload = {
-        id,
         title: taskData.title || 'Untitled Task',
         description: taskData.description || '',
         date: taskData.date,
         startTime: taskData.startTime || '09:00',
         endTime: taskData.endTime || '10:00',
-        categoryId: taskData.categoryId || (categories[0]?.id || 'cat-work'),
+        categoryId: taskData.categoryId || (categories[0]?.id || null),
         priority: taskData.priority || 'Medium',
         goalId: taskData.goalId || null,
         status: 'pending',
       };
-      dispatch(addTaskAction(payload));
-      showToast({
-        type: 'success',
-        title: 'Task Created',
-        message: `"${payload.title}" has been scheduled.`,
-      });
-      return payload;
+
+      try {
+        const res = await api.createTask(payload);
+        const created = res?.data || { id: `task-${Date.now()}`, ...payload };
+        dispatch(addTaskAction(created));
+        showToast({
+          type: 'success',
+          title: 'Task Created',
+          message: `"${payload.title}" has been scheduled and synced.`,
+        });
+        return created;
+      } catch (err) {
+        const local = { id: `task-${Date.now()}`, ...payload };
+        dispatch(addTaskAction(local));
+        showToast({
+          type: 'success',
+          title: 'Task Created',
+          message: `"${payload.title}" has been scheduled.`,
+        });
+        return local;
+      }
     },
     [categories, dispatch, showToast]
   );
 
   const updateTask = useCallback(
-    (taskId, updates) => {
+    async (taskId, updates) => {
       dispatch(updateTaskAction({ id: taskId, ...updates }));
+      try {
+        await api.updateTask(taskId, updates);
+      } catch (err) {
+        console.warn('Backend task update failed:', err);
+      }
       showToast({
         type: 'info',
         title: 'Task Updated',
@@ -198,8 +247,13 @@ export function AppProvider({ children }) {
         message: `Are you sure you want to delete "${target?.title || 'this task'}"? This action cannot be undone.`,
         confirmText: 'Delete',
         isDanger: true,
-        onConfirm: () => {
+        onConfirm: async () => {
           dispatch(deleteTaskAction(taskId));
+          try {
+            await api.deleteTask(taskId);
+          } catch (err) {
+            console.warn('Backend task delete failed:', err);
+          }
           showToast({
             type: 'info',
             title: 'Task Deleted',
@@ -212,12 +266,17 @@ export function AppProvider({ children }) {
   );
 
   const toggleTaskComplete = useCallback(
-    (taskId) => {
+    async (taskId) => {
       const target = tasks.find((t) => t.id === taskId);
       const isDone = target?.status === 'completed';
       const newStatus = isDone ? 'pending' : 'completed';
 
       dispatch(toggleTaskCompleteAction(taskId));
+      try {
+        await api.toggleTaskComplete(taskId);
+      } catch (err) {
+        console.warn('Backend task toggle failed:', err);
+      }
       showToast({
         type: isDone ? 'info' : 'success',
         title: isDone ? 'Task Incomplete' : 'Task Completed',
@@ -228,38 +287,63 @@ export function AppProvider({ children }) {
   );
 
   const moveTaskSlot = useCallback(
-    (payload) => {
+    async (payload) => {
       dispatch(moveTaskSlotAction(payload));
+      try {
+        await api.updateTask(payload.taskId, {
+          date: payload.newDate,
+          startTime: payload.newStartTime,
+          endTime: payload.newEndTime,
+        });
+      } catch (err) {
+        console.warn('Backend move task failed:', err);
+      }
     },
     [dispatch]
   );
 
-  // Goal Actions
+  // Goal Actions (Connected to Cloud Backend)
   const addGoal = useCallback(
-    (goalData) => {
-      const goalId = `goal-${Date.now()}`;
+    async (goalData) => {
       const payload = {
-        id: goalId,
         title: goalData.title || 'New Goal',
         description: goalData.description || '',
         targetDate: goalData.targetDate,
         category: goalData.category || 'General',
         relatedTaskIds: goalData.relatedTaskIds || [],
       };
-      dispatch(addGoalAction(payload));
-      showToast({
-        type: 'success',
-        title: 'Goal Added',
-        message: `New goal "${payload.title}" created with auto-progress tracking.`,
-      });
-      return payload;
+      try {
+        const res = await api.createGoal(payload);
+        const created = res?.data || { id: `goal-${Date.now()}`, ...payload };
+        dispatch(addGoalAction(created));
+        showToast({
+          type: 'success',
+          title: 'Goal Added',
+          message: `New goal "${payload.title}" created with auto-progress tracking.`,
+        });
+        return created;
+      } catch (err) {
+        const local = { id: `goal-${Date.now()}`, ...payload };
+        dispatch(addGoalAction(local));
+        showToast({
+          type: 'success',
+          title: 'Goal Added',
+          message: `New goal "${payload.title}" created.`,
+        });
+        return local;
+      }
     },
     [dispatch, showToast]
   );
 
   const updateGoal = useCallback(
-    (goalId, updates) => {
+    async (goalId, updates) => {
       dispatch(updateGoalAction({ id: goalId, ...updates }));
+      try {
+        await api.updateGoal(goalId, updates);
+      } catch (err) {
+        console.warn('Backend goal update failed:', err);
+      }
       showToast({
         type: 'info',
         title: 'Goal Updated',
@@ -277,8 +361,13 @@ export function AppProvider({ children }) {
         message: `Are you sure you want to delete goal "${target?.title || 'Goal'}"?`,
         confirmText: 'Delete',
         isDanger: true,
-        onConfirm: () => {
+        onConfirm: async () => {
           dispatch(deleteGoalAction(goalId));
+          try {
+            await api.deleteGoal(goalId);
+          } catch (err) {
+            console.warn('Backend goal delete failed:', err);
+          }
           showToast({
             type: 'info',
             title: 'Goal Deleted',

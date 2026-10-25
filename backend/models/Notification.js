@@ -32,12 +32,20 @@ module.exports = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      userId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
     },
     {
       tableName: 'notifications',
       timestamps: true,
     }
   );
+
+  Notification.associate = (models) => {
+    Notification.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  };
 
   return Notification;
 };

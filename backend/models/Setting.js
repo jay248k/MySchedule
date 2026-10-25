@@ -41,12 +41,20 @@ module.exports = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      userId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
     },
     {
       tableName: 'settings',
       timestamps: true,
     }
   );
+
+  Setting.associate = (models) => {
+    Setting.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+  };
 
   return Setting;
 };

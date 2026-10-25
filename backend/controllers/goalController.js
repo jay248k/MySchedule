@@ -2,7 +2,13 @@ const { Goal, Task } = require('../models');
 
 exports.getAllGoals = async (req, res, next) => {
   try {
+    const where = {};
+    if (req.userId) {
+      where.userId = req.userId;
+    }
+
     const goals = await Goal.findAll({
+      where,
       include: [{ model: Task, as: 'tasks' }],
       order: [['targetDate', 'ASC']],
     });
@@ -14,7 +20,11 @@ exports.getAllGoals = async (req, res, next) => {
 
 exports.getGoalById = async (req, res, next) => {
   try {
-    const goal = await Goal.findByPk(req.params.id, {
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+
+    const goal = await Goal.findOne({
+      where,
       include: [{ model: Task, as: 'tasks' }],
     });
     if (!goal) {
@@ -46,6 +56,7 @@ exports.createGoal = async (req, res, next) => {
       status: status || 'in-progress',
       category: category || null,
       relatedTaskIds: relatedTaskIds || [],
+      userId: req.userId || req.body.userId || null,
     });
 
     res.status(201).json({ success: true, data: goal });
@@ -56,7 +67,9 @@ exports.createGoal = async (req, res, next) => {
 
 exports.updateGoal = async (req, res, next) => {
   try {
-    const goal = await Goal.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const goal = await Goal.findOne({ where });
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
@@ -85,7 +98,9 @@ exports.updateGoal = async (req, res, next) => {
 
 exports.deleteGoal = async (req, res, next) => {
   try {
-    const goal = await Goal.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const goal = await Goal.findOne({ where });
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }

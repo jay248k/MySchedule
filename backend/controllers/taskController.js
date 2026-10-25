@@ -28,6 +28,10 @@ exports.getAllTasks = async (req, res, next) => {
       where.priority = priority;
     }
 
+    if (req.userId) {
+      where.userId = req.userId;
+    }
+
     const tasks = await Task.findAll({
       where,
       include: [
@@ -121,7 +125,9 @@ exports.createTask = async (req, res, next) => {
 
 exports.updateTask = async (req, res, next) => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
@@ -164,7 +170,9 @@ exports.updateTask = async (req, res, next) => {
 
 exports.toggleTaskComplete = async (req, res, next) => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
@@ -187,7 +195,9 @@ exports.toggleTaskComplete = async (req, res, next) => {
 
 exports.deleteTask = async (req, res, next) => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }

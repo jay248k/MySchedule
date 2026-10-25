@@ -1,8 +1,14 @@
 const { Category, Task, Event } = require('../models');
+const { Op } = require('sequelize');
 
 exports.getAllCategories = async (req, res, next) => {
   try {
+    const where = req.userId
+      ? { [Op.or]: [{ userId: null }, { userId: req.userId }] }
+      : {};
+
     const categories = await Category.findAll({
+      where,
       order: [['createdAt', 'ASC']],
     });
     res.json({ success: true, data: categories });
@@ -52,9 +58,11 @@ exports.createCategory = async (req, res, next) => {
 
 exports.updateCategory = async (req, res, next) => {
   try {
-    const category = await Category.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const category = await Category.findOne({ where });
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+      return res.status(404).json({ success: false, message: 'Category not found or unauthorized' });
     }
 
     const { name, color, icon, description } = req.body;
@@ -73,9 +81,11 @@ exports.updateCategory = async (req, res, next) => {
 
 exports.deleteCategory = async (req, res, next) => {
   try {
-    const category = await Category.findByPk(req.params.id);
+    const where = { id: req.params.id };
+    if (req.userId) where.userId = req.userId;
+    const category = await Category.findOne({ where });
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+      return res.status(404).json({ success: false, message: 'Category not found or unauthorized' });
     }
 
     await category.destroy();
