@@ -117,6 +117,16 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     fetchAllData();
+
+    // Automatically re-sync whenever user focuses the browser tab or returns to web
+    const handleWindowFocus = () => {
+      fetchAllData();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
   }, [fetchAllData, authUser]);
 
   // Toast System

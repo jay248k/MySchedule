@@ -32,10 +32,10 @@ export function AuthModal() {
 
   const { showToast } = useApp();
 
-  // Form fields
+  // Form fields - Pre-filled default user
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('jay@gmail.com');
+  const [password, setPassword] = useState('Jay123');
   const [title, setTitle] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -45,7 +45,8 @@ export function AuthModal() {
   useEffect(() => {
     setErrorMsg('');
     if (authModalTab === 'login') {
-      setPassword('');
+      setEmail('jay@gmail.com');
+      setPassword('Jay123');
     } else {
       setName('');
       setEmail('');
@@ -331,12 +332,12 @@ export function AuthModal() {
           </div>
         )}
 
-        {/* Demo Quick Credentials Banner */}
+        {/* Default Account Quick Fill Banner */}
         {authModalTab === 'login' && (
           <div
             onClick={() => {
-              setEmail('admin@myschedule.app');
-              setPassword('demouser123');
+              setEmail('jay@gmail.com');
+              setPassword('Jay123');
             }}
             style={{
               margin: '16px 28px 0',
@@ -351,7 +352,7 @@ export function AuthModal() {
               gap: '10px',
               transition: 'all 0.2s',
             }}
-            title="Click to auto-fill Demo credentials"
+            title="Click to fill default account credentials"
             id="btn-quick-fill-demo"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -372,11 +373,11 @@ export function AuthModal() {
               </div>
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#E0E7FF' }}>
-                  Demo User Credentials (Click to fill)
+                  Default Account (Click to fill)
                 </div>
                 <div style={{ fontSize: '0.74rem', color: '#94A3B8' }}>
-                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>admin@myschedule.app</span> &nbsp;•&nbsp;{' '}
-                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>demouser123</span>
+                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>jay@gmail.com</span> &nbsp;•&nbsp;{' '}
+                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>Jay123</span>
                 </div>
               </div>
             </div>
