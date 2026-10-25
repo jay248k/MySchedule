@@ -40,8 +40,17 @@ module.exports = (sequelize) => {
       priority: {
         type: DataTypes.STRING,
         defaultValue: 'Medium',
+        set(value) {
+          if (!value) {
+            this.setDataValue('priority', 'Medium');
+          } else {
+            const lower = String(value).toLowerCase();
+            const formatted = lower.charAt(0).toUpperCase() + lower.slice(1);
+            this.setDataValue('priority', formatted);
+          }
+        },
         validate: {
-          isIn: [['High', 'Medium', 'Low']],
+          isIn: [['High', 'Medium', 'Low', 'high', 'medium', 'low', 'HIGH', 'MEDIUM', 'LOW']],
         },
       },
       goalId: {

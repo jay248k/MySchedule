@@ -63,9 +63,17 @@ exports.getTaskById = async (req, res, next) => {
   }
 };
 
+const normalizePriority = (p) => {
+  if (!p) return 'Medium';
+  const lower = String(p).toLowerCase();
+  if (lower === 'high') return 'High';
+  if (lower === 'low') return 'Low';
+  return 'Medium';
+};
+
 exports.createTask = async (req, res, next) => {
   try {
-    const { id, title, description, date, startTime, endTime, categoryId, priority, goalId, status } =
+    const { id, title, description, date, startTime, endTime, categoryId, category, priority, goalId, status } =
       req.body;
 
     if (!title || !title.trim()) {
@@ -75,6 +83,14 @@ exports.createTask = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Task date is required' });
     }
 
+    let resolvedCategoryId = categoryId || null;
+    if (!resolvedCategoryId && category) {
+      const foundCat = await Category.findOne({
+        where: { name: typeof category === 'string' ? category : category.name },
+      });
+      if (foundCat) resolvedCategoryId = foundCat.id;
+    }
+
     const task = await Task.create({
       id: id || undefined,
       title: title.trim(),
@@ -82,8 +98,8 @@ exports.createTask = async (req, res, next) => {
       date,
       startTime: startTime || null,
       endTime: endTime || null,
-      categoryId: categoryId || null,
-      priority: priority || 'Medium',
+      categoryId: resolvedCategoryId,
+      priority: normalizePriority(priority),
       goalId: goalId || null,
       status: status || 'pending',
       userId: req.userId || req.body.userId || null,
@@ -110,8 +126,16 @@ exports.updateTask = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    const { title, description, date, startTime, endTime, categoryId, priority, goalId, status } =
+    const { title, description, date, startTime, endTime, categoryId, category, priority, goalId, status } =
       req.body;
+
+    let resolvedCategoryId = categoryId !== undefined ? categoryId : task.categoryId;
+    if (categoryId === undefined && category) {
+      const foundCat = await Category.findOne({
+        where: { name: typeof category === 'string' ? category : category.name },
+      });
+      if (foundCat) resolvedCategoryId = foundCat.id;
+    }
 
     await task.update({
       title: title !== undefined ? title.trim() : task.title,
@@ -119,8 +143,8 @@ exports.updateTask = async (req, res, next) => {
       date: date !== undefined ? date : task.date,
       startTime: startTime !== undefined ? startTime : task.startTime,
       endTime: endTime !== undefined ? endTime : task.endTime,
-      categoryId: categoryId !== undefined ? categoryId : task.categoryId,
-      priority: priority !== undefined ? priority : task.priority,
+      categoryId: resolvedCategoryId,
+      priority: priority !== undefined ? normalizePriority(priority) : task.priority,
       goalId: goalId !== undefined ? goalId : task.goalId,
       status: status !== undefined ? status : task.status,
     });
