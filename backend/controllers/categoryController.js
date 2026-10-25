@@ -82,11 +82,17 @@ exports.updateCategory = async (req, res, next) => {
 exports.deleteCategory = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const category = await Category.findOne({ where });
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found or unauthorized' });
     }
+
+    // Unlink any tasks and events linked to this category
+    await Task.update({ categoryId: null }, { where: { categoryId: category.id } });
+    await Event.update({ categoryId: null }, { where: { categoryId: category.id } });
 
     await category.destroy();
     res.json({ success: true, message: 'Category deleted successfully' });

@@ -472,30 +472,47 @@ export function AppProvider({ children }) {
     [events, requestConfirm, dispatch, showToast]
   );
 
-  // Category Actions
+  // Category Actions (Connected to Cloud Backend)
   const addCategory = useCallback(
-    (catData) => {
+    async (catData) => {
       const payload = {
-        id: `cat-${Date.now()}`,
         name: catData.name,
         color: catData.color || '#1769FF',
         icon: catData.icon || 'Tag',
         description: catData.description || '',
       };
-      dispatch(addCategoryAction(payload));
-      showToast({
-        type: 'success',
-        title: 'Category Created',
-        message: `Category "${payload.name}" is now available.`,
-      });
-      return payload;
+      try {
+        const res = await api.createCategory(payload);
+        const created = res?.data || { id: `cat-${Date.now()}`, ...payload };
+        dispatch(addCategoryAction(created));
+        showToast({
+          type: 'success',
+          title: 'Category Created',
+          message: `Category "${payload.name}" is now available.`,
+        });
+        return created;
+      } catch (err) {
+        const local = { id: `cat-${Date.now()}`, ...payload };
+        dispatch(addCategoryAction(local));
+        showToast({
+          type: 'success',
+          title: 'Category Created',
+          message: `Category "${payload.name}" created.`,
+        });
+        return local;
+      }
     },
     [dispatch, showToast]
   );
 
   const updateCategory = useCallback(
-    (catId, updates) => {
+    async (catId, updates) => {
       dispatch(updateCategoryAction({ id: catId, ...updates }));
+      try {
+        await api.updateCategory(catId, updates);
+      } catch (err) {
+        console.warn('Backend category update failed:', err);
+      }
       showToast({
         type: 'info',
         title: 'Category Updated',
@@ -512,21 +529,20 @@ export function AppProvider({ children }) {
 
       requestConfirm({
         title: 'Delete Category',
-        message: `Are you sure you want to delete "${target?.name}"? ${affectedCount} task(s) currently assigned to this category will be moved to "Other".`,
+        message: `Are you sure you want to delete "${target?.name}"? ${affectedCount} task(s) currently assigned to this category will be updated.`,
         confirmText: 'Delete Category',
         isDanger: true,
-        onConfirm: () => {
+        onConfirm: async () => {
           dispatch(deleteCategoryAction(catId));
-          const fallbackId = categories.find((c) => c.id !== catId)?.id || 'cat-other';
-          tasks.forEach((t) => {
-            if (t.categoryId === catId) {
-              dispatch(updateTaskAction({ id: t.id, categoryId: fallbackId }));
-            }
-          });
+          try {
+            await api.deleteCategory(catId);
+          } catch (err) {
+            console.warn('Backend category delete failed:', err);
+          }
           showToast({
             type: 'info',
             title: 'Category Deleted',
-            message: `"${target?.name}" removed. Assigned tasks were reassigned.`,
+            message: `"${target?.name || 'Category'}" was removed.`,
           });
         },
       });
