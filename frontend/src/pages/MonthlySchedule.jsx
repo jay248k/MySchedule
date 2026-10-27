@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -21,15 +21,25 @@ import { TaskItem } from '../components/tasks/TaskItem';
 import { DailyScheduleTimeline } from '../components/tasks/DailyScheduleTimeline';
 
 export function MonthlySchedule() {
-  const { tasks, categories, goals, openModal, settings } = useApp();
+  const { tasks, categories, goals, openModal, settings, selectedDate, setSelectedDate } = useApp();
 
   const now = new Date();
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
-  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const [viewMode, setViewMode] = useState('month'); // 'month', 'week', 'day'
   const [selectedCategories, setSelectedCategories] = useState(['all']);
   const [dateScheduleView, setDateScheduleView] = useState('timeline'); // 'timeline', 'cards'
+
+  // Synchronize month and year view with global selectedDate
+  useEffect(() => {
+    if (selectedDate) {
+      const parts = selectedDate.split('-').map(Number);
+      if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        setCurrentYear(parts[0]);
+        setCurrentMonth(parts[1] - 1);
+      }
+    }
+  }, [selectedDate]);
 
   // Month navigation
   const prevMonth = () => {
@@ -490,9 +500,18 @@ export function MonthlySchedule() {
                     className={`btn btn-sm ${dateScheduleView === 'cards' ? 'btn-primary' : 'btn-ghost'}`}
                     style={{ padding: '3px 8px', fontSize: '0.72rem', height: '26px' }}
                     onClick={() => setDateScheduleView('cards')}
-                    title="Cards List"
+                    title="Grid of Cards"
                   >
                     Cards
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${dateScheduleView === 'list' ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{ padding: '3px 8px', fontSize: '0.72rem', height: '26px' }}
+                    onClick={() => setDateScheduleView('list')}
+                    title="Compact Row List"
+                  >
+                    List
                   </button>
                 </div>
 
@@ -507,7 +526,7 @@ export function MonthlySchedule() {
               </div>
             </div>
 
-            <div className="calendar-side-panel-body" style={{ maxHeight: '460px', overflowY: 'auto' }}>
+            <div className="calendar-side-panel-body" style={{ maxHeight: '520px', overflowY: 'auto' }}>
               {dateScheduleView === 'timeline' ? (
                 <DailyScheduleTimeline
                   date={selectedDate}
@@ -521,8 +540,25 @@ export function MonthlySchedule() {
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '28px 12px' }}>
                   No tasks on this date.
                 </div>
+              ) : dateScheduleView === 'cards' ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gap: '12px',
+                    padding: '2px 0',
+                  }}
+                >
+                  {selectedDateTasks.map((t) => (
+                    <TaskItem key={t.id} task={t} asCard={true} />
+                  ))}
+                </div>
               ) : (
-                selectedDateTasks.map((t) => <TaskItem key={t.id} task={t} compact={true} />)
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedDateTasks.map((t) => (
+                    <TaskItem key={t.id} task={t} compact={true} />
+                  ))}
+                </div>
               )}
             </div>
           </div>

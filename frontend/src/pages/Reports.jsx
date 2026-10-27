@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   TrendingUp,
@@ -17,6 +18,16 @@ import {
   Plus,
   RefreshCw,
   Target,
+  LayoutGrid,
+  List,
+  CalendarDays,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
+  Archive,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -45,6 +56,7 @@ import { ProgressBar } from '../components/common/ProgressRing';
 import { TaskItem } from '../components/tasks/TaskItem';
 
 export function Reports() {
+  const navigate = useNavigate();
   const {
     tasks,
     categories,
@@ -56,6 +68,8 @@ export function Reports() {
     saveDailyReport,
     deleteDailyReport,
     showToast,
+    selectedDate,
+    setSelectedDate,
   } = useApp();
 
   // Active view: 'today-report' (default) or 'analytics'
@@ -63,7 +77,13 @@ export function Reports() {
 
   // Selected date for Daily Work Reporting
   const todayStr = getTodayDateString();
-  const [selectedReportDate, setSelectedReportDate] = useState(todayStr);
+  const [selectedReportDate, setSelectedReportDate] = useState(() => selectedDate || todayStr);
+
+  useEffect(() => {
+    if (selectedDate) {
+      setSelectedReportDate(selectedDate);
+    }
+  }, [selectedDate]);
 
   // Filter for tasks checklist on selected date: 'all', 'completed', 'pending'
   const [taskFilter, setTaskFilter] = useState('all');
@@ -80,6 +100,40 @@ export function Reports() {
   const [tomorrowPlan, setTomorrowPlan] = useState('');
   const [hoursLogged, setHoursLogged] = useState('7.0');
   const [mood, setMood] = useState('fire'); // 'fire', 'rocket', 'coffee', 'blocked'
+
+  // Archive Multi-View, Search & Filter states
+  const [archiveView, setArchiveView] = useState('cards'); // 'cards', 'table', 'timeline'
+  const [archiveSearch, setArchiveSearch] = useState('');
+  const [archiveMoodFilter, setArchiveMoodFilter] = useState('all');
+  const [expandedReportIds, setExpandedReportIds] = useState(new Set());
+
+  const toggleExpandReport = (id) => {
+    setExpandedReportIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const parseBulletPoints = (text) => {
+    if (!text) return [];
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => line.replace(/^[•\-\*\d\.\)]\s*/, ''));
+  };
+
+  const MOOD_METADATA = {
+    fire: { label: 'High Velocity', emoji: '🔥', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.28)' },
+    productive: { label: 'High Velocity', emoji: '🔥', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.28)' },
+    rocket: { label: 'On Track', emoji: '🚀', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.28)' },
+    ontrack: { label: 'On Track', emoji: '🚀', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.28)' },
+    coffee: { label: 'Steady Pace', emoji: '☕', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.28)' },
+    steady: { label: 'Steady Pace', emoji: '☕', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.28)' },
+    blocked: { label: 'Blocked', emoji: '⚠️', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239, 68, 68, 0.28)' },
+  };
 
   // Helper to calculate hours between time strings
   const calculateTaskHours = (task) => {
@@ -695,7 +749,8 @@ export function Reports() {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
-                    maxHeight: '440px',
+                    flex: 1,
+                    minHeight: 0,
                     overflowY: 'auto',
                     paddingRight: '4px',
                   }}
@@ -842,38 +897,89 @@ export function Reports() {
               <div
                 className="card"
                 style={{
-                  padding: '24px',
+                  padding: '26px 28px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '18px',
+                  gap: '20px',
                   background: 'var(--card-bg)',
                   border: '1.5px solid var(--border-color)',
-                  boxShadow: 'var(--shadow-md)',
+                  boxShadow: 'var(--shadow-lg)',
+                  borderRadius: 'var(--radius-lg)',
+                  position: 'relative',
                 }}
               >
+                {/* 1. Header with Status & Top Quick Actions */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     borderBottom: '1px solid var(--border-color)',
-                    paddingBottom: '14px',
+                    paddingBottom: '16px',
+                    flexWrap: 'wrap',
+                    gap: '12px',
                   }}
                 >
                   <div>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Daily Work Report & Standup Log
-                    </h3>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      Reporting for: <strong>{formattedSelectedDay}</strong>
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                        Daily Work Report & Standup Log
+                      </h3>
+                      {savedReportForSelectedDate ? (
+                        <span
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '3px 9px',
+                            borderRadius: '999px',
+                            background: 'rgba(16, 185, 129, 0.12)',
+                            color: '#10B981',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <CheckCircle2 size={12} /> Saved in Archive
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '3px 9px',
+                            borderRadius: '999px',
+                            background: 'rgba(245, 158, 11, 0.12)',
+                            color: '#F59E0B',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          ● Draft Mode
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      <Calendar size={13} color="var(--primary-color)" />
+                      <span>Reporting for: <strong>{formattedSelectedDay}</strong></span>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm btn-no-print"
                       onClick={handleCopyStandup}
+                      style={{
+                        padding: '7px 12px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--page-bg)',
+                      }}
+                      title="Copy formatted standup markdown for Slack or Microsoft Teams"
                     >
                       <Copy size={14} /> Copy Standup
                     </button>
@@ -881,182 +987,553 @@ export function Reports() {
                       type="button"
                       className="btn btn-primary btn-sm btn-no-print"
                       onClick={handleSaveReport}
+                      style={{
+                        padding: '7px 16px',
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 14px rgba(var(--primary-rgb, 16, 185, 129), 0.3)',
+                      }}
                     >
-                      <Save size={14} /> Save Report
+                      <Save size={15} /> Save Report
                     </button>
                   </div>
                 </div>
 
-                {/* 1. Today's Accomplishments & Delivered Work */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      ✅ Today's Accomplishments & Delivered Work
-                    </label>
+                {/* Section A: Today's Accomplishments & Delivered Work */}
+                <div
+                  style={{
+                    background: 'var(--page-bg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-color)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '7px',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: '#10B981',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <CheckCircle2 size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Today's Accomplishments & Delivered Work
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          Completed milestones, code delivered, and resolved deliverables
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm btn-no-print"
-                      style={{ fontSize: '0.75rem', padding: '2px 8px', color: 'var(--primary-color)' }}
                       onClick={handleRefreshAccomplishments}
+                      style={{
+                        fontSize: '0.76rem',
+                        padding: '4px 10px',
+                        color: 'var(--primary-color)',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                      title="Sync all completed tasks from today into the accomplishments list"
                     >
-                      <RefreshCw size={12} /> Auto-fill from Tasks
+                      <RefreshCw size={12} /> Sync Completed Tasks
                     </button>
                   </div>
+
                   <textarea
                     rows={4}
                     className="daily-report-textarea"
                     placeholder="• Detail tasks delivered, milestones achieved, code written..."
                     value={accomplishments}
                     onChange={(e) => setAccomplishments(e.target.value)}
+                    style={{
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '0.86rem',
+                      lineHeight: '1.6',
+                      padding: '12px 14px',
+                    }}
                   />
                 </div>
 
-                {/* 2. Key Highlights & Work in Progress */}
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    📌 Key Highlights & Ongoing Work
-                  </label>
+                {/* Section B: Key Highlights & Ongoing Work */}
+                <div
+                  style={{
+                    background: 'var(--page-bg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-color)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '7px',
+                          background: 'rgba(59, 130, 246, 0.15)',
+                          color: '#3B82F6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Sparkles size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Key Highlights & Ongoing Work
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          Major architectural progress, sprint momentum, and sync meetings
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick suggestion pills */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {[
+                        'Delivered on schedule 🚀',
+                        'Client sync completed 🤝',
+                        'Architecture reviewed 📐',
+                      ].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setHighlights((prev) => (prev ? `${prev}\n• ${tag}` : `• ${tag}`));
+                          }}
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '3px 8px',
+                            borderRadius: '999px',
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <textarea
                     rows={2}
                     className="daily-report-textarea"
                     placeholder="Key meetings, architectural decisions, ongoing sprint focus..."
                     value={highlights}
                     onChange={(e) => setHighlights(e.target.value)}
+                    style={{
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '0.86rem',
+                      lineHeight: '1.6',
+                      padding: '10px 14px',
+                    }}
                   />
                 </div>
 
-                {/* 3. Blockers & Impediments */}
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    🚧 Blockers / Roadblocks Encountered
-                  </label>
+                {/* Section C: Blockers / Roadblocks Encountered */}
+                <div
+                  style={{
+                    background: 'var(--page-bg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid',
+                    borderColor:
+                      blockers.toLowerCase().includes('none') || !blockers.trim()
+                        ? 'var(--border-color)'
+                        : 'rgba(239, 68, 68, 0.35)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    transition: 'border-color 0.2s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '7px',
+                          background:
+                            blockers.toLowerCase().includes('none') || !blockers.trim()
+                              ? 'rgba(16, 185, 129, 0.15)'
+                              : 'rgba(239, 68, 68, 0.15)',
+                          color:
+                            blockers.toLowerCase().includes('none') || !blockers.trim()
+                              ? '#10B981'
+                              : '#EF4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <AlertTriangle size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Blockers / Roadblocks Encountered
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          External dependencies, pending PR reviews, or blocking environment issues
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick 1-click status pills */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setBlockers('None. Steady progress without major impediments.')}
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '3px 9px',
+                          borderRadius: '999px',
+                          background:
+                            blockers.toLowerCase().includes('none')
+                              ? 'rgba(16, 185, 129, 0.2)'
+                              : 'var(--card-bg)',
+                          border: '1px solid',
+                          borderColor:
+                            blockers.toLowerCase().includes('none')
+                              ? '#10B981'
+                              : 'var(--border-color)',
+                          color:
+                            blockers.toLowerCase().includes('none')
+                              ? '#10B981'
+                              : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                        }}
+                      >
+                        ✅ None (All Clear)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlockers('Waiting for Code Review / PR approval on repository.')}
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '3px 9px',
+                          borderRadius: '999px',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ⏳ Pending Review
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlockers('External service API dependency failure.')}
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '3px 9px',
+                          borderRadius: '999px',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ⚠️ Dependency Delay
+                      </button>
+                    </div>
+                  </div>
+
                   <textarea
                     rows={2}
                     className="daily-report-textarea"
                     placeholder="Dependencies pending, environment bugs, waiting for review (or 'None')..."
                     value={blockers}
                     onChange={(e) => setBlockers(e.target.value)}
+                    style={{
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '0.86rem',
+                      lineHeight: '1.6',
+                      padding: '10px 14px',
+                    }}
                   />
                 </div>
 
-                {/* 4. Tomorrow's Planned Priorities */}
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    <label style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      🚀 Tomorrow's Focus & Planned Priorities
-                    </label>
+                {/* Section D: Tomorrow's Planned Priorities */}
+                <div
+                  style={{
+                    background: 'var(--page-bg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-color)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '7px',
+                          background: 'rgba(139, 92, 246, 0.15)',
+                          color: '#8B5CF6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Target size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Tomorrow's Focus & Planned Priorities
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          Upcoming milestones and scheduled tasks to tackle next
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm btn-no-print"
-                      style={{ fontSize: '0.75rem', padding: '2px 8px', color: 'var(--primary-color)' }}
                       onClick={handleRefreshTomorrowPlan}
+                      style={{
+                        fontSize: '0.76rem',
+                        padding: '4px 10px',
+                        color: 'var(--primary-color)',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                      title="Auto-fill tasks scheduled for tomorrow"
                     >
                       <RefreshCw size={12} /> Auto-fill Tomorrow's Tasks
                     </button>
                   </div>
+
                   <textarea
                     rows={3}
                     className="daily-report-textarea"
                     placeholder="• Priorities and target deliverables planned for tomorrow..."
                     value={tomorrowPlan}
                     onChange={(e) => setTomorrowPlan(e.target.value)}
+                    style={{
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '0.86rem',
+                      lineHeight: '1.6',
+                      padding: '12px 14px',
+                    }}
                   />
                 </div>
 
-                {/* 5. Effort & Velocity Assessment */}
+                {/* Section E: Effort & Velocity Momentum Console */}
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 2fr',
+                    gridTemplateColumns: 'minmax(220px, 1.2fr) minmax(320px, 2fr)',
                     gap: '16px',
-                    padding: '14px',
+                    padding: '18px',
                     background: 'var(--page-bg)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-color)',
                   }}
                 >
-                  <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: 'var(--text-secondary)',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      Logged Effort Hours
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      max="24"
-                      className="date-input-picker"
-                      style={{ width: '100%', padding: '6px 10px' }}
-                      value={hoursLogged}
-                      onChange={(e) => setHoursLogged(e.target.value)}
-                    />
-                  </div>
+                  {/* Left: Logged Effort Hours */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        Logged Effort Hours
+                      </label>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        {completedHours}h completed / {plannedHours}h planned
+                      </span>
+                    </div>
 
-                  <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: 'var(--text-secondary)',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      Day Velocity / Mood
-                    </label>
-                    <div className="mood-selector">
-                      {[
-                        { id: 'fire', label: '🔥 High Velocity' },
-                        { id: 'rocket', label: '🚀 On Track' },
-                        { id: 'coffee', label: '☕ Steady' },
-                        { id: 'blocked', label: '⚠️ Blocked' },
-                      ].map((m) => (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = parseFloat(hoursLogged) || 0;
+                          setHoursLogged(Math.max(0, current - 0.5).toFixed(1));
+                        }}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                          fontWeight: 800,
+                          fontSize: '1.1rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        -
+                      </button>
+
+                      <div
+                        style={{
+                          flex: 1,
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="24"
+                          value={hoursLogged}
+                          onChange={(e) => setHoursLogged(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '7px 32px 7px 12px',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--card-bg)',
+                            border: '1.5px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                            fontSize: '1rem',
+                            fontWeight: 800,
+                            textAlign: 'center',
+                          }}
+                        />
+                        <span style={{ position: 'absolute', right: '12px', fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                          hrs
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = parseFloat(hoursLogged) || 0;
+                          setHoursLogged(Math.min(24, current + 0.5).toFixed(1));
+                        }}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                          fontWeight: 800,
+                          fontSize: '1.1rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Quick Preset Buttons */}
+                    <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
+                      {['4.0', '6.0', '7.5', '8.0', '10.0'].map((preset) => (
                         <button
-                          key={m.id}
+                          key={preset}
                           type="button"
-                          className={`mood-btn ${mood === m.id ? 'selected' : ''}`}
-                          onClick={() => setMood(m.id)}
+                          onClick={() => setHoursLogged(preset)}
+                          style={{
+                            flex: 1,
+                            padding: '4px 0',
+                            borderRadius: '4px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: hoursLogged === preset ? 'rgba(var(--primary-rgb, 16, 185, 129), 0.15)' : 'var(--card-bg)',
+                            border: `1px solid ${hoursLogged === preset ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                            color: hoursLogged === preset ? 'var(--primary-color)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                          }}
                         >
-                          {m.label}
+                          {preset}h
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Right: Day Velocity / Mood Selector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        Productivity Velocity / Mood
+                      </label>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        Self-assessed daily momentum
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      {[
+                        { id: 'fire', label: 'High Velocity', emoji: '🔥', color: '#F97316', bg: 'rgba(249, 115, 22, 0.15)' },
+                        { id: 'rocket', label: 'On Track', emoji: '🚀', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },
+                        { id: 'coffee', label: 'Steady Pace', emoji: '☕', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)' },
+                        { id: 'blocked', label: 'Blocked', emoji: '⚠️', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)' },
+                      ].map((m) => {
+                        const isSelected = mood === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setMood(m.id)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: 'var(--radius-md)',
+                              border: `1.5px solid ${isSelected ? m.color : 'var(--border-color)'}`,
+                              background: isSelected ? m.bg : 'var(--card-bg)',
+                              color: isSelected ? m.color : 'var(--text-secondary)',
+                              fontSize: '0.82rem',
+                              fontWeight: isSelected ? 800 : 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSelected ? `0 2px 10px ${m.color}30` : 'none',
+                            }}
+                          >
+                            <span style={{ fontSize: '1rem' }}>{m.emoji}</span>
+                            <span>{m.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1067,31 +1544,43 @@ export function Reports() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginTop: '8px',
-                    paddingTop: '12px',
+                    paddingTop: '16px',
                     borderTop: '1px solid var(--border-color)',
+                    flexWrap: 'wrap',
+                    gap: '12px',
                   }}
                 >
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm btn-no-print"
                     onClick={() => autoGenerateDraftFromTasks(selectedReportDate)}
+                    style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}
                   >
-                    <RefreshCw size={14} /> Reset to Defaults
+                    <RefreshCw size={13} /> Reset to Task Defaults
                   </button>
 
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm btn-no-print"
                       onClick={handleCopyStandup}
+                      style={{ padding: '8px 14px', fontSize: '0.84rem', fontWeight: 600 }}
                     >
-                      <Copy size={15} /> Copy Standup
+                      <Copy size={14} /> Copy Standup
                     </button>
                     <button
                       type="button"
                       className="btn btn-primary btn-sm btn-no-print"
                       onClick={handleSaveReport}
+                      style={{
+                        padding: '8px 20px',
+                        fontSize: '0.86rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 16px rgba(var(--primary-rgb, 16, 185, 129), 0.35)',
+                      }}
                     >
                       <Save size={15} /> Save Daily Report
                     </button>
@@ -1102,152 +1591,118 @@ export function Reports() {
           </div>
 
           {/* ========================================================================= */}
-          {/* 3. SUBMITTED DAILY REPORTS HISTORY ARCHIVE                                */}
+          {/* 3. SUBMITTED DAILY REPORTS ARCHIVE CTA & QUICK STRIP                      */}
           {/* ========================================================================= */}
-          <div className="card" style={{ padding: '24px 28px' }}>
+          <div className="card" style={{ padding: '22px 26px', marginTop: '16px' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: '12px',
-                marginBottom: '18px',
+                gap: '14px',
               }}
             >
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Submitted Daily Work Reports Archive
-                </h3>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  History of saved work reports across previous days
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '10px',
+                    background: 'rgba(var(--primary-rgb, 16, 185, 129), 0.12)',
+                    color: 'var(--primary-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Archive size={20} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      Submitted Daily Work Reports Archive
+                    </h3>
+                    <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
+                      {dailyReports.length} {dailyReports.length === 1 ? 'Report' : 'Reports'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    All past daily standup logs, velocity statuses, and accomplishments are organized on a dedicated page with Cards, Table, and Timeline views.
+                  </span>
+                </div>
               </div>
-              <span className="badge badge-primary">
-                {dailyReports.length} Saved Daily Report{dailyReports.length !== 1 ? 's' : ''}
-              </span>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => navigate('/archive')}
+                style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
+              >
+                Open Full Archive Page <ArrowRight size={14} />
+              </button>
             </div>
 
-            {dailyReports.length === 0 ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '36px',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.9rem',
-                }}
-              >
-                No daily reports saved yet. Fill out the report above and click "Save Daily Report" to log today's work.
-              </div>
-            ) : (
+            {/* Recent Reports Quick Strip */}
+            {dailyReports.length > 0 && (
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                  gap: '16px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: '12px',
+                  marginTop: '16px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid var(--border-color)',
                 }}
               >
-                {dailyReports.map((report) => {
-                  const isCurrentSelected = report.date === selectedReportDate;
-                  const formattedDate = formatDate(report.date, {
+                {dailyReports.slice(0, 3).map((r) => {
+                  const moodMeta = MOOD_METADATA[r.mood] || MOOD_METADATA.productive;
+                  const formattedDate = formatDate(r.date, {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',
-                    year: 'numeric',
                   });
-
-                  const moodLabels = {
-                    fire: '🔥 High Velocity',
-                    rocket: '🚀 On Track',
-                    coffee: '☕ Steady Pace',
-                    blocked: '⚠️ Blocked',
-                  };
 
                   return (
                     <div
-                      key={report.id || report.date}
-                      className="history-report-card"
+                      key={r.id || r.date}
+                      onClick={() => navigate('/archive')}
                       style={{
-                        borderColor: isCurrentSelected ? 'var(--primary-color)' : 'var(--border-color)',
-                        background: isCurrentSelected ? 'var(--primary-light)' : 'var(--card-bg)',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--page-bg)',
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
+                      className="history-report-card"
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          borderBottom: '1px solid var(--border-color)',
-                          paddingBottom: '10px',
-                        }}
-                      >
-                        <div>
-                          <strong style={{ fontSize: '0.96rem', color: 'var(--text-primary)' }}>
-                            {formattedDate}
-                          </strong>
-                          {report.date === todayStr && (
-                            <span
-                              className="badge badge-success"
-                              style={{ marginLeft: '6px', fontSize: '0.68rem', padding: '1px 6px' }}
-                            >
-                              Today
-                            </span>
-                          )}
-                        </div>
-                        <span className="badge" style={{ background: 'var(--page-bg)', fontSize: '0.74rem' }}>
-                          {moodLabels[report.mood] || report.mood || '🔥 Productive'}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={13} color="var(--primary-color)" />
+                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {formattedDate}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        <strong>Logged:</strong> {report.hoursLogged || '7.0'} hrs
-                      </div>
-
-                      {report.accomplishments && (
-                        <div
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          {r.hoursLogged || '7.0'}h
+                        </span>
+                        <span
+                          className="badge"
                           style={{
-                            fontSize: '0.82rem',
-                            color: 'var(--text-primary)',
-                            background: 'var(--page-bg)',
-                            padding: '8px 12px',
-                            borderRadius: 'var(--radius-sm)',
-                            whiteSpace: 'pre-line',
-                            maxHeight: '80px',
-                            overflowY: 'hidden',
-                            textOverflow: 'ellipsis',
+                            background: moodMeta.bg,
+                            color: moodMeta.color,
+                            fontSize: '0.68rem',
+                            padding: '1px 6px',
                           }}
                         >
-                          {report.accomplishments}
-                        </div>
-                      )}
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginTop: 'auto',
-                          paddingTop: '8px',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          style={{ fontSize: '0.76rem', padding: '3px 8px' }}
-                          onClick={() => setSelectedReportDate(report.date)}
-                        >
-                          <ArrowRight size={12} /> Inspect / Edit Day
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          style={{ color: 'var(--text-muted)' }}
-                          title="Delete report"
-                          onClick={() => deleteDailyReport(report.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                          {moodMeta.emoji} {moodMeta.label}
+                        </span>
                       </div>
                     </div>
                   );
@@ -1532,7 +1987,7 @@ export function Reports() {
                     />
                     <Legend />
                     <Bar dataKey="completed" name="Completed" stackId="a" fill="var(--success)" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="pending" name="Pending" stackId="a" fill="var(--primary-color)" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="pending" name="Pending" stackId="a" fill="var(--warning)" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="overdue" name="Overdue" stackId="a" fill="var(--danger)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1760,7 +2215,7 @@ export function Reports() {
                       <Line
                         type="monotone"
                         dataKey="pending"
-                        stroke="var(--primary-color)"
+                        stroke="var(--warning)"
                         strokeWidth={2}
                         strokeDasharray="4 4"
                         dot={{ r: 3 }}

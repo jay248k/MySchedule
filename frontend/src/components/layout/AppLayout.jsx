@@ -9,6 +9,7 @@ import { GoalModal } from '../goals/GoalModal';
 import { CategoryModal } from '../categories/CategoryModal';
 import { BulkImportModal } from '../common/BulkImportModal';
 import { ConfirmDialog, ToastContainer } from '../common/ConfirmDialog';
+import { StopReasonModal } from '../workTracker/StopReasonModal';
 
 export function AppLayout() {
   return (
@@ -34,6 +35,7 @@ export function AppLayout() {
       <GoalModal />
       <CategoryModal />
       <BulkImportModal />
+      <StopReasonModal />
 
       {/* Global Feedback Dialogs & Notifications */}
       <ConfirmDialog />

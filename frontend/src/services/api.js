@@ -134,6 +134,12 @@ export const api = {
   updateSettings: (payload) => apiClient.put('/settings', payload),
   getUserProfile: () => apiClient.get('/user'),
   updateUserProfile: (payload) => apiClient.put('/user', payload),
+
+  // Work Tracker & Time Sessions
+  getWorkSessions: (params = {}) => apiClient.get('/work-sessions', { params }),
+  createWorkSession: (payload) => apiClient.post('/work-sessions', payload),
+  updateWorkSession: (id, payload) => apiClient.put(`/work-sessions/${id}`, payload),
+  deleteWorkSession: (id) => apiClient.delete(`/work-sessions/${id}`),
 };
 
 export default api;

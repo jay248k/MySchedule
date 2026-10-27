@@ -266,6 +266,48 @@ const runSeed = async () => {
     });
     console.log('✅ Seeded user settings.');
 
+    // 6. Daily Reports
+    const reportsData = [
+      {
+        id: `report-${getTodayDateString(0)}`,
+        date: getTodayDateString(0),
+        title: `Daily Work Report - ${getTodayDateString(0)}`,
+        accomplishments: '• Build task dashboard (01) (06:00 - 06:30) [Development]\n• Morning Workout (06:00 - 06:45) [Health]\n• Review task status flow (08) (07:00 - 08:00) [Development]',
+        highlights: 'Delivered initial schedule sequences on schedule.',
+        blockers: 'None. Steady progress without major impediments.',
+        tomorrowPlan: '• Review dashboard layout (01) (06:00 - 06:30)\n• Architecture Review & Planning (09:00 - 10:30)',
+        hoursLogged: 7.5,
+        rating: 5,
+        mood: 'fire',
+        tasksCompletedCount: 3,
+        tasksTotalCount: 5,
+        submittedAt: new Date(),
+      },
+      {
+        id: `report-${getTodayDateString(-1)}`,
+        date: getTodayDateString(-1),
+        title: `Daily Work Report - ${getTodayDateString(-1)}`,
+        accomplishments: '• Submitted Engineering Lab Report with LaTeX measurement graphs.\n• Conducted Client Sprint Sync meeting.',
+        highlights: 'Cleared all high priority sprint deliverables.',
+        blockers: 'None. Dependencies cleared on time.',
+        tomorrowPlan: '• Plan next sprint tasks.',
+        hoursLogged: 7.0,
+        rating: 5,
+        mood: 'rocket',
+        tasksCompletedCount: 4,
+        tasksTotalCount: 4,
+        submittedAt: new Date(Date.now() - 86400000),
+      },
+    ];
+
+    for (const r of reportsData) {
+      await db.DailyReport.findOrCreate({
+        where: { id: r.id },
+        defaults: r,
+      });
+    }
+    console.log(`✅ Seeded ${reportsData.length} daily reports.`);
+
     console.log('🎉 Database seeding completed successfully!');
     return true;
   } catch (error) {

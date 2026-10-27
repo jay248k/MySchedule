@@ -75,6 +75,45 @@ const normalizePriority = (p) => {
   return 'Medium';
 };
 
+const timeToMinutes = (tStr) => {
+  if (!tStr) return 0;
+  const parts = String(tStr).split(':');
+  const h = parseInt(parts[0], 10) || 0;
+  const m = parseInt(parts[1], 10) || 0;
+  return h * 60 + m;
+};
+
+const checkTaskConflict = async ({ date, startTime, endTime, excludeTaskId, userId }) => {
+  if (!date || !startTime || !endTime) return null;
+  const s = timeToMinutes(startTime);
+  const e = timeToMinutes(endTime);
+  if (e <= s) return null;
+
+  const where = {
+    date,
+    startTime: { [Op.ne]: null },
+    endTime: { [Op.ne]: null },
+  };
+  if (excludeTaskId) {
+    where.id = { [Op.ne]: excludeTaskId };
+  }
+  if (userId) {
+    where.userId = userId;
+  }
+
+  const existingTasks = await Task.findAll({ where });
+  for (const existing of existingTasks) {
+    const exS = timeToMinutes(existing.startTime);
+    const exE = timeToMinutes(existing.endTime);
+    if (exE > exS) {
+      if (s < exE && e > exS) {
+        return existing;
+      }
+    }
+  }
+  return null;
+};
+
 exports.createTask = async (req, res, next) => {
   try {
     const { id, title, description, date, startTime, endTime, categoryId, category, priority, goalId, status } =
@@ -85,6 +124,33 @@ exports.createTask = async (req, res, next) => {
     }
     if (!date) {
       return res.status(400).json({ success: false, message: 'Task date is required' });
+    }
+
+    if (startTime && endTime) {
+      if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+        return res.status(400).json({ success: false, message: 'End time must be after start time' });
+      }
+
+      const conflict = await checkTaskConflict({
+        date,
+        startTime,
+        endTime,
+        excludeTaskId: id || null,
+        userId: req.userId || req.body.userId || null,
+      });
+
+      if (conflict) {
+        return res.status(409).json({
+          success: false,
+          message: `Time slot conflict: "${conflict.title}" is already scheduled between ${conflict.startTime} and ${conflict.endTime}. Other tasks cannot be scheduled in this slot.`,
+          conflict: {
+            id: conflict.id,
+            title: conflict.title,
+            startTime: conflict.startTime,
+            endTime: conflict.endTime,
+          },
+        });
+      }
     }
 
     let resolvedCategoryId = categoryId || null;
@@ -250,6 +316,42 @@ exports.updateTask = async (req, res, next) => {
         where: { name: typeof category === 'string' ? category : category.name },
       });
       if (foundCat) resolvedCategoryId = foundCat.id;
+    }
+
+    const targetDate = date !== undefined ? date : task.date;
+    const targetStartTime = startTime !== undefined ? startTime : task.startTime;
+    const targetEndTime = endTime !== undefined ? endTime : task.endTime;
+
+    const isTimeRescheduled =
+      (date !== undefined && date !== task.date) ||
+      (startTime !== undefined && startTime !== task.startTime) ||
+      (endTime !== undefined && endTime !== task.endTime);
+
+    if (isTimeRescheduled && targetStartTime && targetEndTime) {
+      if (timeToMinutes(targetEndTime) <= timeToMinutes(targetStartTime)) {
+        return res.status(400).json({ success: false, message: 'End time must be after start time' });
+      }
+
+      const conflict = await checkTaskConflict({
+        date: targetDate,
+        startTime: targetStartTime,
+        endTime: targetEndTime,
+        excludeTaskId: task.id,
+        userId: req.userId || task.userId || null,
+      });
+
+      if (conflict) {
+        return res.status(409).json({
+          success: false,
+          message: `Time slot conflict: Cannot schedule between ${targetStartTime} and ${targetEndTime}. "${conflict.title}" is already scheduled from ${conflict.startTime} to ${conflict.endTime}.`,
+          conflict: {
+            id: conflict.id,
+            title: conflict.title,
+            startTime: conflict.startTime,
+            endTime: conflict.endTime,
+          },
+        });
+      }
     }
 
     await task.update({

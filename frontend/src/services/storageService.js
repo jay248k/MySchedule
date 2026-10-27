@@ -18,6 +18,8 @@ const KEYS = {
   NOTIFICATIONS: 'my_schedule_notifications',
   USER: 'my_schedule_user',
   DAILY_REPORTS: 'my_schedule_daily_reports',
+  WORK_SESSIONS: 'my_schedule_work_sessions',
+  ACTIVE_WORK_SESSION: 'my_schedule_active_work_session',
 };
 
 export const storageService = {
@@ -190,6 +192,44 @@ export const storageService = {
       localStorage.setItem(KEYS.DAILY_REPORTS, JSON.stringify(reports));
     } catch (e) {
       console.error('Failed to save daily reports to localStorage', e);
+    }
+  },
+
+  getWorkSessions() {
+    try {
+      const data = localStorage.getItem(KEYS.WORK_SESSIONS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveWorkSessions(sessions) {
+    try {
+      localStorage.setItem(KEYS.WORK_SESSIONS, JSON.stringify(sessions));
+    } catch (e) {
+      console.error('Failed to save work sessions', e);
+    }
+  },
+
+  getActiveWorkSession() {
+    try {
+      const data = localStorage.getItem(KEYS.ACTIVE_WORK_SESSION);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  saveActiveWorkSession(active) {
+    try {
+      if (active) {
+        localStorage.setItem(KEYS.ACTIVE_WORK_SESSION, JSON.stringify(active));
+      } else {
+        localStorage.removeItem(KEYS.ACTIVE_WORK_SESSION);
+      }
+    } catch (e) {
+      console.error('Failed to save active work session', e);
     }
   },
 

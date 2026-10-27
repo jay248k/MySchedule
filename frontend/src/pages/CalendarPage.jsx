@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -37,14 +37,34 @@ export function CalendarPage() {
     categories,
     openModal,
     settings,
+    selectedDate,
+    setSelectedDate,
   } = useApp();
 
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth());
-  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const [viewMode, setViewMode] = useState('week'); // Default to 'week' (Google Calendar view)
   const [itemTypeFilter, setItemTypeFilter] = useState('all'); // 'all', 'events', 'tasks'
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+
+  // Synchronize month and year view with global selectedDate
+  useEffect(() => {
+    if (selectedDate) {
+      const parts = selectedDate.split('-').map(Number);
+      if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        setCurrentYear(parts[0]);
+        setCurrentMonth(parts[1] - 1);
+      }
+    }
+  }, [selectedDate]);
+
+  // Activate full-page edge-to-edge mode (removes page-container padding and card wrapper)
+  useEffect(() => {
+    document.body.classList.add('calendar-fullpage-active');
+    return () => {
+      document.body.classList.remove('calendar-fullpage-active');
+    };
+  }, []);
 
   // Modal state when a user clicks on a day in Month or Week view
   const [dayDetailModalDate, setDayDetailModalDate] = useState(null);
@@ -147,19 +167,9 @@ export function CalendarPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-      {/* 1. Top Header Bar with Navigation, Filters, View Modes & Add Action */}
-      <div
-        className="card"
-        style={{
-          padding: '18px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
+    <div className="calendar-fullpage-root">
+      {/* 1. Full-Page Top Toolbar (Clean, Borderless, Not a Card) */}
+      <div className="calendar-fullpage-header">
         <div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Calendar & Events
@@ -265,9 +275,8 @@ export function CalendarPage() {
         </div>
       </div>
 
-      {/* 2. Full-Width Calendar Board (Side companion card completely removed as requested) */}
-      <div className="calendar-page-layout">
-        <div className="calendar-board">
+      {/* 2. Full-Page Calendar Canvas (Edge-to-Edge, Not on Card) */}
+      <div className="calendar-fullpage-body">
           {/* MONTH VIEW */}
           {viewMode === 'month' && (
             <div>
@@ -373,7 +382,6 @@ export function CalendarPage() {
               events={events}
             />
           )}
-        </div>
       </div>
 
       {/* 3. Day Detail Modal: Opens when user clicks on any day */}

@@ -78,6 +78,15 @@ export function BulkImportModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parseError, setParseError] = useState('');
   const [importResult, setImportResult] = useState(null); // { type, total, successCount, failedCount, insertedItems, failedItems }
+  const [importProgress, setImportProgress] = useState({
+    active: false,
+    current: 0,
+    total: 0,
+    percent: 0,
+    batchNum: 0,
+    totalBatches: 0,
+    statusText: '',
+  });
   const fileInputRef = useRef(null);
 
   // Synchronize initial type when modal opens
@@ -93,6 +102,15 @@ export function BulkImportModal() {
       setParseError('');
       setImportResult(null);
       setIsSubmitting(false);
+      setImportProgress({
+        active: false,
+        current: 0,
+        total: 0,
+        percent: 0,
+        batchNum: 0,
+        totalBatches: 0,
+        statusText: '',
+      });
     }
   }, [isOpen, activeModal]);
 
@@ -179,6 +197,15 @@ export function BulkImportModal() {
     setParsedData(null);
     setParseError('');
     setImportResult(null);
+    setImportProgress({
+      active: false,
+      current: 0,
+      total: 0,
+      percent: 0,
+      batchNum: 0,
+      totalBatches: 0,
+      statusText: '',
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -187,17 +214,73 @@ export function BulkImportModal() {
 
     setIsSubmitting(true);
     setParseError('');
+
+    const itemsToImport = parsedData.validItems;
+    const totalItems = itemsToImport.length;
+    // Chunk large files in batches of 50 for tasks, 30 for goals/categories to prevent database timeouts
+    const BATCH_SIZE = importType === 'tasks' ? 50 : 30;
+    const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
+
+    setImportProgress({
+      active: true,
+      current: 0,
+      total: totalItems,
+      percent: 0,
+      batchNum: 1,
+      totalBatches,
+      statusText: `Preparing to import ${totalItems} records in ${totalBatches} batch${totalBatches > 1 ? 'es' : ''}...`,
+    });
+
     try {
-      let res;
-      if (importType === 'categories') {
-        res = await bulkImportCategories(parsedData.validItems);
-      } else if (importType === 'goals') {
-        res = await bulkImportGoals(parsedData.validItems);
-      } else if (importType === 'tasks') {
-        res = await bulkImportTasks(parsedData.validItems);
+      let insertedAccumulator = [];
+
+      for (let b = 0; b < totalBatches; b++) {
+        const start = b * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, totalItems);
+        const chunk = itemsToImport.slice(start, end);
+
+        const currentPct = Math.round((start / totalItems) * 100);
+        setImportProgress({
+          active: true,
+          current: start,
+          total: totalItems,
+          percent: currentPct,
+          batchNum: b + 1,
+          totalBatches,
+          statusText: `Inserting batch ${b + 1} of ${totalBatches} (${start + 1}–${end} of ${totalItems} records)...`,
+        });
+
+        let res;
+        if (importType === 'categories') {
+          res = await bulkImportCategories(chunk, { silent: true });
+        } else if (importType === 'goals') {
+          res = await bulkImportGoals(chunk, { silent: true });
+        } else if (importType === 'tasks') {
+          res = await bulkImportTasks(chunk, { silent: true });
+        }
+
+        if (res?.data) {
+          insertedAccumulator = insertedAccumulator.concat(res.data);
+        }
+
+        const endPct = Math.round((end / totalItems) * 100);
+        setImportProgress({
+          active: true,
+          current: end,
+          total: totalItems,
+          percent: endPct,
+          batchNum: b + 1,
+          totalBatches,
+          statusText: end === totalItems
+            ? `Finalizing ${totalItems} imported records...`
+            : `Completed ${end} of ${totalItems} records (${endPct}%)...`,
+        });
+
+        // Small yield so the browser can paint the progress line animation smoothly
+        await new Promise((resolve) => setTimeout(resolve, 60));
       }
 
-      const successCount = res?.count !== undefined ? res.count : parsedData.validCount;
+      const successCount = insertedAccumulator.length || totalItems;
       const failedItems = (parsedData.invalidItems || []).map((inv) => ({
         rowNum: inv.rowNum,
         name: inv.raw?.name || inv.raw?.title || `Row ${inv.rowNum}`,
@@ -210,13 +293,14 @@ export function BulkImportModal() {
         total: parsedData.total,
         successCount,
         failedCount: failedItems.length,
-        insertedItems: res?.data || parsedData.validItems,
+        insertedItems: insertedAccumulator.length ? insertedAccumulator : itemsToImport,
         failedItems,
       });
     } catch (err) {
       setParseError(err.message || 'Import failed. Please try again.');
     } finally {
       setIsSubmitting(false);
+      setImportProgress((prev) => ({ ...prev, active: false }));
     }
   };
 
@@ -233,9 +317,35 @@ export function BulkImportModal() {
           padding: 0,
           overflow: 'hidden',
           borderRadius: '16px',
+          position: 'relative',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Top Progress Line across the entire modal width */}
+        {importProgress.active && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'rgba(23, 105, 255, 0.2)',
+              zIndex: 99,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${importProgress.percent}%`,
+                background: 'linear-gradient(90deg, #1769FF 0%, #06B6D4 50%, #10B981 100%)',
+                transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 0 10px rgba(6, 182, 212, 0.8)',
+              }}
+            />
+          </div>
+        )}
         {/* Modal Header */}
         <div
           style={{
@@ -1020,6 +1130,85 @@ export function BulkImportModal() {
           )}
         </div>
 
+        {/* Real-Time Bulk Import Progress Line Banner */}
+        {importProgress.active && (
+          <div
+            style={{
+              padding: '16px 24px',
+              background: 'linear-gradient(180deg, #F0F9FF 0%, #E0F2FE 100%)',
+              borderTop: '1px solid #BAE6FD',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              animation: 'fadeIn 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: '#DBEAFE',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <RefreshCw size={15} className="spin" color="#0284C7" />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0369A1' }}>
+                    {importProgress.statusText}
+                  </span>
+                  <p style={{ fontSize: '0.74rem', color: '#0284C7', margin: 0, marginTop: '2px' }}>
+                    Safely inserting in optimized cloud database batches...
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284C7' }}>
+                  {importProgress.percent}%
+                </span>
+              </div>
+            </div>
+
+            {/* Glowing Animated Progress Line */}
+            <div
+              style={{
+                width: '100%',
+                height: '10px',
+                background: '#E0F2FE',
+                borderRadius: '999px',
+                overflow: 'hidden',
+                border: '1px solid #BAE6FD',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)',
+              }}
+            >
+              <div
+                style={{
+                  width: `${importProgress.percent}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #2563EB 0%, #06B6D4 60%, #10B981 100%)',
+                  borderRadius: '999px',
+                  transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 0 12px rgba(6, 182, 212, 0.6)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#0369A1' }}>
+              <span>
+                Inserted: <strong>{importProgress.current}</strong> of <strong>{importProgress.total}</strong> records
+              </span>
+              <span>
+                Batch <strong>{importProgress.batchNum}</strong> of <strong>{importProgress.totalBatches}</strong>
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Modal Footer */}
         <div
           style={{
@@ -1107,7 +1296,9 @@ export function BulkImportModal() {
                   {isSubmitting ? (
                     <>
                       <RefreshCw size={15} className="spin" />
-                      <span>Importing...</span>
+                      <span>
+                        Importing {importProgress.percent > 0 ? `(${importProgress.percent}%)` : '...'}
+                      </span>
                     </>
                   ) : (
                     <>

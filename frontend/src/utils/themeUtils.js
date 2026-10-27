@@ -148,18 +148,18 @@ export const THEME_MODES = [
   },
   {
     id: 'oled',
-    name: 'OLED Pure Black',
-    description: 'Pitch black, ultra high-contrast for battery & eye strain relief',
-    pageBg: '#000000',
-    cardBg: '#0B0F17',
-    cardHover: '#111827',
-    textPrimary: '#F9FAFB',
-    textSecondary: '#9CA3AF',
-    textMuted: '#6B7280',
-    borderColor: '#1F2937',
-    borderSubtle: '#111827',
-    sidebarBg: '#030712',
-    sidebarActive: '#1F2937',
+    name: 'Pure Very Dark (OLED)',
+    description: 'Pitch black, ultra high-contrast for battery & deep focus',
+    pageBg: '#05070B',
+    cardBg: '#0C1017',
+    cardHover: '#131924',
+    textPrimary: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    textMuted: '#64748B',
+    borderColor: '#1A2332',
+    borderSubtle: '#101620',
+    sidebarBg: '#020408',
+    sidebarActive: '#0E1726',
   },
   {
     id: 'warm',
@@ -167,14 +167,21 @@ export const THEME_MODES = [
     description: 'Soft cream tones inspired by premium notebooks',
     pageBg: '#FAF7F2',
     cardBg: '#FFFFFF',
-    cardHover: '#F5EFE6',
+    cardHover: '#F7F2EB',
     textPrimary: '#292524',
     textSecondary: '#78716C',
     textMuted: '#A8A29E',
     borderColor: '#E7E5E4',
     borderSubtle: '#F5F5F4',
-    sidebarBg: '#1C1917',
-    sidebarActive: '#292524',
+    sidebarBg: '#F4EFE6',
+    sidebarActive: '#E8DEC8',
+    sidebarText: '#292524',
+    sidebarMuted: '#78716C',
+    sidebarBorder: '#E6DDD1',
+    sidebarTextTitle: '#1C1917',
+    sidebarTextHover: '#1C1917',
+    sidebarHover: 'rgba(41, 37, 36, 0.07)',
+    sidebarCardBg: 'rgba(255, 255, 255, 0.75)',
   },
 ];
 
@@ -233,13 +240,17 @@ export function applyThemeToDocument({
   // 1. Resolve Theme Mode
   const modeConfig = THEME_MODES.find((m) => m.id === theme) || THEME_MODES[0];
 
-  // Set theme attributes on HTML root
+  // Set theme attributes on HTML root & body
+  const body = typeof document !== 'undefined' ? document.body : null;
   if (theme === 'dark' || theme === 'oled') {
     root.classList.add('dark-mode');
+    if (body) body.classList.add('dark-mode');
   } else {
     root.classList.remove('dark-mode');
+    if (body) body.classList.remove('dark-mode');
   }
   root.setAttribute('data-theme', theme);
+  if (body) body.setAttribute('data-theme', theme);
 
   // Apply theme mode variables
   root.style.setProperty('--page-bg', modeConfig.pageBg);
@@ -252,25 +263,55 @@ export function applyThemeToDocument({
   root.style.setProperty('--border-subtle', modeConfig.borderSubtle);
   root.style.setProperty('--sidebar-bg', modeConfig.sidebarBg);
   root.style.setProperty('--sidebar-active', modeConfig.sidebarActive);
+  root.style.setProperty('--sidebar-text', modeConfig.sidebarText || '#E2E8F0');
+  root.style.setProperty('--sidebar-muted', modeConfig.sidebarMuted || '#8E9FB8');
+  root.style.setProperty('--sidebar-border', modeConfig.sidebarBorder || 'rgba(255, 255, 255, 0.08)');
+  root.style.setProperty('--sidebar-text-title', modeConfig.sidebarTextTitle || '#ffffff');
+  root.style.setProperty('--sidebar-text-hover', modeConfig.sidebarTextHover || '#ffffff');
+  root.style.setProperty('--sidebar-hover', modeConfig.sidebarHover || 'rgba(255, 255, 255, 0.08)');
+  root.style.setProperty('--sidebar-card-bg', modeConfig.sidebarCardBg || 'linear-gradient(135deg, rgba(23, 105, 255, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%)');
 
-  // 2. Resolve Color Combination
-  let combo = COLOR_COMBINATIONS.find((c) => c.id === colorCombinationId);
-  if (!combo) {
-    combo = COLOR_COMBINATIONS.find((c) => c.primary.toLowerCase() === (accentColor || '').toLowerCase());
+  if (theme === 'dark' || theme === 'oled') {
+    root.style.setProperty('--success-bg', 'rgba(16, 185, 129, 0.15)');
+    root.style.setProperty('--warning-bg', 'rgba(245, 158, 11, 0.15)');
+    root.style.setProperty('--danger-bg', 'rgba(244, 63, 94, 0.15)');
+  } else {
+    root.style.setProperty('--success-bg', '#E6FBF4');
+    root.style.setProperty('--warning-bg', '#FEF8EC');
+    root.style.setProperty('--danger-bg', '#FFF1F3');
   }
 
-  const primary = combo ? combo.primary : (accentColor || '#1769FF');
+  // 2. Resolve Color Combination & Brand Accent
+  // Priority: Match combo by accentColor if available, or by combination id
+  let combo = null;
+  if (accentColor) {
+    combo = COLOR_COMBINATIONS.find(
+      (c) => c.primary.toLowerCase() === (accentColor || '').toLowerCase()
+    );
+  }
+  if (!combo && colorCombinationId) {
+    combo = COLOR_COMBINATIONS.find((c) => c.id === colorCombinationId);
+  }
+
+  const primary = accentColor || (combo ? combo.primary : '#1769FF');
   const secondary = combo ? combo.secondary : adjustColorBrightness(primary, 20);
   const hover = combo ? combo.hover : adjustColorBrightness(primary, -15);
   const light = combo ? combo.light : hexToRgba(primary, 0.15);
   const glow = combo ? combo.glow : hexToRgba(primary, 0.35);
   const gradient = combo ? combo.gradient : `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`;
 
+  let cleanHex = primary.replace('#', '');
+  if (cleanHex.length === 3) cleanHex = cleanHex.split('').map((c) => c + c).join('');
+  const r = parseInt(cleanHex.substring(0, 2), 16) || 23;
+  const g = parseInt(cleanHex.substring(2, 4), 16) || 105;
+  const b = parseInt(cleanHex.substring(4, 6), 16) || 255;
+
   root.style.setProperty('--primary-color', primary);
   root.style.setProperty('--primary-hover', hover);
   root.style.setProperty('--primary-light', light);
   root.style.setProperty('--primary-glow', glow);
   root.style.setProperty('--primary-gradient', gradient);
+  root.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
 
   root.setAttribute('data-color-combo', combo ? combo.id : 'custom');
 

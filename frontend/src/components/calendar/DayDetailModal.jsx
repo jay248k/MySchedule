@@ -119,9 +119,9 @@ export function DayDetailModal({ date, onClose }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                 <span
                   style={{
-                    background: '#F1F5F9',
-                    color: '#334155',
-                    border: '1px solid #CBD5E1',
+                    background: 'var(--card-hover)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)',
                     fontSize: '0.74rem',
                     fontWeight: 700,
                     padding: '2px 8px',
@@ -147,8 +147,8 @@ export function DayDetailModal({ date, onClose }) {
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: '#F1F5F9',
-              border: '1px solid #E2E8F0',
+              background: 'var(--card-hover)',
+              border: '1px solid var(--border-color)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

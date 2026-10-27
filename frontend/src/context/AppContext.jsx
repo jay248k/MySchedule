@@ -8,7 +8,10 @@ import {
   deleteTask as deleteTaskAction,
   toggleTaskComplete as toggleTaskCompleteAction,
   moveTaskSlot as moveTaskSlotAction,
+  setSelectedDate as setSelectedDateAction,
 } from '../redux/slices/tasksSlice';
+import { getTodayDateString } from '../utils/dateUtils';
+import { findScheduleConflict } from '../utils/taskUtils';
 import {
   setEvents,
   addEvent as addEventAction,
@@ -43,6 +46,7 @@ import {
   clearNotifications as clearNotificationsAction,
   updateSettings as updateSettingsAction,
 } from '../redux/slices/uiSlice';
+import { applyThemeToDocument } from '../utils/themeUtils';
 import { storageService } from '../services/storageService';
 import { api } from '../services/api';
 
@@ -63,12 +67,23 @@ export function AppProvider({ children }) {
   const globalSearchQuery = useAppSelector((state) => state.ui.globalSearchQuery);
   const toasts = useAppSelector((state) => state.ui.toasts);
   const authUser = useAppSelector((state) => state.auth.user);
+  const selectedDate = useAppSelector((state) => state.tasks.selectedDate || getTodayDateString());
+
+  const setSelectedDate = useCallback(
+    (newDate) => {
+      dispatch(setSelectedDateAction(newDate || getTodayDateString()));
+    },
+    [dispatch]
+  );
 
   // Local supplemental states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [dailyReports, setDailyReports] = useState(() => storageService.getDailyReports());
   const [user, setUser] = useState(() => authUser || storageService.getUser());
+  const [workSessions, setWorkSessions] = useState(() => storageService.getWorkSessions());
+  const [activeWorkSession, setActiveWorkSession] = useState(() => storageService.getActiveWorkSession());
+  const [isStopModalOpen, setIsStopModalOpen] = useState(false);
 
   // Keep local user state synchronized with Redux auth user
   useEffect(() => {
@@ -77,14 +92,14 @@ export function AppProvider({ children }) {
     }
   }, [authUser]);
 
-  // Apply theme class to document element
+  // Apply dynamic theme mode and brand accents to document
   useEffect(() => {
-    if (settings.theme === 'dark') {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
-  }, [settings.theme]);
+    applyThemeToDocument({
+      theme: settings?.theme || 'light',
+      colorCombinationId: settings?.colorCombinationId || 'electric-sapphire',
+      accentColor: settings?.accentColor || '#1769FF',
+    });
+  }, [settings?.theme, settings?.colorCombinationId, settings?.accentColor]);
 
   // Sync goal progress whenever tasks array updates
   useEffect(() => {
@@ -94,11 +109,12 @@ export function AppProvider({ children }) {
   // Real-time backend data synchronization across Web & Mobile
   const fetchAllData = useCallback(async () => {
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes] = await Promise.all([
+      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes] = await Promise.all([
         api.getTasks().catch(() => null),
         api.getCategories().catch(() => null),
         api.getGoals().catch(() => null),
         api.getEvents().catch(() => null),
+        api.getWorkSessions().catch(() => null),
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
@@ -120,6 +136,13 @@ export function AppProvider({ children }) {
         const serverIds = new Set(eventsRes.data.map((e) => e.id));
         const localEvents = storageService.getEvents().filter((e) => !serverIds.has(e.id));
         dispatch(setEvents([...eventsRes.data, ...localEvents]));
+      }
+      if (workSessionsRes?.data && Array.isArray(workSessionsRes.data)) {
+        const serverIds = new Set(workSessionsRes.data.map((s) => s.id));
+        const localSessions = storageService.getWorkSessions().filter((s) => !serverIds.has(s.id));
+        const combined = [...workSessionsRes.data, ...localSessions];
+        setWorkSessions(combined);
+        storageService.saveWorkSessions(combined);
       }
     } catch (err) {
       console.warn('Backend sync warning:', err);
@@ -219,6 +242,23 @@ export function AppProvider({ children }) {
         status: 'pending',
       };
 
+      // Conflict validation
+      const conflict = findScheduleConflict({
+        date: payload.date,
+        startTime: payload.startTime,
+        endTime: payload.endTime,
+        tasks,
+      });
+
+      if (conflict) {
+        showToast({
+          type: 'error',
+          title: 'Schedule Conflict',
+          message: `Cannot schedule: "${conflict.title}" is already scheduled from ${conflict.startTime} to ${conflict.endTime}.`,
+        });
+        return null;
+      }
+
       try {
         const res = await api.createTask(payload);
         const created = res?.data || { id: `task-${Date.now()}`, ...payload };
@@ -230,6 +270,16 @@ export function AppProvider({ children }) {
         });
         return created;
       } catch (err) {
+        const errorMsg = err?.response?.data?.message;
+        if (err?.response?.status === 409 || (errorMsg && errorMsg.includes('conflict'))) {
+          showToast({
+            type: 'error',
+            title: 'Schedule Conflict',
+            message: errorMsg || 'A task is already scheduled in this time slot.',
+          });
+          return null;
+        }
+
         const local = { id: `task-${Date.now()}`, ...payload };
         dispatch(addTaskAction(local));
         showToast({
@@ -240,15 +290,56 @@ export function AppProvider({ children }) {
         return local;
       }
     },
-    [categories, dispatch, showToast]
+    [categories, dispatch, showToast, tasks]
   );
 
   const updateTask = useCallback(
     async (taskId, updates) => {
+      const existing = tasks.find((t) => t.id === taskId);
+      const targetDate = updates.date !== undefined ? updates.date : existing?.date;
+      const targetStart = updates.startTime !== undefined ? updates.startTime : existing?.startTime;
+      const targetEnd = updates.endTime !== undefined ? updates.endTime : existing?.endTime;
+
+      const isTimeChange =
+        (updates.date !== undefined && updates.date !== existing?.date) ||
+        (updates.startTime !== undefined && updates.startTime !== existing?.startTime) ||
+        (updates.endTime !== undefined && updates.endTime !== existing?.endTime);
+
+      if (isTimeChange && targetDate && targetStart && targetEnd) {
+        const conflict = findScheduleConflict({
+          date: targetDate,
+          startTime: targetStart,
+          endTime: targetEnd,
+          tasks,
+          excludeTaskId: taskId,
+        });
+
+        if (conflict) {
+          showToast({
+            type: 'error',
+            title: 'Schedule Conflict',
+            message: `Cannot reschedule: "${conflict.title}" is already scheduled between ${conflict.startTime} and ${conflict.endTime}.`,
+          });
+          return false;
+        }
+      }
+
       dispatch(updateTaskAction({ id: taskId, ...updates }));
       try {
         await api.updateTask(taskId, updates);
       } catch (err) {
+        const errorMsg = err?.response?.data?.message;
+        if (errorMsg) {
+          showToast({
+            type: 'error',
+            title: 'Schedule Conflict',
+            message: errorMsg,
+          });
+          if (existing) {
+            dispatch(updateTaskAction(existing));
+          }
+          return false;
+        }
         console.warn('Backend task update failed:', err);
       }
       showToast({
@@ -256,8 +347,9 @@ export function AppProvider({ children }) {
         title: 'Task Updated',
         message: 'Changes saved successfully.',
       });
+      return true;
     },
-    [dispatch, showToast]
+    [dispatch, showToast, tasks]
   );
 
   const deleteTask = useCallback(
@@ -324,16 +416,18 @@ export function AppProvider({ children }) {
   );
 
   const bulkImportTasks = useCallback(
-    async (items) => {
+    async (items, options = {}) => {
       try {
         const res = await api.bulkCreateTasks(items);
         const created = res?.data || items.map((t, i) => ({ id: `task-${Date.now()}-${i}`, ...t }));
         dispatch(addTasksAction(created));
-        showToast({
-          type: 'success',
-          title: 'Tasks Imported',
-          message: `Successfully imported ${created.length} tasks.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Tasks Imported',
+            message: `Successfully imported ${created.length} tasks.`,
+          });
+        }
         return { success: true, count: created.length, data: created };
       } catch (err) {
         console.warn('Backend bulk task creation failed, trying individual creations:', err);
@@ -348,11 +442,13 @@ export function AppProvider({ children }) {
           }
         }
         dispatch(addTasksAction(createdList));
-        showToast({
-          type: 'success',
-          title: 'Tasks Imported',
-          message: `Imported ${createdList.length} tasks.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Tasks Imported',
+            message: `Imported ${createdList.length} tasks.`,
+          });
+        }
         return { success: true, count: createdList.length, data: createdList };
       }
     },
@@ -463,16 +559,18 @@ export function AppProvider({ children }) {
   );
 
   const bulkImportGoals = useCallback(
-    async (items) => {
+    async (items, options = {}) => {
       try {
         const res = await api.bulkCreateGoals(items);
         const created = res?.data || items.map((g, i) => ({ id: `goal-${Date.now()}-${i}`, ...g }));
         dispatch(addGoalsAction(created));
-        showToast({
-          type: 'success',
-          title: 'Goals Imported',
-          message: `Successfully imported ${created.length} goals.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Goals Imported',
+            message: `Successfully imported ${created.length} goals.`,
+          });
+        }
         return { success: true, count: created.length, data: created };
       } catch (err) {
         console.warn('Backend bulk goal creation failed, trying individual creations:', err);
@@ -487,11 +585,13 @@ export function AppProvider({ children }) {
           }
         }
         dispatch(addGoalsAction(createdList));
-        showToast({
-          type: 'success',
-          title: 'Goals Imported',
-          message: `Imported ${createdList.length} goals.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Goals Imported',
+            message: `Imported ${createdList.length} goals.`,
+          });
+        }
         return { success: true, count: createdList.length, data: createdList };
       }
     },
@@ -634,16 +734,18 @@ export function AppProvider({ children }) {
   );
 
   const bulkImportCategories = useCallback(
-    async (items) => {
+    async (items, options = {}) => {
       try {
         const res = await api.bulkCreateCategories(items);
         const created = res?.data || items.map((c, i) => ({ id: `cat-${Date.now()}-${i}`, ...c }));
         dispatch(addCategoriesAction(created));
-        showToast({
-          type: 'success',
-          title: 'Categories Imported',
-          message: `Successfully imported ${created.length} categories.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Categories Imported',
+            message: `Successfully imported ${created.length} categories.`,
+          });
+        }
         return { success: true, count: created.length, data: created };
       } catch (err) {
         console.warn('Backend bulk category creation failed, trying individual creations:', err);
@@ -658,11 +760,13 @@ export function AppProvider({ children }) {
           }
         }
         dispatch(addCategoriesAction(createdList));
-        showToast({
-          type: 'success',
-          title: 'Categories Imported',
-          message: `Imported ${createdList.length} categories.`,
-        });
+        if (!options.silent) {
+          showToast({
+            type: 'success',
+            title: 'Categories Imported',
+            message: `Imported ${createdList.length} categories.`,
+          });
+        }
         return { success: true, count: createdList.length, data: createdList };
       }
     },
@@ -786,15 +890,202 @@ export function AppProvider({ children }) {
   }, [dispatch, showToast]);
 
   const updateSettings = useCallback(
-    (newSettings) => {
-      dispatch(updateSettingsAction(newSettings));
+    (newSettingsOrUpdater) => {
+      const nextSettings =
+        typeof newSettingsOrUpdater === 'function'
+          ? newSettingsOrUpdater(settings)
+          : { ...settings, ...newSettingsOrUpdater };
+      dispatch(updateSettingsAction(nextSettings));
+      // Sync to backend if accessible
+      api.updateSettings(nextSettings).catch(() => {});
     },
-    [dispatch]
+    [dispatch, settings]
+  );
+
+  // Work Session Handlers (Start, Stop with Reason, Manual Log, Delete)
+  const startWorkSession = useCallback((task = null) => {
+    const now = new Date();
+    const newActive = {
+      isRunning: true,
+      startTimestamp: Date.now(),
+      startTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      date: getTodayDateString(),
+      taskId: task?.id || null,
+      taskTitle: task?.title || '',
+    };
+    setActiveWorkSession(newActive);
+    storageService.saveActiveWorkSession(newActive);
+    showToast({
+      type: 'success',
+      title: 'Work Timer Started',
+      message: task?.title ? `Focusing on: "${task.title}"` : 'Live work session is now tracking.',
+    });
+  }, [showToast]);
+
+  const requestStopWorkSession = useCallback(() => {
+    setIsStopModalOpen(true);
+  }, []);
+
+  const cancelStopModal = useCallback(() => {
+    setIsStopModalOpen(false);
+  }, []);
+
+  const completeStopWorkSession = useCallback(
+    async ({ stopReason = 'Finished Work', notes = '', taskId = null, taskTitle = '' }) => {
+      if (!activeWorkSession) {
+        setIsStopModalOpen(false);
+        return;
+      }
+
+      const now = new Date();
+      const endTimestamp = Date.now();
+      const durationSeconds = Math.max(1, Math.round((endTimestamp - activeWorkSession.startTimestamp) / 1000));
+      const endTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const sessionDate = activeWorkSession.date || getTodayDateString();
+
+      const finalTaskId = taskId || activeWorkSession.taskId || null;
+      const finalTaskTitle = taskTitle || activeWorkSession.taskTitle || '';
+
+      const sessionPayload = {
+        id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: sessionDate,
+        startTime: activeWorkSession.startTime,
+        endTime,
+        durationSeconds,
+        stopReason: stopReason || 'Finished Work',
+        notes: notes || '',
+        taskId: finalTaskId,
+        taskTitle: finalTaskTitle,
+      };
+
+      // Clear active session immediately
+      setActiveWorkSession(null);
+      storageService.saveActiveWorkSession(null);
+      setIsStopModalOpen(false);
+
+      // Save locally
+      setWorkSessions((prev) => {
+        const updated = [sessionPayload, ...prev];
+        storageService.saveWorkSessions(updated);
+        return updated;
+      });
+
+      // Persist to backend
+      try {
+        const res = await api.createWorkSession(sessionPayload);
+        if (res?.data) {
+          setWorkSessions((prev) =>
+            prev.map((s) => (s.id === sessionPayload.id ? res.data : s))
+          );
+        }
+      } catch (err) {
+        console.warn('Saved work session locally:', err);
+      }
+
+      const durMinutes = Math.floor(durationSeconds / 60);
+      const durSecs = durationSeconds % 60;
+      const durationLabel = durMinutes > 0 ? `${durMinutes}m ${durSecs}s` : `${durSecs}s`;
+
+      showToast({
+        type: 'info',
+        title: 'Work Session Recorded',
+        message: `Duration: ${durationLabel} · Reason: ${stopReason}`,
+      });
+    },
+    [activeWorkSession, showToast]
+  );
+
+  const addManualWorkSession = useCallback(
+    async (sessionData) => {
+      const payload = {
+        id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: sessionData.date || getTodayDateString(),
+        startTime: sessionData.startTime || '09:00:00',
+        endTime: sessionData.endTime || '10:00:00',
+        durationSeconds: Number(sessionData.durationSeconds) || 3600,
+        stopReason: sessionData.stopReason || 'Finished Work',
+        notes: sessionData.notes || '',
+        taskId: sessionData.taskId || null,
+        taskTitle: sessionData.taskTitle || '',
+      };
+
+      setWorkSessions((prev) => {
+        const updated = [payload, ...prev];
+        storageService.saveWorkSessions(updated);
+        return updated;
+      });
+
+      try {
+        const res = await api.createWorkSession(payload);
+        if (res?.data) {
+          setWorkSessions((prev) =>
+            prev.map((s) => (s.id === payload.id ? res.data : s))
+          );
+        }
+      } catch (e) {
+        console.warn('Saved manual work session locally:', e);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Session Logged',
+        message: `Manually added ${Math.round(payload.durationSeconds / 60)}m session.`,
+      });
+    },
+    [showToast]
+  );
+
+  const deleteWorkSession = useCallback(
+    async (sessionId) => {
+      setWorkSessions((prev) => {
+        const filtered = prev.filter((s) => s.id !== sessionId);
+        storageService.saveWorkSessions(filtered);
+        return filtered;
+      });
+
+      try {
+        await api.deleteWorkSession(sessionId);
+      } catch (e) {
+        console.warn('Deleted work session locally:', e);
+      }
+
+      showToast({
+        type: 'info',
+        title: 'Session Removed',
+        message: 'Work session deleted from log.',
+      });
+    },
+    [showToast]
+  );
+
+  const updateWorkSession = useCallback(
+    async (sessionId, updates) => {
+      setWorkSessions((prev) => {
+        const updated = prev.map((s) => (s.id === sessionId ? { ...s, ...updates } : s));
+        storageService.saveWorkSessions(updated);
+        return updated;
+      });
+
+      try {
+        await api.updateWorkSession(sessionId, updates);
+      } catch (e) {
+        console.warn('Updated work session locally:', e);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Session Updated',
+        message: 'Work log details updated.',
+      });
+    },
+    [showToast]
   );
 
   return (
     <AppContext.Provider
       value={{
+        selectedDate,
+        setSelectedDate,
         tasks,
         categories,
         events,
@@ -844,6 +1135,17 @@ export function AppProvider({ children }) {
         dailyReports,
         saveDailyReport,
         deleteDailyReport,
+        workSessions,
+        activeWorkSession,
+        isStopModalOpen,
+        setIsStopModalOpen,
+        startWorkSession,
+        requestStopWorkSession,
+        cancelStopModal,
+        completeStopWorkSession,
+        addManualWorkSession,
+        deleteWorkSession,
+        updateWorkSession,
       }}
     >
       {children}

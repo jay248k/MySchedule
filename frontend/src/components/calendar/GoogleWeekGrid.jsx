@@ -4,7 +4,6 @@ import { useApp } from '../../context/AppContext';
 import { formatTime, formatDate, getTodayDateString } from '../../utils/dateUtils';
 import { getEffectiveStatus } from '../../utils/taskUtils';
 
-const HOUR_HEIGHT = 68; // Height in pixels for each hour slot
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 // Helper to compute user's timezone formatted as GMT+XX:YY
@@ -42,6 +41,50 @@ export function GoogleWeekGrid({
   const scrollRef = useRef(null);
   const timezoneStr = useMemo(() => getTimezoneString(), []);
   const todayStr = getTodayDateString();
+
+  // Screen fit mode: default to TRUE so the full 24h schedule fits on screen without scrolling!
+  const [fitToScreen, setFitToScreen] = useState(() => {
+    const saved = localStorage.getItem('gcal_fit_screen');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleFitToScreen = () => {
+    setFitToScreen((prev) => {
+      const next = !prev;
+      localStorage.setItem('gcal_fit_screen', String(next));
+      return next;
+    });
+  };
+
+  const [canvasHeight, setCanvasHeight] = useState(720);
+
+  useEffect(() => {
+    const measure = () => {
+      if (scrollRef.current) {
+        const h = scrollRef.current.clientHeight;
+        if (h > 150) setCanvasHeight(h);
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    const ro = new ResizeObserver(measure);
+    if (scrollRef.current) ro.observe(scrollRef.current);
+    return () => {
+      window.removeEventListener('resize', measure);
+      ro.disconnect();
+    };
+  }, []);
+
+  const hourHeight = useMemo(() => {
+    if (fitToScreen) {
+      return Math.max(26, Math.floor(canvasHeight / 24));
+    }
+    return 64;
+  }, [fitToScreen, canvasHeight]);
+
+  const totalGridHeight = useMemo(() => {
+    return fitToScreen ? canvasHeight : 24 * hourHeight;
+  }, [fitToScreen, canvasHeight, hourHeight]);
 
   // Drag and drop states
   const [draggingTaskId, setDraggingTaskId] = useState(null);
@@ -147,18 +190,21 @@ export function GoogleWeekGrid({
     return map;
   }, [weekDays, tasks, events]);
 
-  // Initial scroll to 7:00 AM or earliest item
+  // Auto-scroll when in standard expanded mode
   useEffect(() => {
-    if (scrollRef.current) {
+    if (!fitToScreen && scrollRef.current) {
       let scrollTargetMins = 420; // 7:00 AM
-      // Check if today has earlier items
-      const todayData = itemsByDay[todayStr];
-      if (todayData && todayData.timed.length > 0) {
-        scrollTargetMins = Math.max(0, todayData.timed[0].startMins - 60);
+      const targetData = itemsByDay[todayStr] || itemsByDay[selectedDate];
+      if (targetData && targetData.timed.length > 0) {
+        scrollTargetMins = Math.max(0, targetData.timed[0].startMins - 45);
       }
-      scrollRef.current.scrollTop = (scrollTargetMins / 60) * HOUR_HEIGHT;
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = (scrollTargetMins / 60) * hourHeight;
+        }
+      });
     }
-  }, [todayStr]);
+  }, [fitToScreen, todayStr, selectedDate, itemsByDay, hourHeight]);
 
   // Drag and Drop handlers
   const handleDragStart = (e, item) => {
@@ -188,7 +234,7 @@ export function GoogleWeekGrid({
     }
   };
 
-  const handleDrop = (e, targetDateStr, hour, minute) => {
+  const handleDrop = async (e, targetDateStr, hour, minute) => {
     e.preventDefault();
     let data;
     try {
@@ -232,11 +278,16 @@ export function GoogleWeekGrid({
         endTime: newEndTime,
       });
     } else {
-      updateTask(item.id, {
+      const res = await updateTask(item.id, {
         date: targetDateStr,
         startTime: newStartTime,
         endTime: newEndTime,
       });
+      if (res === false) {
+        setDraggingTaskId(null);
+        setDragOverSlot(null);
+        return;
+      }
     }
 
     showToast({
@@ -264,7 +315,7 @@ export function GoogleWeekGrid({
     const onMouseMove = (moveEvent) => {
       const deltaY = moveEvent.clientY - startY;
       // Convert pixels to minutes, snap to 15-minute intervals
-      const deltaMins = Math.round(((deltaY / HOUR_HEIGHT) * 60) / 15) * 15;
+      const deltaMins = Math.round(((deltaY / hourHeight) * 60) / 15) * 15;
       const newDuration = Math.max(15, Math.min(1440 - item.startMins, initialDuration + deltaMins));
 
       setResizingItem({
@@ -281,7 +332,7 @@ export function GoogleWeekGrid({
       window.removeEventListener('mouseup', onMouseUp);
 
       const deltaY = upEvent.clientY - startY;
-      const deltaMins = Math.round(((deltaY / HOUR_HEIGHT) * 60) / 15) * 15;
+      const deltaMins = Math.round(((deltaY / hourHeight) * 60) / 15) * 15;
       const finalDuration = Math.max(15, Math.min(1440 - item.startMins, initialDuration + deltaMins));
 
       const newEndMins = item.startMins + finalDuration;
@@ -318,7 +369,7 @@ export function GoogleWeekGrid({
     return `${hour - 12} PM`;
   };
 
-  const nowTopPosition = (currentTimeMinutes / 60) * HOUR_HEIGHT;
+  const nowTopPosition = (currentTimeMinutes / 60) * hourHeight;
 
   // Check if any day has all-day items
   const hasAnyAllDay = weekDays.some((d) => (itemsByDay[d.dateStr]?.allDay.length || 0) > 0);
@@ -327,11 +378,39 @@ export function GoogleWeekGrid({
     <div className="gcal-week-container">
       {/* 1. Week View Header: Timezone + 7 Day Headers */}
       <div className="gcal-week-header-row">
-        {/* Left top timezone cell */}
-        <div className="gcal-week-tz-cell">
-          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+        {/* Left top timezone cell with Fit Screen toggle */}
+        <div
+          className="gcal-week-tz-cell"
+          style={{ flexDirection: 'column', gap: '3px', padding: '6px 4px' }}
+        >
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
             {timezoneStr}
           </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={toggleFitToScreen}
+            title={
+              fitToScreen
+                ? 'Currently fit to full screen (no scroll needed). Click for expanded scroll view.'
+                : 'Scroll view. Click to fit all 24 hours on screen without scrolling.'
+            }
+            style={{
+              fontSize: '0.60rem',
+              fontWeight: 800,
+              padding: '1px 5px',
+              borderRadius: '3px',
+              background: fitToScreen
+                ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.15)'
+                : 'var(--card-hover)',
+              color: fitToScreen ? 'var(--primary-color)' : 'var(--text-muted)',
+              border: '1px solid var(--border-color)',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {fitToScreen ? 'No Scroll' : 'Scroll'}
+          </button>
         </div>
 
         {/* 7 Day Column Headers */}
@@ -404,25 +483,33 @@ export function GoogleWeekGrid({
       )}
 
       {/* 3. 24-Hour Multi-Column Time Grid Canvas */}
-      <div className="gcal-week-scroll-canvas" ref={scrollRef}>
+      <div className={`gcal-week-scroll-canvas ${fitToScreen ? 'no-scroll' : ''}`} ref={scrollRef}>
         {/* Left Time Axis */}
-        <div className="gcal-time-axis">
+        <div className="gcal-time-axis" style={{ height: `${totalGridHeight}px` }}>
           {HOURS.map((hour) => (
-            <div key={`hour-axis-${hour}`} className="gcal-time-axis-hour">
+            <div
+              key={`hour-axis-${hour}`}
+              className="gcal-time-axis-hour"
+              style={{ height: `${hourHeight}px` }}
+            >
               <span>{getHourLabel(hour)}</span>
             </div>
           ))}
         </div>
 
         {/* 7 Columns Grid */}
-        <div className="gcal-week-grid-canvas">
+        <div className="gcal-week-grid-canvas" style={{ height: `${totalGridHeight}px` }}>
           {/* Render 7 Day Columns */}
           {weekDays.map((day) => {
             const isToday = day.dateStr === todayStr;
             const dayData = itemsByDay[day.dateStr] || { timed: [], allDay: [] };
 
             return (
-              <div key={`col-${day.dateStr}`} className={`gcal-week-day-column ${isToday ? 'is-today-column' : ''}`}>
+              <div
+                key={`col-${day.dateStr}`}
+                className={`gcal-week-day-column ${isToday ? 'is-today-column' : ''}`}
+                style={{ height: `${totalGridHeight}px` }}
+              >
                 {/* Red Current Time Line across Today's Column */}
                 {isToday && (
                   <div
@@ -452,9 +539,13 @@ export function GoogleWeekGrid({
                     dragOverSlot?.minute === 30;
 
                   return (
-                    <div key={`hour-${day.dateStr}-${hour}`} className="gcal-hour-row">
+                    <div
+                      key={`hour-${day.dateStr}-${hour}`}
+                      className="gcal-hour-row"
+                      style={{ height: `${hourHeight}px` }}
+                    >
                       {/* 30-min dashed line */}
-                      <div className="gcal-half-hour-line" />
+                      <div className="gcal-half-hour-line" style={{ top: `${hourHeight / 2}px` }} />
 
                       {/* Top slot (:00) drop zone */}
                       <div
@@ -509,8 +600,11 @@ export function GoogleWeekGrid({
                     ? resizingItem.currentDurationMins
                     : item.durationMins;
 
-                  const topPos = (item.startMins / 60) * HOUR_HEIGHT;
-                  const blockHeight = Math.max(26, (activeDuration / 60) * HOUR_HEIGHT - 3);
+                  const topPos = (item.startMins / 60) * hourHeight;
+                  const blockHeight = Math.max(
+                    fitToScreen ? 18 : 24,
+                    (activeDuration / 60) * hourHeight - 2
+                  );
 
                   // Calculate column width & left offset for overlapping items
                   const widthPct = item.totalCols > 1 ? 100 / item.totalCols - 1.5 : 98;

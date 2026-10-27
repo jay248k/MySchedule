@@ -4,14 +4,14 @@ import { useApp } from '../../context/AppContext';
 import { getTodayDateString } from '../../utils/dateUtils';
 
 export function EventModal() {
-  const { activeModal, closeModal, addEvent, updateEvent, categories } = useApp();
+  const { activeModal, closeModal, addEvent, updateEvent, categories, selectedDate } = useApp();
 
   const isEditing = activeModal?.type === 'event' && activeModal?.data?.id;
   const initialData = activeModal?.data || {};
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(getTodayDateString());
+  const [date, setDate] = useState(selectedDate || getTodayDateString());
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
   const [categoryId, setCategoryId] = useState('');
@@ -22,7 +22,7 @@ export function EventModal() {
     if (activeModal?.type === 'event') {
       setTitle(initialData.title || '');
       setDescription(initialData.description || '');
-      setDate(initialData.date || getTodayDateString());
+      setDate(initialData.date || selectedDate || getTodayDateString());
       setStartTime(initialData.startTime || '10:00');
       setEndTime(initialData.endTime || '11:00');
       setCategoryId(initialData.categoryId || categories[0]?.id || 'cat-work');

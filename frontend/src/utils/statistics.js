@@ -84,10 +84,95 @@ export function getPriorityDistribution(tasks) {
   return Object.values(priorities);
 }
 
-export function getWeeklyProductivityTrend(tasks) {
+export function getProductivityTrend(tasks = [], timeRange = 'week', selectedCategoryId = 'all', categories = []) {
   const today = new Date();
-  const days = [];
 
+  // Helper to match task to category
+  const matchesCategory = (task, cat) => {
+    if (!cat) return true;
+    if (task.categoryId && (task.categoryId === cat.id || String(task.categoryId) === String(cat.id))) return true;
+    if (typeof task.category === 'string' && task.category.toLowerCase().trim() === cat.name?.toLowerCase().trim()) return true;
+    if (task.category && typeof task.category === 'object' && (task.category.id === cat.id || task.category.name?.toLowerCase() === cat.name?.toLowerCase())) return true;
+    return false;
+  };
+
+  const selectedCat = selectedCategoryId !== 'all'
+    ? categories.find((c) => String(c.id) === String(selectedCategoryId) || c.name === selectedCategoryId)
+    : null;
+
+  const filterTasksForPoint = (pointTasks) => {
+    if (selectedCat) {
+      return pointTasks.filter((t) => matchesCategory(t, selectedCat));
+    }
+    return pointTasks;
+  };
+
+  const buildDataPoint = (label, fullDate, pointTasks) => {
+    const targetTasks = filterTasksForPoint(pointTasks);
+    const completed = targetTasks.filter((t) => t.status === 'completed').length;
+    const total = targetTasks.length;
+
+    const dataPoint = {
+      day: label,
+      fullDate,
+      total,
+      completed,
+      pending: total - completed,
+    };
+
+    // If 'all' is selected, also compute breakdown per category for multi-line rendering
+    if (selectedCategoryId === 'all' && categories.length > 0) {
+      categories.forEach((cat) => {
+        const catTasks = pointTasks.filter((t) => matchesCategory(t, cat));
+        const catCompleted = catTasks.filter((t) => t.status === 'completed').length;
+        dataPoint[`cat_${cat.id}`] = catCompleted;
+        dataPoint[`cat_${cat.id}_total`] = catTasks.length;
+      });
+    }
+
+    return dataPoint;
+  };
+
+  if (timeRange === 'year') {
+    // Last 12 months
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+      const prefix = `${year}-${monthNum}`;
+      const monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+      const pointTasks = tasks.filter((t) => t.date && t.date.startsWith(prefix));
+
+      months.push(buildDataPoint(monthLabel, `${monthLabel} ${year}`, pointTasks));
+    }
+    return months;
+  }
+
+  if (timeRange === 'month') {
+    // Last 30 days
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      // Show readable label on axis for clean spacing
+      const dayLabel = d.getDate() === 1 || i % 5 === 0 || i === 0
+        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : String(d.getDate());
+
+      const pointTasks = tasks.filter((t) => t.date === dateStr);
+      days.push(buildDataPoint(dayLabel, dateStr, pointTasks));
+    }
+    return days;
+  }
+
+  // Default: 'week' (Last 7 days)
+  const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
@@ -97,20 +182,14 @@ export function getWeeklyProductivityTrend(tasks) {
     const dateStr = `${year}-${month}-${day}`;
     const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-    const dayTasks = tasks.filter((t) => t.date === dateStr);
-    const completed = dayTasks.filter((t) => t.status === 'completed').length;
-    const total = dayTasks.length;
-
-    days.push({
-      day: dayName,
-      date: dateStr,
-      total,
-      completed,
-      pending: total - completed,
-    });
+    const pointTasks = tasks.filter((t) => t.date === dateStr);
+    days.push(buildDataPoint(dayName, dateStr, pointTasks));
   }
-
   return days;
+}
+
+export function getWeeklyProductivityTrend(tasks) {
+  return getProductivityTrend(tasks, 'week', 'all', []);
 }
 
 export function getDaysReportingData(tasks, rangeMode = '14days') {

@@ -56,7 +56,8 @@ const uiSlice = createSlice({
       storageService.saveNotifications([]);
     },
     updateSettings: (state, action) => {
-      state.settings = { ...state.settings, ...action.payload };
+      const payload = typeof action.payload === 'function' ? action.payload(state.settings) : action.payload;
+      state.settings = { ...state.settings, ...payload };
       storageService.saveSettings(state.settings);
     },
   },

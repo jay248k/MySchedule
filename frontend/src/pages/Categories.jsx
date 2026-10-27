@@ -33,6 +33,7 @@ import {
 } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { ProgressBar } from '../components/common/ProgressRing';
+import { CustomSelect } from '../components/common/CustomSelect';
 
 export function Categories() {
   const { categories, tasks, openModal, deleteCategory } = useApp();
@@ -320,20 +321,20 @@ export function Categories() {
                     </span>
                   </div>
 
-                  {/* Filter selector */}
-                  <select
-                    className="form-select"
-                    style={{ width: 'auto', fontSize: '0.85rem' }}
+                  {/* Themed Custom Filter selector */}
+                  <CustomSelect
                     value={selectedChartCat}
-                    onChange={(e) => setSelectedChartCat(e.target.value)}
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedChartCat(val)}
+                    size="sm"
+                    options={[
+                      { value: 'all', label: 'All Categories' },
+                      ...categories.map((c) => ({
+                        value: c.id,
+                        label: c.name,
+                        color: c.color,
+                      })),
+                    ]}
+                  />
                 </div>
 
                 <div style={{ width: '100%', height: 270, marginTop: '16px' }}>
@@ -350,23 +351,30 @@ export function Categories() {
                           boxShadow: 'var(--shadow-md)',
                         }}
                       />
-                      <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                      <Legend
+                        wrapperStyle={{ paddingTop: '10px' }}
+                        formatter={(value) => (
+                          <span style={{ color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 600 }}>
+                            {value}
+                          </span>
+                        )}
+                      />
                       <Line
                         type="monotone"
                         dataKey="completed"
-                        stroke="var(--success)"
+                        stroke="#10B981"
                         strokeWidth={3}
-                        dot={{ r: 4, fill: 'var(--success)' }}
+                        dot={{ r: 4, fill: '#10B981' }}
                         activeDot={{ r: 6 }}
                         name="Completed"
                       />
                       <Line
                         type="monotone"
                         dataKey="pending"
-                        stroke="var(--primary-color)"
+                        stroke="#F59E0B"
                         strokeWidth={2}
                         strokeDasharray="4 4"
-                        dot={{ r: 4, fill: 'var(--primary-color)' }}
+                        dot={{ r: 4, fill: '#F59E0B' }}
                         activeDot={{ r: 6 }}
                         name="Pending"
                       />
@@ -451,7 +459,17 @@ export function Categories() {
             <div style={{ width: '100%', height: 280, marginTop: '16px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryStatsData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.6)" />
+                  <defs>
+                    <linearGradient id="barCompletedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+                    </linearGradient>
+                    <linearGradient id="barPendingGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#D97706" stopOpacity={0.8} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.15)" />
                   <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                   <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} allowDecimals={false} />
                   <Tooltip
@@ -460,11 +478,29 @@ export function Categories() {
                       borderColor: 'var(--border-color)',
                       borderRadius: '8px',
                       boxShadow: 'var(--shadow-md)',
+                      fontSize: '0.82rem',
                     }}
                   />
-                  <Legend />
-                  <Bar dataKey="completed" name="Completed Tasks" fill="var(--success)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pending" name="Pending Tasks" fill="var(--primary-color)" radius={[4, 4, 0, 0]} />
+                  <Legend
+                    wrapperStyle={{ paddingTop: '12px' }}
+                    content={({ payload }) => (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', paddingTop: '8px' }}>
+                        {payload && payload.map((entry, index) => {
+                          const color = entry.dataKey === 'completed' ? '#10B981' : '#F59E0B';
+                          return (
+                            <div key={`legend-item-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: color, display: 'inline-block' }} />
+                              <span style={{ color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 600 }}>
+                                {entry.value}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  />
+                  <Bar dataKey="completed" name="Completed Tasks" fill="url(#barCompletedGrad)" radius={[5, 5, 0, 0]} />
+                  <Bar dataKey="pending" name="Pending Tasks" fill="url(#barPendingGrad)" radius={[5, 5, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -12,6 +12,7 @@ const DailyReportModel = require('./DailyReport');
 const NotificationModel = require('./Notification');
 const SettingModel = require('./Setting');
 const UserProfileModel = require('./UserProfile');
+const WorkSessionModel = require('./WorkSession');
 
 // Initialize models
 const db = {
@@ -25,6 +26,7 @@ const db = {
   Notification: NotificationModel(sequelize),
   Setting: SettingModel(sequelize),
   UserProfile: UserProfileModel(sequelize),
+  WorkSession: WorkSessionModel(sequelize),
 };
 
 // Establish associations

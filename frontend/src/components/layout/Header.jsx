@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -11,16 +11,25 @@ import {
   UserPlus,
   ShieldCheck,
   UploadCloud,
+  Moon,
+  Sun,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatDate, getTodayDateString } from '../../utils/dateUtils';
+import { GlobalSearchModal } from '../common/GlobalSearchModal';
 
 export function Header() {
   const navigate = useNavigate();
   const {
     tasks,
     events,
+    selectedDate,
+    setSelectedDate,
     user: appUser,
     notifications,
     markNotificationRead,
@@ -29,6 +38,8 @@ export function Header() {
     setMobileSidebarOpen,
     globalSearchQuery,
     setGlobalSearchQuery,
+    settings,
+    setSettings,
     showToast,
   } = useApp();
 
@@ -42,35 +53,33 @@ export function Header() {
 
   const user = authUser || appUser;
 
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // Global keyboard shortcut: Ctrl+K or Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsGlobalSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const todayStr = getTodayDateString();
-  const formattedToday = formatDate(todayStr, {
+  const activeDate = selectedDate || todayStr;
+  const isSelectedToday = activeDate === todayStr;
+  const formattedSelectedDate = formatDate(activeDate, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Filter tasks & events matching search query
-  const matchingTasks = globalSearchQuery.trim()
-    ? tasks.filter(
-        (t) =>
-          t.title.toLowerCase().includes(globalSearchQuery.toLowerCase()) ||
-          (t.description && t.description.toLowerCase().includes(globalSearchQuery.toLowerCase()))
-      ).slice(0, 5)
-    : [];
-
-  const matchingEvents = globalSearchQuery.trim()
-    ? events.filter(
-        (e) =>
-          e.title.toLowerCase().includes(globalSearchQuery.toLowerCase()) ||
-          (e.description && e.description.toLowerCase().includes(globalSearchQuery.toLowerCase()))
-      ).slice(0, 3)
-    : [];
 
   return (
     <header className="top-header">
@@ -86,119 +95,247 @@ export function Header() {
           <Menu size={22} />
         </button>
 
-        {/* Global Search */}
-        <div className="header-search">
+        {/* Global Search Bar (Opens Command Palette Modal) */}
+        <div
+          className="header-search"
+          onClick={() => setIsGlobalSearchOpen(true)}
+          role="button"
+          tabIndex={0}
+          title="Search anything across workspace (Ctrl+K)"
+        >
           <Search size={18} className="search-icon" />
           <input
             type="text"
             className="search-input"
             placeholder="Search tasks, meetings, priorities..."
-            value={globalSearchQuery}
-            onChange={(e) => setGlobalSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setTimeout(() => setSearchFocused(false), 250)}
+            readOnly
+            onClick={() => setIsGlobalSearchOpen(true)}
           />
-
-          {/* Search Dropdown Results */}
-          {searchFocused && globalSearchQuery.trim() && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '110%',
-                left: 0,
-                right: 0,
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-xl)',
-                padding: '12px',
-                zIndex: 60,
-                maxHeight: '380px',
-                overflowY: 'auto',
-              }}
-            >
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                SEARCH RESULTS
-              </div>
-
-              {matchingTasks.length === 0 && matchingEvents.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  No matching tasks or events found.
-                </div>
-              ) : (
-                <>
-                  {matchingTasks.length > 0 && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-color)', marginBottom: '6px' }}>
-                        Tasks ({matchingTasks.length})
-                      </div>
-                      {matchingTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={() => {
-                            openModal('task', task);
-                            setGlobalSearchQuery('');
-                          }}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px',
-                          }}
-                          className="search-result-item"
-                        >
-                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{task.title}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{task.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {matchingEvents.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#8B5CF6', marginBottom: '6px' }}>
-                        Events ({matchingEvents.length})
-                      </div>
-                      {matchingEvents.map((evt) => (
-                        <div
-                          key={evt.id}
-                          onClick={() => {
-                            openModal('event', evt);
-                            setGlobalSearchQuery('');
-                          }}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px',
-                          }}
-                          className="search-result-item"
-                        >
-                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{evt.title}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{evt.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+          <div className="search-shortcut-badge">
+            <kbd style={{ fontFamily: 'inherit' }}>Ctrl</kbd>
+            <span>K</span>
+          </div>
         </div>
       </div>
 
       {/* Header Actions */}
       <div className="header-right">
-        {/* Date Display */}
-        <div className="header-date-badge">
-          <Calendar size={15} color="var(--primary-color)" />
-          <span>{formattedToday}</span>
+        {/* Global Date Selector Badge & Popover */}
+        <div className="header-date-picker-wrap" style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className={`header-date-badge ${!isSelectedToday ? 'is-custom-date' : ''}`}
+            onClick={() => setIsDatePickerOpen((prev) => !prev)}
+            title={`Active workspace date: ${formattedSelectedDate} (${isSelectedToday ? 'Today' : 'Custom date'}). Click to change date globally.`}
+            style={{
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: isSelectedToday ? 'var(--page-bg)' : 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)',
+              border: isSelectedToday ? '1px solid var(--border-color)' : '1.5px solid var(--primary-color)',
+              color: isSelectedToday ? 'var(--text-secondary)' : 'var(--primary-color)',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Calendar size={15} color="var(--primary-color)" />
+            <span>{formattedSelectedDate}</span>
+            {!isSelectedToday && (
+              <span
+                style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary-color)',
+                  boxShadow: '0 0 6px var(--primary-color)',
+                }}
+              />
+            )}
+            <ChevronDown size={13} style={{ opacity: 0.7 }} />
+          </button>
+
+          {isDatePickerOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                onClick={() => setIsDatePickerOpen(false)}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: '0 12px 30px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.25)',
+                  padding: '16px',
+                  zIndex: 999,
+                  width: '290px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Global System Date
+                    </span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      Changes data across all pages
+                    </span>
+                  </div>
+                  {!isSelectedToday && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs"
+                      onClick={() => {
+                        setSelectedDate(todayStr);
+                        setIsDatePickerOpen(false);
+                      }}
+                      title="Reset back to Today"
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: 'var(--primary-color)',
+                        padding: '3px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'rgba(var(--primary-rgb, 23, 105, 255), 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <RotateCcw size={11} /> Today
+                    </button>
+                  )}
+                </div>
+
+                {/* Date Input */}
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '5px', display: 'block' }}>
+                    Pick Specific Date
+                  </label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--input-bg, var(--page-bg))',
+                      color: 'var(--text-primary)',
+                    }}
+                    value={activeDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setSelectedDate(e.target.value);
+                        setIsDatePickerOpen(false);
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Quick Presets */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ flex: 1, fontSize: '0.74rem', padding: '6px 8px', justifyContent: 'center' }}
+                    onClick={() => {
+                      const d = new Date(todayStr + 'T00:00:00');
+                      d.setDate(d.getDate() - 1);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      setSelectedDate(`${y}-${m}-${day}`);
+                      setIsDatePickerOpen(false);
+                    }}
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${isSelectedToday ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, fontSize: '0.74rem', padding: '6px 8px', justifyContent: 'center' }}
+                    onClick={() => {
+                      setSelectedDate(todayStr);
+                      setIsDatePickerOpen(false);
+                    }}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ flex: 1, fontSize: '0.74rem', padding: '6px 8px', justifyContent: 'center' }}
+                    onClick={() => {
+                      const d = new Date(todayStr + 'T00:00:00');
+                      d.setDate(d.getDate() + 1);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      setSelectedDate(`${y}-${m}-${day}`);
+                      setIsDatePickerOpen(false);
+                    }}
+                  >
+                    Tomorrow
+                  </button>
+                </div>
+
+                {/* Prev / Next Day Steppers */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: '0.76rem', gap: '4px', padding: '4px 8px' }}
+                    onClick={() => {
+                      const d = new Date(activeDate + 'T00:00:00');
+                      d.setDate(d.getDate() - 1);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      setSelectedDate(`${y}-${m}-${day}`);
+                    }}
+                  >
+                    <ChevronLeft size={13} /> Previous Day
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: '0.76rem', gap: '4px', padding: '4px 8px' }}
+                    onClick={() => {
+                      const d = new Date(activeDate + 'T00:00:00');
+                      d.setDate(d.getDate() + 1);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      setSelectedDate(`${y}-${m}-${day}`);
+                    }}
+                  >
+                    Next Day <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Quick Bulk Import Button */}
@@ -223,6 +360,42 @@ export function Header() {
         >
           <Plus size={16} />
           <span>Add Task</span>
+        </button>
+
+        {/* Quick Theme Toggle */}
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={() => {
+            const nextTheme =
+              settings?.theme === 'light'
+                ? 'dark'
+                : settings?.theme === 'dark'
+                ? 'oled'
+                : 'light';
+            setSettings({ ...settings, theme: nextTheme });
+            const titleMap = {
+              light: 'Light Mode',
+              dark: 'Dark Navy Mode',
+              oled: 'Pure Very Dark (OLED)',
+            };
+            showToast({
+              type: 'info',
+              title: titleMap[nextTheme] || 'Theme Updated',
+              message: `Switched to ${titleMap[nextTheme] || nextTheme} appearance.`,
+            });
+          }}
+          aria-label="Toggle theme appearance"
+          title={`Current theme: ${settings?.theme || 'light'}. Click to cycle.`}
+          id="btn-header-theme-toggle"
+        >
+          {settings?.theme === 'light' ? (
+            <Moon size={19} />
+          ) : settings?.theme === 'oled' ? (
+            <Sun size={19} color="#FBBF24" />
+          ) : (
+            <Moon size={19} color="var(--primary-color)" />
+          )}
         </button>
 
         {/* Notifications Popover */}
@@ -506,6 +679,12 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Global Search Command Palette Modal */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+      />
     </header>
   );
 }

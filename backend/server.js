@@ -17,6 +17,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const workSessionRoutes = require('./routes/workSessionRoutes');
 
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -93,6 +94,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/work-sessions', workSessionRoutes);
 
 // 404 & Error Handlers
 app.use(notFoundHandler);

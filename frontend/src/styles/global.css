@@ -126,14 +126,14 @@ input, select, textarea {
 }
 
 .btn-secondary {
-  background: #ffffff;
+  background: var(--card-bg);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-  background: var(--border-subtle);
-  border-color: #cbd5e1;
+  background: var(--card-hover);
+  border-color: var(--border-color);
 }
 
 .btn-ghost {
@@ -211,24 +211,46 @@ input, select, textarea {
 }
 
 .badge-neutral {
-  background: #f1f5f9;
+  background: var(--card-hover);
   color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Priority Badges */
 .priority-high {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.14);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.28);
 }
 
 .priority-medium {
-  background: #fef3c7;
-  color: #d97706;
+  background: rgba(245, 158, 11, 0.14);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.28);
 }
 
 .priority-low {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(16, 185, 129, 0.14);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: #F43F5E;
+  border: 1px solid rgba(244, 63, 94, 0.28);
 }
 
 /* Form Controls */
@@ -245,7 +267,7 @@ input, select, textarea {
   color: var(--text-primary);
 }
 
-.form-input, .form-select, .form-textarea {
+.form-input, .form-select, .form-textarea, select {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border-color);
@@ -256,9 +278,19 @@ input, select, textarea {
   outline: none;
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+select, .form-select {
+  cursor: pointer;
+}
+
+select option, .form-select option {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  padding: 8px 12px;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus, select:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(23, 105, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 23, 105, 255), 0.15);
 }
 
 .form-row {
@@ -278,14 +310,14 @@ input, select, textarea {
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--border-color, #cbd5e1);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
   flex-shrink: 0;
-  background: #ffffff;
+  background: var(--card-bg, #ffffff);
 }
 
 .custom-checkbox:hover {

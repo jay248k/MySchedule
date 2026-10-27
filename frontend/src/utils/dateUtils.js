@@ -56,13 +56,16 @@ export function isTaskOverdue(task) {
   const todayStr = getTodayDateString();
   if (task.date < todayStr) return true;
   
-  if (task.date === todayStr && task.endTime) {
-    const now = new Date();
-    const currentH = now.getHours();
-    const currentM = now.getMinutes();
-    const [h, m] = task.endTime.split(':').map(Number);
-    if (currentH > h || (currentH === h && currentM > m)) {
-      return true;
+  if (task.date === todayStr) {
+    const checkTime = task.endTime || task.startTime;
+    if (checkTime) {
+      const now = new Date();
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
+      const [h, m] = checkTime.split(':').map(Number);
+      if (currentH > h || (currentH === h && currentM > m)) {
+        return true;
+      }
     }
   }
   return false;

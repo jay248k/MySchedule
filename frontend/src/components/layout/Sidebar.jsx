@@ -8,6 +8,8 @@ import {
   Tags,
   Target,
   BarChart3,
+  Archive,
+  Flame,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -16,6 +18,7 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
+  Timer,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -25,11 +28,13 @@ import { getEffectiveStatus } from '../../utils/taskUtils';
 export function Sidebar() {
   const {
     tasks,
+    selectedDate,
     sidebarCollapsed,
     setSidebarCollapsed,
     mobileSidebarOpen,
     setMobileSidebarOpen,
     user: appUser,
+    activeWorkSession,
   } = useApp();
 
   const {
@@ -42,24 +47,36 @@ export function Sidebar() {
   const currentUser = authUser || appUser;
 
   const todayStr = getTodayDateString();
-  const todayTasks = tasks.filter((t) => t.date === todayStr);
-  const pendingTodayCount = todayTasks.filter(
+  const activeDate = selectedDate || todayStr;
+  const isSelectedToday = activeDate === todayStr;
+  const activeTasks = tasks.filter((t) => t.date === activeDate);
+  const pendingActiveCount = activeTasks.filter(
     (t) => getEffectiveStatus(t) !== 'completed'
   ).length;
+
+  const isTrackingLive = Boolean(activeWorkSession?.isRunning);
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     {
-      name: "Today's Tasks",
+      name: isSelectedToday ? "Today's Tasks" : "Day's Tasks",
       path: '/today',
       icon: CheckSquare,
-      badge: pendingTodayCount > 0 ? pendingTodayCount : null,
+      badge: pendingActiveCount > 0 ? pendingActiveCount : null,
+    },
+    {
+      name: 'Work Tracker',
+      path: '/work-tracker',
+      icon: Timer,
+      badge: isTrackingLive ? 'LIVE' : null,
+      badgeColor: isTrackingLive ? '#10B981' : undefined,
     },
     { name: 'Monthly Schedule', path: '/monthly', icon: CalendarDays },
     { name: 'Calendar', path: '/calendar', icon: Calendar },
     { name: 'Categories', path: '/categories', icon: Tags },
     { name: 'Goals', path: '/goals', icon: Target },
     { name: 'Reports', path: '/reports', icon: BarChart3 },
+    { name: 'Reports Archive', path: '/archive', icon: Archive },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -132,7 +149,7 @@ export function Sidebar() {
         {!sidebarCollapsed && (
           <div className="sidebar-motivation">
             <div className="sidebar-motivation-title">
-              <Sparkles size={16} color="#38BDF8" />
+              <Sparkles size={16} color="var(--primary-color, #38BDF8)" />
               <span>Daily Focus</span>
             </div>
             <p className="sidebar-motivation-quote">
@@ -145,7 +162,7 @@ export function Sidebar() {
         <div
           style={{
             padding: sidebarCollapsed ? '10px 8px' : '10px 14px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: '1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: sidebarCollapsed ? 'center' : 'space-between',
@@ -197,7 +214,7 @@ export function Sidebar() {
                     style={{
                       fontSize: '0.82rem',
                       fontWeight: 600,
-                      color: 'var(--text-primary, #ffffff)',
+                      color: 'var(--sidebar-text-title, #ffffff)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -278,7 +295,7 @@ export function Sidebar() {
         <div
           style={{
             padding: '10px 14px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: '1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-end',
           }}

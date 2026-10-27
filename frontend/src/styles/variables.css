@@ -10,6 +10,10 @@
   --sidebar-hover: rgba(255, 255, 255, 0.08);
   --sidebar-text: #E2E8F0;
   --sidebar-muted: #8E9FB8;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text-title: #ffffff;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-card-bg: linear-gradient(135deg, rgba(23, 105, 255, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
   
   --page-bg: #F3F8FF;
   --card-bg: #FFFFFF;
@@ -53,6 +57,8 @@
   --sidebar-collapsed-width: 78px;
   --header-height: 70px;
   
+  --primary-rgb: 23, 105, 255;
+  
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
@@ -60,15 +66,18 @@
 }
 
 /* Dark Mode Overrides */
-html.dark-mode {
-  --primary-color: #3B82F6;
-  --primary-hover: #2563EB;
-  --primary-light: rgba(59, 130, 246, 0.15);
-  
+html.dark-mode,
+body.dark-mode,
+[data-theme='dark'] {
   --sidebar-bg: #071738;
   --sidebar-active: #0D265A;
   --sidebar-hover: rgba(255, 255, 255, 0.06);
   --sidebar-text: #E2E8F0;
+  --sidebar-muted: #8E9FB8;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text-title: #ffffff;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-card-bg: linear-gradient(135deg, rgba(23, 105, 255, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
   
   --page-bg: #0A1124;
   --card-bg: #101E3D;
@@ -84,4 +93,97 @@ html.dark-mode {
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.45);
+  
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger-bg: rgba(244, 63, 94, 0.15);
+  --primary-light: rgba(var(--primary-rgb, 23, 105, 255), 0.15);
+}
+
+/* Very Dark / OLED Pitch Black Theme */
+html[data-theme='oled'],
+body[data-theme='oled'] {
+  --sidebar-bg: #020408;
+  --sidebar-active: #0E1726;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-text: #F1F5F9;
+  --sidebar-muted: #64748B;
+  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar-text-title: #F8FAFC;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-card-bg: rgba(255, 255, 255, 0.03);
+  
+  --page-bg: #05070B;
+  --card-bg: #0C1017;
+  --card-hover: #131924;
+  
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  
+  --border-color: #1A2332;
+  --border-subtle: #101620;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.85);
+
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger-bg: rgba(244, 63, 94, 0.15);
+  --primary-light: rgba(var(--primary-rgb, 23, 105, 255), 0.15);
+}
+
+/* Warm Paper Theme */
+html[data-theme='warm'],
+body[data-theme='warm'] {
+  --sidebar-bg: #F4EFE6;
+  --sidebar-active: #E8DEC8;
+  --sidebar-hover: rgba(41, 37, 36, 0.07);
+  --sidebar-text: #292524;
+  --sidebar-muted: #78716C;
+  --sidebar-border: #E6DDD1;
+  --sidebar-text-title: #1C1917;
+  --sidebar-text-hover: #1C1917;
+  --sidebar-card-bg: rgba(255, 255, 255, 0.75);
+
+  --page-bg: #FAF7F2;
+  --card-bg: #FFFFFF;
+  --card-hover: #F7F2EB;
+
+  --text-primary: #292524;
+  --text-secondary: #78716C;
+  --text-muted: #A8A29E;
+
+  --border-color: #E7E5E4;
+  --border-subtle: #F5F5F4;
+
+  --shadow-sm: 0 1px 3px rgba(41, 37, 36, 0.05);
+  --shadow-md: 0 4px 14px rgba(41, 37, 36, 0.08);
+  --shadow-lg: 0 10px 25px rgba(41, 37, 36, 0.12);
+
+  --success-bg: #E6FBF4;
+  --warning-bg: #FEF8EC;
+  --danger-bg: #FFF1F3;
+  --primary-light: rgba(var(--primary-rgb, 23, 105, 255), 0.12);
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb,
+[data-theme='dark'] ::-webkit-scrollbar-thumb,
+[data-theme='oled'] ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+
+[data-theme='warm'] ::-webkit-scrollbar-thumb {
+  background: #D6CEC3;
+}
+
+[data-theme='warm'] ::-webkit-scrollbar-thumb:hover {
+  background: #C4BBAE;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover,
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover,
+[data-theme='oled'] ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }

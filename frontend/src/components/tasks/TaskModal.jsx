@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Tag, Flag, Target } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Calendar, Clock, Tag, Flag, Target, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getTodayDateString } from '../../utils/dateUtils';
+import { findScheduleConflict, timeToMinutes } from '../../utils/taskUtils';
 
 export function TaskModal() {
-  const { activeModal, closeModal, addTask, updateTask, categories, goals } = useApp();
+  const { activeModal, closeModal, addTask, updateTask, categories, goals, selectedDate, tasks } = useApp();
 
   const isEditing = activeModal?.type === 'task' && activeModal?.data?.id;
   const initialData = activeModal?.data || {};
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(getTodayDateString());
+  const [date, setDate] = useState(selectedDate || getTodayDateString());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [categoryId, setCategoryId] = useState('');
@@ -23,7 +24,7 @@ export function TaskModal() {
     if (activeModal?.type === 'task') {
       setTitle(initialData.title || '');
       setDescription(initialData.description || '');
-      setDate(initialData.date || getTodayDateString());
+      setDate(initialData.date || selectedDate || getTodayDateString());
       setStartTime(initialData.startTime || '09:00');
       setEndTime(initialData.endTime || '10:00');
       setCategoryId(initialData.categoryId || categories[0]?.id || 'cat-work');
@@ -33,12 +34,49 @@ export function TaskModal() {
     }
   }, [activeModal, categories]);
 
+  // Live conflict detection
+  const liveConflict = useMemo(() => {
+    if (!date || !startTime || !endTime) return null;
+    return findScheduleConflict({
+      date,
+      startTime,
+      endTime,
+      tasks,
+      excludeTaskId: isEditing ? initialData.id : null,
+    });
+  }, [date, startTime, endTime, tasks, isEditing, initialData.id]);
+
   if (activeModal?.type !== 'task') return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
       setError('Please enter a task title.');
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      setError('Please provide both start time and end time.');
+      return;
+    }
+
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      setError('End time must be after start time.');
+      return;
+    }
+
+    const conflict = findScheduleConflict({
+      date,
+      startTime,
+      endTime,
+      tasks,
+      excludeTaskId: isEditing ? initialData.id : null,
+    });
+
+    if (conflict) {
+      setError(
+        `Time slot conflict: "${conflict.title}" is already scheduled from ${conflict.startTime} to ${conflict.endTime}. Other tasks cannot be scheduled in this slot.`
+      );
       return;
     }
 
@@ -174,6 +212,30 @@ export function TaskModal() {
               </div>
             </div>
 
+            {liveConflict && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#EF4444',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  marginBottom: '16px',
+                }}
+              >
+                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>Time Conflict:</strong> "{liveConflict.title}" is already scheduled from{' '}
+                  {liveConflict.startTime} to {liveConflict.endTime}. Other tasks cannot overlap this time slot.
+                </span>
+              </div>
+            )}
+
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">
@@ -216,7 +278,16 @@ export function TaskModal() {
             <button type="button" className="btn btn-secondary" onClick={closeModal}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!!liveConflict}
+              style={{
+                opacity: liveConflict ? 0.6 : 1,
+                cursor: liveConflict ? 'not-allowed' : 'pointer',
+              }}
+              title={liveConflict ? 'Time slot is already occupied' : undefined}
+            >
               {isEditing ? 'Save Changes' : 'Schedule Task'}
             </button>
           </div>

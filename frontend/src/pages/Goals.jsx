@@ -10,6 +10,8 @@ import {
   X,
   Sparkles,
   UploadCloud,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate } from '../utils/dateUtils';
@@ -27,6 +29,14 @@ export function Goals() {
     unlinkTaskFromGoal,
   } = useApp();
   const [filter, setFilter] = useState('all'); // 'all', 'in-progress', 'completed'
+  const [expandedGoalIds, setExpandedGoalIds] = useState({});
+
+  const toggleExpand = (goalId) => {
+    setExpandedGoalIds((prev) => ({
+      ...prev,
+      [goalId]: !prev[goalId],
+    }));
+  };
 
   // Tasks that are not linked to any goal yet
   const unlinkedTasks = tasks.filter(
@@ -45,6 +55,20 @@ export function Goals() {
     if (filter === 'completed') return isCompleted;
     return !isCompleted;
   });
+
+  const areAllExpanded = filteredGoals.length > 0 && filteredGoals.every((g) => expandedGoalIds[g.id]);
+
+  const toggleAllTasks = () => {
+    if (areAllExpanded) {
+      setExpandedGoalIds({});
+    } else {
+      const next = {};
+      filteredGoals.forEach((g) => {
+        next[g.id] = true;
+      });
+      setExpandedGoalIds(next);
+    }
+  };
 
   const inProgressCount = goals.filter((g) => {
     const relatedTasks = tasks.filter((t) => t.goalId === g.id || g.relatedTaskIds?.includes(t.id));
@@ -143,6 +167,25 @@ export function Goals() {
         >
           Completed ({completedCount})
         </button>
+
+        {filteredGoals.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={toggleAllTasks}
+            style={{
+              marginLeft: 'auto',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.78rem',
+            }}
+            title={areAllExpanded ? 'Collapse tasks on all cards' : 'Expand tasks on all cards'}
+          >
+            {areAllExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <span>{areAllExpanded ? 'Collapse All Cards' : 'Expand All Cards'}</span>
+          </button>
+        )}
       </div>
 
       {/* Goals Cards Grid */}
@@ -160,6 +203,7 @@ export function Goals() {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
             gap: '20px',
+            alignItems: 'start',
           }}
         >
           {filteredGoals.map((goal) => {
@@ -170,18 +214,21 @@ export function Goals() {
               ? Math.round((completedLinkedCount / relatedTasks.length) * 100)
               : 0;
             const isCompleted = hasLinkedTasks && effectiveProgress >= 100;
+            const isExpanded = !!expandedGoalIds[goal.id];
 
             return (
               <div
                 key={goal.id}
                 className="card"
                 style={{
-                  padding: '24px',
+                  padding: '20px 22px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
+                  gap: '14px',
                   position: 'relative',
                   borderTop: `4px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
+                  transition: 'all 0.2s ease',
+                  boxShadow: isExpanded ? 'var(--shadow-md)' : 'var(--shadow-sm)',
                 }}
               >
                 {/* Header */}
@@ -195,19 +242,17 @@ export function Goals() {
                         <span className="badge badge-neutral">{goal.category}</span>
                       )}
                       <span
-                        className="badge"
+                        className="badge badge-neutral"
                         style={{
-                          backgroundColor: '#F1F5F9',
-                          color: '#334155',
-                          border: '1px solid #CBD5E1',
                           fontSize: '0.72rem',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '5px',
+                          border: '1px solid var(--border-color)',
                         }}
                       >
-                        <Target size={11} color="var(--primary-color)" />
-                        {relatedTasks.length} {relatedTasks.length === 1 ? 'task' : 'tasks'} linked
+                        <Target size={12} color="var(--primary-color)" />
+                        <span>{relatedTasks.length} {relatedTasks.length === 1 ? 'task' : 'tasks'} linked</span>
                       </span>
                     </div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '8px', color: 'var(--text-primary)' }}>
@@ -238,7 +283,19 @@ export function Goals() {
                 </div>
 
                 {goal.description && (
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: '0.86rem',
+                      color: 'var(--text-secondary)',
+                      lineHeight: '1.45',
+                      margin: 0,
+                      display: '-webkit-box',
+                      WebkitLineClamp: isExpanded ? 'unset' : 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: isExpanded ? 'visible' : 'hidden',
+                    }}
+                    title={!isExpanded && goal.description.length > 80 ? goal.description : undefined}
+                  >
                     {goal.description}
                   </p>
                 )}
@@ -285,168 +342,237 @@ export function Goals() {
                   </div>
                 </div>
 
-                {/* Interactive Linked Tasks Checklist Section */}
+                {/* Collapsible Linked Tasks Checklist Section */}
                 <div
                   style={{
                     borderTop: '1px solid var(--border-color)',
-                    paddingTop: '14px',
+                    paddingTop: '12px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CheckCircle2 size={15} color="var(--primary-color)" />
-                      Goal Tasks ({completedLinkedCount}/{relatedTasks.length})
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      style={{ padding: '3px 8px', fontSize: '0.75rem', height: '26px' }}
-                      onClick={() => openModal('task', { goalId: goal.id })}
-                    >
-                      <Plus size={13} /> Add Task
-                    </button>
-                  </div>
-
-                  {relatedTasks.length === 0 ? (
-                    <div
+                  {/* Small card task bar with arrow */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '6px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: isExpanded ? 'var(--page-bg)' : 'transparent',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      transition: 'background var(--transition-fast)',
+                    }}
+                    onClick={() => toggleExpand(goal.id)}
+                    title={isExpanded ? 'Click to collapse tasks' : 'Click to view tasks'}
+                  >
+                    <span
                       style={{
-                        padding: '14px 16px',
-                        background: 'var(--page-bg)',
-                        border: '1px dashed var(--border-color)',
-                        borderRadius: 'var(--radius-md)',
-                        textAlign: 'center',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
                         gap: '6px',
                       }}
                     >
-                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-                        This goal has no tasks linked to it yet. Add tasks to automatically calculate progress as you complete them!
-                      </p>
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                          onClick={() => openModal('task', { goalId: goal.id })}
-                        >
-                          <Plus size={13} /> Add First Task
-                        </button>
-                        {unlinkedTasks.length > 0 && (
-                          <select
-                            className="form-select"
-                            style={{ width: 'auto', fontSize: '0.75rem', padding: '3px 8px', height: '28px' }}
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                linkTaskToGoal(e.target.value, goal.id);
-                                e.target.value = '';
-                              }
-                            }}
-                            defaultValue=""
-                          >
-                            <option value="" disabled>+ Link existing task...</option>
-                            {unlinkedTasks.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.title} ({t.date})
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
+                      <CheckCircle2 size={15} color="var(--primary-color)" />
+                      Goal Tasks ({completedLinkedCount}/{relatedTasks.length})
+                    </span>
+
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        style={{ padding: '2px 8px', fontSize: '0.74rem', height: '24px' }}
+                        onClick={() => openModal('task', { goalId: goal.id })}
+                        title="Add task to this goal"
+                      >
+                        <Plus size={12} /> Add Task
+                      </button>
+
+                      {/* Small card arrow button */}
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          background: isExpanded ? 'rgba(59, 130, 246, 0.12)' : 'var(--page-bg)',
+                          color: isExpanded ? 'var(--primary-color)' : 'var(--text-secondary)',
+                          border: '1px solid var(--border-color)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onClick={() => toggleExpand(goal.id)}
+                        title={isExpanded ? 'Collapse card' : 'Expand card'}
+                        aria-label={isExpanded ? 'Collapse card' : 'Expand card'}
+                      >
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
                     </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {relatedTasks.map((task) => {
-                        const isTaskDone = task.status === 'completed';
-                        return (
-                          <div
-                            key={task.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '8px 10px',
-                              background: isTaskDone ? '#F0FDF4' : 'var(--page-bg)',
-                              border: `1px solid ${isTaskDone ? '#BBF7D0' : 'var(--border-color)'}`,
-                              borderRadius: 'var(--radius-sm)',
-                              gap: '8px',
-                              transition: 'all var(--transition-fast)',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-                              {/* Clickable Checkbox */}
-                              <div
-                                className={`custom-checkbox ${isTaskDone ? 'checked' : ''}`}
-                                style={{ width: '18px', height: '18px', flexShrink: 0, cursor: 'pointer' }}
-                                onClick={() => toggleTaskComplete(task.id)}
-                                title={isTaskDone ? 'Mark as incomplete' : 'Mark as completed'}
-                              >
-                                {isTaskDone && <Check size={12} strokeWidth={3} />}
-                              </div>
+                  </div>
 
-                              <span
-                                style={{
-                                  fontSize: '0.84rem',
-                                  fontWeight: 600,
-                                  color: isTaskDone ? 'var(--text-muted)' : 'var(--text-primary)',
-                                  textDecoration: isTaskDone ? 'line-through' : 'none',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  cursor: 'pointer',
+                  {/* Tasks List - Only visible when expanded */}
+                  {isExpanded && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                      {relatedTasks.length === 0 ? (
+                        <div
+                          style={{
+                            padding: '12px 14px',
+                            background: 'var(--page-bg)',
+                            border: '1px dashed var(--border-color)',
+                            borderRadius: 'var(--radius-md)',
+                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            This goal has no tasks linked to it yet. Add tasks to automatically calculate progress!
+                          </p>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '0.74rem' }}
+                              onClick={() => openModal('task', { goalId: goal.id })}
+                            >
+                              <Plus size={12} /> Add First Task
+                            </button>
+                            {unlinkedTasks.length > 0 && (
+                              <select
+                                className="form-select"
+                                style={{ width: 'auto', fontSize: '0.72rem', padding: '2px 8px', height: '26px' }}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    linkTaskToGoal(e.target.value, goal.id);
+                                    e.target.value = '';
+                                  }
                                 }}
-                                onClick={() => toggleTaskComplete(task.id)}
-                                title={`Click to toggle: ${task.title}`}
+                                defaultValue=""
                               >
-                                {task.title}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              {task.date && (
-                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                  {task.date}
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                className="btn-icon"
-                                style={{ width: '22px', height: '22px', color: 'var(--text-muted)' }}
-                                onClick={() => unlinkTaskFromGoal(task.id, goal.id)}
-                                title="Unlink from goal"
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
+                                <option value="" disabled>+ Link existing task...</option>
+                                {unlinkedTasks.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.title} ({t.date})
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                            maxHeight: '320px',
+                            overflowY: 'auto',
+                            paddingRight: '2px',
+                          }}
+                        >
+                          {relatedTasks.map((task) => {
+                            const isTaskDone = task.status === 'completed';
+                            return (
+                              <div
+                                key={task.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '7px 9px',
+                                  background: isTaskDone ? 'rgba(16, 185, 129, 0.08)' : 'var(--page-bg)',
+                                  border: `1px solid ${isTaskDone ? 'rgba(16, 185, 129, 0.25)' : 'var(--border-color)'}`,
+                                  borderRadius: 'var(--radius-sm)',
+                                  gap: '8px',
+                                  transition: 'all var(--transition-fast)',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                                  {/* Clickable Checkbox */}
+                                  <div
+                                    className={`custom-checkbox ${isTaskDone ? 'checked' : ''}`}
+                                    style={{ width: '17px', height: '17px', flexShrink: 0, cursor: 'pointer' }}
+                                    onClick={() => toggleTaskComplete(task.id)}
+                                    title={isTaskDone ? 'Mark as incomplete' : 'Mark as completed'}
+                                  >
+                                    {isTaskDone && <Check size={11} strokeWidth={3} />}
+                                  </div>
 
-                      {/* Option to link another existing task */}
-                      {unlinkedTasks.length > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                          <select
-                            className="form-select"
-                            style={{ width: 'auto', fontSize: '0.72rem', padding: '2px 8px', height: '26px' }}
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                linkTaskToGoal(e.target.value, goal.id);
-                                e.target.value = '';
-                              }
-                            }}
-                            defaultValue=""
-                          >
-                            <option value="" disabled>+ Link another task...</option>
-                            {unlinkedTasks.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.title} ({t.date})
-                              </option>
-                            ))}
-                          </select>
+                                  <span
+                                    style={{
+                                      fontSize: '0.82rem',
+                                      fontWeight: 600,
+                                      color: isTaskDone ? 'var(--text-muted)' : 'var(--text-primary)',
+                                      textDecoration: isTaskDone ? 'line-through' : 'none',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => toggleTaskComplete(task.id)}
+                                    title={`Click to toggle: ${task.title}`}
+                                  >
+                                    {task.title}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                  {task.date && (
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                      {task.date}
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="btn-icon"
+                                    style={{ width: '22px', height: '22px', color: 'var(--text-muted)' }}
+                                    onClick={() => unlinkTaskFromGoal(task.id, goal.id)}
+                                    title="Unlink from goal"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Option to link another existing task */}
+                          {unlinkedTasks.length > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                              <select
+                                className="form-select"
+                                style={{ width: 'auto', fontSize: '0.72rem', padding: '2px 8px', height: '26px' }}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    linkTaskToGoal(e.target.value, goal.id);
+                                    e.target.value = '';
+                                  }
+                                }}
+                                defaultValue=""
+                              >
+                                <option value="" disabled>+ Link another task...</option>
+                                {unlinkedTasks.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.title} ({t.date})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

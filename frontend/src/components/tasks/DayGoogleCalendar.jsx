@@ -4,7 +4,6 @@ import { useApp } from '../../context/AppContext';
 import { formatTime, formatDate, getTodayDateString } from '../../utils/dateUtils';
 import { getEffectiveStatus } from '../../utils/taskUtils';
 
-const HOUR_HEIGHT = 68; // Height in pixels for each hour slot
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export function DayGoogleCalendar({
@@ -16,6 +15,50 @@ export function DayGoogleCalendar({
   const { updateTask, updateEvent, toggleTaskComplete, openModal, showToast, settings } = useApp();
   const is12Hour = settings?.timeFormat !== '24h';
   const scrollRef = useRef(null);
+
+  // Screen fit mode: default to true for no scrolling
+  const [fitToScreen, setFitToScreen] = useState(() => {
+    const saved = localStorage.getItem('gcal_fit_screen');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleFitToScreen = () => {
+    setFitToScreen((prev) => {
+      const next = !prev;
+      localStorage.setItem('gcal_fit_screen', String(next));
+      return next;
+    });
+  };
+
+  const [canvasHeight, setCanvasHeight] = useState(720);
+
+  useEffect(() => {
+    const measure = () => {
+      if (scrollRef.current) {
+        const h = scrollRef.current.clientHeight;
+        if (h > 150) setCanvasHeight(h);
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    const ro = new ResizeObserver(measure);
+    if (scrollRef.current) ro.observe(scrollRef.current);
+    return () => {
+      window.removeEventListener('resize', measure);
+      ro.disconnect();
+    };
+  }, []);
+
+  const hourHeight = useMemo(() => {
+    if (fitToScreen) {
+      return Math.max(26, Math.floor(canvasHeight / 24));
+    }
+    return 64;
+  }, [fitToScreen, canvasHeight]);
+
+  const totalGridHeight = useMemo(() => {
+    return fitToScreen ? canvasHeight : 24 * hourHeight;
+  }, [fitToScreen, canvasHeight, hourHeight]);
 
   const [draggingTaskId, setDraggingTaskId] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null); // { hour: number, minute: number }
@@ -119,19 +162,22 @@ export function DayGoogleCalendar({
     return { timedTasks: timed, allDayTasks: allDay };
   }, [dayTasks, dayEvents]);
 
-  // Auto-scroll on mount to earliest task or current time / 7:30 AM
+  // Auto-scroll on mount to earliest task or current time / 7:30 AM when in scroll view
   useEffect(() => {
-    if (scrollRef.current) {
-      let scrollTargetMins = 450; // default 7:30 AM (450 mins)
+    if (!fitToScreen && scrollRef.current) {
+      let scrollTargetMins = 450; // default 7:30 AM
       if (timedTasks.length > 0) {
         scrollTargetMins = Math.max(0, timedTasks[0].startMins - 60);
       } else if (isToday) {
         scrollTargetMins = Math.max(0, currentTimeMinutes - 60);
       }
-      const scrollPos = (scrollTargetMins / 60) * HOUR_HEIGHT;
-      scrollRef.current.scrollTop = scrollPos;
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = (scrollTargetMins / 60) * hourHeight;
+        }
+      });
     }
-  }, [selectedDate, timedTasks.length, isToday, currentTimeMinutes]);
+  }, [fitToScreen, selectedDate, timedTasks.length, isToday, hourHeight]);
 
   // Drag and Drop Handlers
   const handleDragStart = (e, task) => {
@@ -153,7 +199,7 @@ export function DayGoogleCalendar({
     }
   };
 
-  const handleDrop = (e, hour, minute) => {
+  const handleDrop = async (e, hour, minute) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain') || draggingTaskId;
     if (!taskId) return;
@@ -181,17 +227,19 @@ export function DayGoogleCalendar({
     const newStartTime = `${newStartH}:${newStartM}`;
     const newEndTime = `${newEndH}:${newEndM}`;
 
-    updateTask(task.id, {
+    const res = await updateTask(task.id, {
       startTime: newStartTime,
       endTime: newEndTime,
       date: selectedDate,
     });
 
-    showToast({
-      type: 'success',
-      title: 'Task Rescheduled',
-      message: `"${task.title}" rescheduled to ${formatTime(newStartTime, is12Hour)} – ${formatTime(newEndTime, is12Hour)}`,
-    });
+    if (res !== false) {
+      showToast({
+        type: 'success',
+        title: 'Task Rescheduled',
+        message: `"${task.title}" rescheduled to ${formatTime(newStartTime, is12Hour)} – ${formatTime(newEndTime, is12Hour)}`,
+      });
+    }
 
     setDraggingTaskId(null);
     setDragOverSlot(null);
@@ -207,7 +255,7 @@ export function DayGoogleCalendar({
 
     const onMouseMove = (moveEvent) => {
       const deltaY = moveEvent.clientY - startY;
-      const deltaMins = Math.round(((deltaY / HOUR_HEIGHT) * 60) / 15) * 15;
+      const deltaMins = Math.round(((deltaY / hourHeight) * 60) / 15) * 15;
       const newDuration = Math.max(15, Math.min(1440 - item.startMins, initialDuration + deltaMins));
 
       setResizingItem({
@@ -224,7 +272,7 @@ export function DayGoogleCalendar({
       window.removeEventListener('mouseup', onMouseUp);
 
       const deltaY = upEvent.clientY - startY;
-      const deltaMins = Math.round(((deltaY / HOUR_HEIGHT) * 60) / 15) * 15;
+      const deltaMins = Math.round(((deltaY / hourHeight) * 60) / 15) * 15;
       const finalDuration = Math.max(15, Math.min(1440 - item.startMins, initialDuration + deltaMins));
 
       const newEndMins = item.startMins + finalDuration;
@@ -254,7 +302,7 @@ export function DayGoogleCalendar({
     window.addEventListener('mouseup', onMouseUp);
   };
 
-  const nowTopPosition = (currentTimeMinutes / 60) * HOUR_HEIGHT;
+  const nowTopPosition = (currentTimeMinutes / 60) * hourHeight;
 
   // Format time label for hour axis
   const getHourLabel = (hour) => {
@@ -268,9 +316,30 @@ export function DayGoogleCalendar({
     <div className="gcal-day-container">
       {/* 1. Google Calendar Header Bar (Timezone & Date Column Header) */}
       <div className="gcal-day-header-bar">
-        {/* Timezone cell on left axis */}
-        <div className="gcal-timezone-cell">
-          GMT+05:30
+        {/* Timezone cell on left axis with Fit Screen toggle */}
+        <div className="gcal-timezone-cell" style={{ flexDirection: 'column', gap: '3px', padding: '6px 4px' }}>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            GMT+05:30
+          </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={toggleFitToScreen}
+            title={fitToScreen ? "Currently fit to screen without scrolling" : "Click to fit screen"}
+            style={{
+              fontSize: '0.60rem',
+              fontWeight: 800,
+              padding: '1px 5px',
+              borderRadius: '3px',
+              background: fitToScreen ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.15)' : 'var(--card-hover)',
+              color: fitToScreen ? 'var(--primary-color)' : 'var(--text-muted)',
+              border: '1px solid var(--border-color)',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {fitToScreen ? 'No Scroll' : 'Scroll'}
+          </button>
         </div>
 
         {/* Date header with day of week & date badge */}
@@ -281,13 +350,13 @@ export function DayGoogleCalendar({
                 width: '46px',
                 height: '46px',
                 borderRadius: '50%',
-                background: isToday ? '#1769FF' : '#F1F5F9',
-                color: isToday ? '#FFFFFF' : '#1E293B',
+                background: isToday ? 'var(--primary-color)' : 'var(--card-hover)',
+                color: isToday ? '#FFFFFF' : 'var(--text-primary)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isToday ? '0 4px 10px rgba(23, 105, 255, 0.3)' : 'none',
+                boxShadow: isToday ? '0 4px 10px var(--primary-glow)' : 'none',
               }}
             >
               <span style={{ fontSize: '0.66rem', fontWeight: 700, textTransform: 'uppercase', lineHeight: 1 }}>
@@ -357,18 +426,22 @@ export function DayGoogleCalendar({
       )}
 
       {/* 3. Main Hourly Grid Canvas */}
-      <div className="gcal-day-scroll-canvas" ref={scrollRef}>
+      <div className={`gcal-day-scroll-canvas ${fitToScreen ? 'no-scroll' : ''}`} ref={scrollRef}>
         {/* Time Axis Column */}
-        <div className="gcal-time-axis">
+        <div className="gcal-time-axis" style={{ height: `${totalGridHeight}px` }}>
           {HOURS.map((hour) => (
-            <div key={`hour-label-${hour}`} className="gcal-time-axis-hour">
+            <div
+              key={`hour-label-${hour}`}
+              className="gcal-time-axis-hour"
+              style={{ height: `${hourHeight}px` }}
+            >
               <span>{getHourLabel(hour)}</span>
             </div>
           ))}
         </div>
 
         {/* Day Grid Canvas with Drop Target Slots */}
-        <div className="gcal-grid-canvas">
+        <div className="gcal-grid-canvas" style={{ height: `${totalGridHeight}px` }}>
           {/* Red Current Time Line Indicator (Google Calendar Style) */}
           {isToday && (
             <div
@@ -391,9 +464,13 @@ export function DayGoogleCalendar({
             const isHoveredBottom = dragOverSlot?.hour === hour && dragOverSlot?.minute === 30;
 
             return (
-              <div key={`hour-row-${hour}`} className="gcal-hour-row">
+              <div
+                key={`hour-row-${hour}`}
+                className="gcal-hour-row"
+                style={{ height: `${hourHeight}px` }}
+              >
                 {/* Half-Hour Dashed Divider */}
-                <div className="gcal-half-hour-line" />
+                <div className="gcal-half-hour-line" style={{ top: `${hourHeight / 2}px` }} />
 
                 {/* Top Slot (:00) Drop Zone */}
                 <div
@@ -445,8 +522,11 @@ export function DayGoogleCalendar({
               ? resizingItem.currentDurationMins
               : item.durationMins;
 
-            const topPos = (item.startMins / 60) * HOUR_HEIGHT;
-            const blockHeight = Math.max(30, (activeDuration / 60) * HOUR_HEIGHT - 3);
+            const topPos = (item.startMins / 60) * hourHeight;
+            const blockHeight = Math.max(
+              fitToScreen ? 18 : 26,
+              (activeDuration / 60) * hourHeight - 2
+            );
 
             // Column width & left offset for overlapping items
             const widthPct = item.totalCols > 1 ? 100 / item.totalCols - 1.2 : 98;

@@ -14,6 +14,8 @@ import {
   Calendar as CalendarIcon,
   List,
   UploadCloud,
+  Wand2,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
@@ -23,20 +25,25 @@ import {
 } from '../utils/dateUtils';
 import { calculateTaskStats } from '../utils/statistics';
 import { groupTasksByPeriod, filterAndSortTasks } from '../utils/taskUtils';
+import { SmartRescheduleModal } from '../components/tasks/SmartRescheduleModal';
 import { TaskItem } from '../components/tasks/TaskItem';
 import { EmptyState } from '../components/common/EmptyState';
 import { DayGoogleCalendar } from '../components/tasks/DayGoogleCalendar';
 
 export function TodaysTasks() {
-  const { tasks, categories, events, openModal } = useApp();
+  const { tasks, categories, events, openModal, selectedDate, setSelectedDate } = useApp();
 
-  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' (Google Calendar style) or 'list'
   const [statusFilter, setStatusFilter] = useState('all'); // all, pending, completed, overdue
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [sortBy, setSortBy] = useState('time'); // time, priority, created
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+
+  const overdueCount = tasks.filter(
+    (t) => t.date < getTodayDateString() && t.status !== 'completed'
+  ).length;
 
   // Navigate to previous or next day
   const changeDay = (offset) => {
@@ -154,8 +161,8 @@ export function TodaysTasks() {
           <div
             style={{
               display: 'inline-flex',
-              background: '#F1F5F9',
-              border: '1px solid #CBD5E1',
+              background: 'var(--card-hover)',
+              border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-md)',
               padding: '2px',
               gap: '2px',
@@ -198,6 +205,37 @@ export function TodaysTasks() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsRescheduleOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: overdueCount > 0 ? '#F59E0B' : 'var(--text-primary)',
+                borderColor: overdueCount > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)',
+                background: overdueCount > 0 ? 'rgba(245, 158, 11, 0.08)' : 'var(--card-bg)',
+              }}
+              title="Auto-balance overdue tasks from previous days into open time slots"
+            >
+              <Wand2 size={16} color={overdueCount > 0 ? '#F59E0B' : 'var(--primary-color)'} />
+              <span>Smart Reschedule</span>
+              {overdueCount > 0 && (
+                <span
+                  style={{
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    background: '#F59E0B',
+                    color: '#FFFFFF',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                  }}
+                >
+                  {overdueCount}
+                </span>
+              )}
+            </button>
             <button
               type="button"
               className="btn btn-secondary"
@@ -493,6 +531,12 @@ export function TodaysTasks() {
           )}
         </div>
       )}
+
+      {/* Smart Schedule Auto-Balancing Modal */}
+      <SmartRescheduleModal
+        isOpen={isRescheduleOpen}
+        onClose={() => setIsRescheduleOpen(false)}
+      />
     </div>
   );
 }
