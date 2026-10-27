@@ -51,18 +51,42 @@ export function getDayPeriod(timeStr) {
 }
 
 export function isTaskOverdue(task) {
-  if (!task || task.status === 'completed') return false;
+  if (!task || task.status === 'completed' || task.status === 'cancelled') return false;
   
   const todayStr = getTodayDateString();
-  if (task.date < todayStr) return true;
+  if (task.date && task.date < todayStr) return true;
   
   if (task.date === todayStr) {
-    const checkTime = task.endTime || task.startTime;
+    let checkTime = task.endTime;
+    if (!checkTime && task.timeSlot) {
+      if (task.timeSlot.includes('-')) {
+        const parts = task.timeSlot.split('-');
+        checkTime = (parts[1] || parts[0]).trim();
+      } else if (task.timeSlot.toLowerCase().includes(' to ')) {
+        const parts = task.timeSlot.toLowerCase().split(' to ');
+        checkTime = (parts[1] || parts[0]).trim();
+      }
+    }
+    if (!checkTime) {
+      checkTime = task.startTime;
+    }
+
     if (checkTime) {
       const now = new Date();
       const currentH = now.getHours();
       const currentM = now.getMinutes();
-      const [h, m] = checkTime.split(':').map(Number);
+      
+      const cleanTime = String(checkTime).trim().toLowerCase();
+      const isPM = cleanTime.includes('pm');
+      const isAM = cleanTime.includes('am');
+      const nums = cleanTime.replace(/[^\d:]/g, '').split(':').map(Number);
+      
+      let h = nums[0] !== undefined ? nums[0] : 0;
+      let m = nums[1] !== undefined ? nums[1] : 0;
+      
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      
       if (currentH > h || (currentH === h && currentM > m)) {
         return true;
       }

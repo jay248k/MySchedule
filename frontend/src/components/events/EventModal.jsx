@@ -92,7 +92,7 @@ export function EventModal() {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g., Team Sprint Review"
+                placeholder="Enter event title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus
@@ -105,7 +105,7 @@ export function EventModal() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g., Zoom Meeting, Room 402, Downtown Hub"
+                  placeholder="Enter location or meeting link"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />

@@ -133,7 +133,7 @@ export function TaskModal() {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g., Study VLSI Concepts"
+                placeholder="Enter task title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus

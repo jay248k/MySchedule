@@ -907,7 +907,7 @@ export function BulkImportModal() {
                       lineHeight: 1.4,
                       resize: 'vertical',
                     }}
-                    placeholder={`Paste your CSV lines or JSON array here...\nExample for ${importType}:\n${TEMPLATES[importType]?.csv}`}
+                    placeholder="Paste your CSV lines or JSON array here..."
                     value={rawText}
                     onChange={(e) => {
                       setRawText(e.target.value);

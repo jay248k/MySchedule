@@ -20,6 +20,8 @@ const KEYS = {
   DAILY_REPORTS: 'my_schedule_daily_reports',
   WORK_SESSIONS: 'my_schedule_work_sessions',
   ACTIVE_WORK_SESSION: 'my_schedule_active_work_session',
+  DEVIATIONS: 'my_schedule_deviations',
+  REQUESTS: 'my_schedule_work_requests',
 };
 
 export const storageService = {
@@ -230,6 +232,40 @@ export const storageService = {
       }
     } catch (e) {
       console.error('Failed to save active work session', e);
+    }
+  },
+
+  getDeviations() {
+    try {
+      const data = localStorage.getItem(KEYS.DEVIATIONS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveDeviations(deviations) {
+    try {
+      localStorage.setItem(KEYS.DEVIATIONS, JSON.stringify(deviations));
+    } catch (e) {
+      console.error('Failed to save deviations to localStorage', e);
+    }
+  },
+
+  getRequests() {
+    try {
+      const data = localStorage.getItem(KEYS.REQUESTS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveRequests(requests) {
+    try {
+      localStorage.setItem(KEYS.REQUESTS, JSON.stringify(requests));
+    } catch (e) {
+      console.error('Failed to save requests to localStorage', e);
     }
   },
 

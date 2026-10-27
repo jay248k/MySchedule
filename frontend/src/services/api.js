@@ -140,6 +140,20 @@ export const api = {
   createWorkSession: (payload) => apiClient.post('/work-sessions', payload),
   updateWorkSession: (id, payload) => apiClient.put(`/work-sessions/${id}`, payload),
   deleteWorkSession: (id) => apiClient.delete(`/work-sessions/${id}`),
+
+  // Schedule Deviations & Mistakes Log (Planned vs Actual)
+  getDeviations: (params = {}) => apiClient.get('/deviations', { params }),
+  createDeviation: (payload) => apiClient.post('/deviations', payload),
+  updateDeviation: (id, payload) => apiClient.put(`/deviations/${id}`, payload),
+  deleteDeviation: (id) => apiClient.delete(`/deviations/${id}`),
+
+  // Work & Missed Work Requests
+  getRequests: (params = {}) => apiClient.get('/requests', { params }),
+  createRequest: (payload) => apiClient.post('/requests', payload),
+  completeRequest: (id, payload = {}) => apiClient.patch(`/requests/${id}/complete`, payload),
+  rescheduleRequest: (id, payload) => apiClient.patch(`/requests/${id}/reschedule`, payload),
+  cancelRequest: (id, payload) => apiClient.patch(`/requests/${id}/cancel`, payload),
+  deleteRequest: (id) => apiClient.delete(`/requests/${id}`),
 };
 
 export default api;

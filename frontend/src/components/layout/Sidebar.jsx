@@ -19,6 +19,8 @@ import {
   LogOut,
   ShieldCheck,
   Timer,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -35,6 +37,7 @@ export function Sidebar() {
     setMobileSidebarOpen,
     user: appUser,
     activeWorkSession,
+    requests,
   } = useApp();
 
   const {
@@ -55,6 +58,7 @@ export function Sidebar() {
   ).length;
 
   const isTrackingLive = Boolean(activeWorkSession?.isRunning);
+  const pendingRequestsCount = (requests || []).filter((r) => r.status === 'pending').length;
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -70,6 +74,18 @@ export function Sidebar() {
       icon: Timer,
       badge: isTrackingLive ? 'LIVE' : null,
       badgeColor: isTrackingLive ? '#10B981' : undefined,
+    },
+    {
+      name: 'Mistakes & Deviations',
+      path: '/deviations',
+      icon: AlertCircle,
+    },
+    {
+      name: 'Work Requests',
+      path: '/requests',
+      icon: FileText,
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+      badgeColor: '#F59E0B',
     },
     { name: 'Monthly Schedule', path: '/monthly', icon: CalendarDays },
     { name: 'Calendar', path: '/calendar', icon: Calendar },
@@ -100,7 +116,7 @@ export function Sidebar() {
         {/* Brand Header */}
         <div className="sidebar-brand">
           <div className="sidebar-logo">
-            <CalendarDays size={22} />
+            <CalendarDays size={18} />
           </div>
           {!sidebarCollapsed && (
             <div className="sidebar-brand-text">
@@ -135,10 +151,19 @@ export function Sidebar() {
                 onClick={() => setMobileSidebarOpen(false)}
                 title={sidebarCollapsed ? item.name : undefined}
               >
-                <Icon size={19} style={{ flexShrink: 0 }} />
+                <Icon size={16} style={{ flexShrink: 0 }} />
                 {!sidebarCollapsed && <span>{item.name}</span>}
                 {!sidebarCollapsed && item.badge && (
-                  <span className="sidebar-nav-badge">{item.badge}</span>
+                  <span
+                    className="sidebar-nav-badge"
+                    style={
+                      item.badgeColor
+                        ? { background: item.badgeColor, color: '#FFFFFF', fontWeight: 800, letterSpacing: '0.04em' }
+                        : undefined
+                    }
+                  >
+                    {item.badge}
+                  </span>
                 )}
               </NavLink>
             );
@@ -161,7 +186,7 @@ export function Sidebar() {
         {/* User Account / Auth Status in Sidebar */}
         <div
           style={{
-            padding: sidebarCollapsed ? '10px 8px' : '10px 14px',
+            padding: sidebarCollapsed ? '6px 6px' : '6px 12px',
             borderTop: '1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
@@ -174,13 +199,13 @@ export function Sidebar() {
               type="button"
               className="btn-icon"
               style={{
-                width: '34px',
-                height: '34px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '50%',
                 background: currentUser?.avatarBg || '#1769FF',
                 color: '#ffffff',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -191,16 +216,16 @@ export function Sidebar() {
             </button>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '50%',
                     background: currentUser?.avatarBg || '#1769FF',
                     color: '#ffffff',
                     fontWeight: 700,
-                    fontSize: '0.8rem',
+                    fontSize: '0.75rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

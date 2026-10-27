@@ -890,7 +890,7 @@ export function Settings() {
                     className="input"
                     value={settings.workspaceName || 'My Schedule Workspace'}
                     onChange={(e) => handleUpdate('workspaceName', e.target.value)}
-                    placeholder="e.g. Acme Studio / Personal Workspace"
+                    placeholder="Enter workspace name"
                   />
                 </div>
 

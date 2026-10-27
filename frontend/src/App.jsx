@@ -13,6 +13,8 @@ import { Goals } from './pages/Goals';
 import { Reports } from './pages/Reports';
 import { ReportsArchive } from './pages/ReportsArchive';
 import { WorkTracker } from './pages/WorkTracker';
+import { DeviationsPage } from './pages/DeviationsPage';
+import RequestsPage from './pages/RequestsPage';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
 
@@ -31,6 +33,8 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="today" element={<TodaysTasks />} />
               <Route path="work-tracker" element={<WorkTracker />} />
+              <Route path="deviations" element={<DeviationsPage />} />
+              <Route path="requests" element={<RequestsPage />} />
               <Route path="monthly" element={<MonthlySchedule />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="categories" element={<Categories />} />

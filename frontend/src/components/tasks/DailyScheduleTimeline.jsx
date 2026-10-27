@@ -349,8 +349,8 @@ export function DailyScheduleTimeline({
                   <div
                     className={`timeline-node node-${itemState}`}
                     style={{
-                      width: '20px',
-                      height: '20px',
+                      width: '22px',
+                      height: '22px',
                       borderRadius: '50%',
                       border: '2px solid',
                       backgroundColor:
@@ -362,27 +362,32 @@ export function DailyScheduleTimeline({
                           ? '#EF4444'
                           : itemState === 'event'
                           ? '#8B5CF6'
-                          : 'var(--card-bg)',
+                          : 'rgba(20, 27, 45, 0.95)',
                       borderColor:
                         itemState === 'completed'
-                          ? '#10B981'
+                          ? '#34D399'
                           : itemState === 'in_progress'
                           ? '#38BDF8'
                           : itemState === 'overdue'
-                          ? '#EF4444'
+                          ? '#F87171'
                           : itemState === 'event'
-                          ? '#8B5CF6'
-                          : '#475569',
+                          ? '#A78BFA'
+                          : 'rgba(255, 255, 255, 0.22)',
                       boxShadow:
                         itemState === 'in_progress'
-                          ? '0 0 12px rgba(56, 189, 248, 0.7)'
-                          : 'none',
+                          ? '0 0 14px rgba(56, 189, 248, 0.8)'
+                          : itemState === 'completed'
+                          ? '0 0 10px rgba(16, 185, 129, 0.5)'
+                          : itemState === 'overdue'
+                          ? '0 0 12px rgba(239, 68, 68, 0.6)'
+                          : '0 2px 6px rgba(0, 0, 0, 0.3)',
                       cursor: readOnly ? 'default' : 'pointer',
-                      marginTop: '20px',
+                      marginTop: '22px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       zIndex: 3,
+                      transition: 'all 0.2s ease',
                     }}
                     onClick={() => {
                       if (!readOnly) {
@@ -403,22 +408,23 @@ export function DailyScheduleTimeline({
                     }
                   >
                     {itemState === 'completed' ? (
-                      <Check size={11} strokeWidth={3} color="#ffffff" />
+                      <Check size={12} strokeWidth={3.2} color="#ffffff" />
                     ) : itemState === 'in_progress' ? (
                       <span
                         style={{
-                          width: '6px',
-                          height: '6px',
+                          width: '7px',
+                          height: '7px',
                           borderRadius: '50%',
                           backgroundColor: '#ffffff',
+                          boxShadow: '0 0 8px #ffffff',
                         }}
                       />
                     ) : itemState === 'overdue' ? (
-                      <AlertCircle size={11} strokeWidth={2.5} color="#ffffff" />
+                      <AlertCircle size={12} strokeWidth={2.8} color="#ffffff" />
                     ) : (
                       <span
                         className="timeline-node-dot"
-                        style={{ backgroundColor: '#64748B', width: '5px', height: '5px' }}
+                        style={{ backgroundColor: '#94A3B8', width: '6px', height: '6px', borderRadius: '50%' }}
                       />
                     )}
                   </div>
@@ -442,28 +448,36 @@ export function DailyScheduleTimeline({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 18px',
-                    borderRadius: '12px',
+                    borderRadius: '14px',
                     background:
                       itemState === 'in_progress'
-                        ? 'rgba(23, 105, 255, 0.08)'
+                        ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.14) 0%, rgba(2, 132, 199, 0.05) 100%)'
                         : itemState === 'completed'
-                        ? 'rgba(16, 185, 129, 0.04)'
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)'
                         : itemState === 'overdue'
-                        ? 'rgba(239, 68, 68, 0.04)'
-                        : 'var(--card-bg)',
+                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.03) 100%)'
+                        : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
                     border:
                       itemState === 'in_progress'
-                        ? '1.5px solid #0284C7'
+                        ? '1.5px solid rgba(56, 189, 248, 0.55)'
                         : itemState === 'completed'
                         ? '1px solid rgba(16, 185, 129, 0.3)'
                         : itemState === 'overdue'
-                        ? '1px solid rgba(239, 68, 68, 0.3)'
-                        : '1px solid var(--border-color)',
+                        ? '1.5px solid rgba(239, 68, 68, 0.5)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderLeft: `4px solid ${
+                      itemState === 'in_progress'
+                        ? '#38BDF8'
+                        : itemState === 'overdue'
+                        ? '#EF4444'
+                        : itemState === 'completed'
+                        ? '#10B981'
+                        : category.color || '#3B82F6'
+                    }`,
                     boxShadow:
                       itemState === 'in_progress'
-                        ? '0 0 16px rgba(56, 189, 248, 0.22)'
-                        : 'var(--shadow-sm)',
-                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        ? '0 0 20px rgba(56, 189, 248, 0.25)'
+                        : '0 4px 14px rgba(0, 0, 0, 0.25)',
                     cursor: readOnly ? 'default' : 'pointer',
                     position: 'relative',
                     zIndex: openMenuId === item.id ? 100 : 'auto',
@@ -477,23 +491,28 @@ export function DailyScheduleTimeline({
                     }
                   }}
                 >
-                  {/* Column 1: Time Column (Start / End Stack) */}
+                  {/* Column 1: Modern Glass Time Badge */}
                   <div
                     style={{
-                      width: '74px',
-                      flexShrink: 0,
                       display: 'flex',
                       flexDirection: 'column',
+                      alignItems: 'center',
                       justifyContent: 'center',
+                      padding: '6px 12px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.07)',
+                      minWidth: '82px',
+                      flexShrink: 0,
                       gap: '2px',
                     }}
                   >
                     <span
                       style={{
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        color: itemState === 'in_progress' ? '#38BDF8' : 'var(--text-primary)',
-                        letterSpacing: '0.01em',
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        color: itemState === 'in_progress' ? '#38BDF8' : '#FFFFFF',
+                        letterSpacing: '0.02em',
                         lineHeight: 1.2,
                       }}
                     >
@@ -501,26 +520,43 @@ export function DailyScheduleTimeline({
                     </span>
                     <span
                       style={{
-                        fontSize: '0.74rem',
+                        fontSize: '0.68rem',
                         fontWeight: 600,
-                        color: 'var(--text-muted)',
+                        color: 'rgba(255, 255, 255, 0.45)',
                         lineHeight: 1.2,
                       }}
                     >
-                      {endTimeFormatted || 'Flexible'}
+                      {endTimeFormatted ? `→ ${endTimeFormatted}` : 'Flexible'}
                     </span>
                   </div>
 
-                  {/* Column 2: Colored Vertical Accent Divider */}
-                  <div
-                    style={{
-                      width: '2.5px',
-                      height: '36px',
-                      borderRadius: '2px',
-                      backgroundColor: category.color || '#1769FF',
-                      flexShrink: 0,
-                    }}
-                  />
+                  {/* Column 2: Quick Toggle Checkmark Button */}
+                  {!readOnly && !isEvent && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleTaskComplete(item.id);
+                      }}
+                      title={isCompleted ? 'Mark incomplete' : 'Mark completed'}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        border: isCompleted ? 'none' : '2px solid rgba(255, 255, 255, 0.22)',
+                        background: isCompleted ? '#10B981' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#FFFFFF',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {isCompleted && <Check size={13} strokeWidth={3.2} />}
+                    </button>
+                  )}
 
                   {/* Column 3: Title & Description */}
                   <div
@@ -533,26 +569,29 @@ export function DailyScheduleTimeline({
                       gap: '3px',
                     }}
                   >
-                    <h4
-                      style={{
-                        margin: 0,
-                        fontSize: '0.92rem',
-                        fontWeight: 600,
-                        color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)',
-                        textDecoration: isCompleted ? 'line-through' : 'none',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                      title={item.title}
-                    >
-                      {item.title}
-                    </h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4
+                        style={{
+                          margin: 0,
+                          fontSize: '0.94rem',
+                          fontWeight: 700,
+                          color: isCompleted ? 'rgba(255, 255, 255, 0.45)' : '#FFFFFF',
+                          textDecoration: isCompleted ? 'line-through' : 'none',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          letterSpacing: '-0.01em',
+                        }}
+                        title={item.title}
+                      >
+                        {item.title}
+                      </h4>
+                    </div>
                     <p
                       style={{
                         margin: 0,
                         fontSize: '0.78rem',
-                        color: 'var(--text-secondary)',
+                        color: 'rgba(255, 255, 255, 0.6)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -568,7 +607,7 @@ export function DailyScheduleTimeline({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '7px',
                       flexShrink: 0,
                     }}
                   >
@@ -576,15 +615,19 @@ export function DailyScheduleTimeline({
                     <span
                       style={{
                         fontSize: '0.72rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         padding: '3px 10px',
                         borderRadius: '9999px',
-                        backgroundColor: `${category.color}18`,
+                        backgroundColor: `${category.color}20`,
                         color: category.color,
-                        border: `1px solid ${category.color}40`,
+                        border: `1px solid ${category.color}50`,
                         whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
                       }}
                     >
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: category.color }} />
                       {category.name}
                     </span>
 
@@ -592,16 +635,16 @@ export function DailyScheduleTimeline({
                     {!isEvent && item.priority && (
                       <span
                         style={{
-                          fontSize: '0.72rem',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
-                          padding: '3px 10px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor:
                             item.priority.toLowerCase() === 'high'
-                              ? 'rgba(239, 68, 68, 0.16)'
+                              ? 'rgba(239, 68, 68, 0.18)'
                               : item.priority.toLowerCase() === 'low'
-                              ? 'rgba(16, 185, 129, 0.16)'
-                              : 'rgba(245, 158, 11, 0.16)',
+                              ? 'rgba(16, 185, 129, 0.18)'
+                              : 'rgba(245, 158, 11, 0.18)',
                           color:
                             item.priority.toLowerCase() === 'high'
                               ? '#EF4444'
@@ -610,15 +653,31 @@ export function DailyScheduleTimeline({
                               : '#F59E0B',
                           border: `1px solid ${
                             item.priority.toLowerCase() === 'high'
-                              ? 'rgba(239, 68, 68, 0.35)'
+                              ? 'rgba(239, 68, 68, 0.4)'
                               : item.priority.toLowerCase() === 'low'
-                              ? 'rgba(16, 185, 129, 0.35)'
-                              : 'rgba(245, 158, 11, 0.35)'
+                              ? 'rgba(16, 185, 129, 0.4)'
+                              : 'rgba(245, 158, 11, 0.4)'
                           }`,
                           whiteSpace: 'nowrap',
                           textTransform: 'capitalize',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
+                        <span
+                          style={{
+                            width: '4px',
+                            height: '4px',
+                            borderRadius: '50%',
+                            background:
+                              item.priority.toLowerCase() === 'high'
+                                ? '#EF4444'
+                                : item.priority.toLowerCase() === 'low'
+                                ? '#10B981'
+                                : '#F59E0B',
+                          }}
+                        />
                         {item.priority}
                       </span>
                     )}
@@ -629,11 +688,11 @@ export function DailyScheduleTimeline({
                         style={{
                           fontSize: '0.7rem',
                           fontWeight: 600,
-                          padding: '3px 8px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)',
-                          color: 'var(--primary-color)',
-                          border: '1px solid rgba(var(--primary-rgb, 23, 105, 255), 0.25)',
+                          backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                          color: '#A78BFA',
+                          border: '1px solid rgba(139, 92, 246, 0.35)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
@@ -670,9 +729,9 @@ export function DailyScheduleTimeline({
                           gap: '5px',
                           padding: '4px 12px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(16, 185, 129, 0.16)',
-                          border: '1px solid rgba(16, 185, 129, 0.4)',
-                          color: '#10B981',
+                          backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                          border: '1px solid rgba(16, 185, 129, 0.45)',
+                          color: '#34D399',
                           fontSize: '0.74rem',
                           fontWeight: 700,
                         }}
@@ -694,14 +753,15 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '6px',
                           padding: '4px 12px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(23, 105, 255, 0.22)',
-                          border: '1px solid rgba(56, 189, 248, 0.55)',
+                          backgroundColor: 'rgba(2, 132, 199, 0.25)',
+                          border: '1.5px solid #38BDF8',
                           color: '#38BDF8',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 800,
+                          boxShadow: '0 0 12px rgba(56, 189, 248, 0.4)',
                         }}
                         onClick={(e) => {
                           if (!readOnly && !isEvent) {
@@ -724,9 +784,9 @@ export function DailyScheduleTimeline({
                           gap: '5px',
                           padding: '4px 12px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(148, 163, 184, 0.1)',
-                          border: '1px solid var(--border-subtle)',
-                          color: 'var(--text-secondary)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          color: 'rgba(255, 255, 255, 0.7)',
                           fontSize: '0.74rem',
                           fontWeight: 600,
                         }}
@@ -751,11 +811,12 @@ export function DailyScheduleTimeline({
                           gap: '5px',
                           padding: '4px 12px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(239, 68, 68, 0.16)',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.22)',
+                          border: '1px solid #EF4444',
                           color: '#EF4444',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 800,
+                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)',
                         }}
                         onClick={(e) => {
                           if (!readOnly && !isEvent) {
@@ -778,9 +839,9 @@ export function DailyScheduleTimeline({
                           gap: '5px',
                           padding: '4px 12px',
                           borderRadius: '9999px',
-                          backgroundColor: 'rgba(139, 92, 246, 0.18)',
-                          border: '1px solid rgba(139, 92, 246, 0.4)',
-                          color: '#A78BFA',
+                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                          border: '1px solid rgba(139, 92, 246, 0.45)',
+                          color: '#C4B5FD',
                           fontSize: '0.74rem',
                           fontWeight: 700,
                         }}
@@ -793,8 +854,8 @@ export function DailyScheduleTimeline({
                     <span
                       style={{
                         fontSize: '0.72rem',
-                        color: 'var(--text-muted)',
-                        fontWeight: 500,
+                        color: 'rgba(255, 255, 255, 0.45)',
+                        fontWeight: 600,
                       }}
                     >
                       {durationStr}

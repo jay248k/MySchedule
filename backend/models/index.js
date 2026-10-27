@@ -13,6 +13,8 @@ const NotificationModel = require('./Notification');
 const SettingModel = require('./Setting');
 const UserProfileModel = require('./UserProfile');
 const WorkSessionModel = require('./WorkSession');
+const ScheduleDeviationModel = require('./ScheduleDeviation');
+const WorkRequestModel = require('./WorkRequest');
 
 // Initialize models
 const db = {
@@ -27,6 +29,8 @@ const db = {
   Setting: SettingModel(sequelize),
   UserProfile: UserProfileModel(sequelize),
   WorkSession: WorkSessionModel(sequelize),
+  ScheduleDeviation: ScheduleDeviationModel(sequelize),
+  WorkRequest: WorkRequestModel(sequelize),
 };
 
 // Establish associations

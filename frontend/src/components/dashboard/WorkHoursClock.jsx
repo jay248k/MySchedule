@@ -357,8 +357,7 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 3px 12px rgba(16, 185, 129, 0.35)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'transform 0.15s',
             }}
             title="Start tracking active work time"
           >
@@ -382,10 +381,9 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 3px 12px rgba(239, 68, 68, 0.4)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'transform 0.15s',
             }}
-            title="Stop timer and record reason (Break, Lunch, Meeting, etc.)"
+            title="Stop timer and record remarks"
           >
             <Square size={13} fill="#FFFFFF" />
             <span>Stop Work</span>

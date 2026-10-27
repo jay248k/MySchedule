@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -17,11 +17,18 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  Check,
+  FileText,
+  Clock,
+  X as XIcon,
+  AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { formatDate, getTodayDateString } from '../../utils/dateUtils';
+import { formatDate, getTodayDateString, isTaskOverdue } from '../../utils/dateUtils';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
+import CancelRemarksModal from '../requests/CancelRemarksModal';
+import RescheduleRequestModal from '../requests/RescheduleRequestModal';
 
 export function Header() {
   const navigate = useNavigate();
@@ -41,6 +48,12 @@ export function Header() {
     settings,
     setSettings,
     showToast,
+    requests,
+    completeWorkRequest,
+    rescheduleWorkRequest,
+    cancelWorkRequest,
+    updateTask,
+    toggleTaskComplete,
   } = useApp();
 
   const {
@@ -57,6 +70,8 @@ export function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [cancellingRequest, setCancellingRequest] = useState(null);
+  const [reschedulingRequest, setReschedulingRequest] = useState(null);
 
   // Global keyboard shortcut: Ctrl+K or Cmd+K
   useEffect(() => {
@@ -79,7 +94,74 @@ export function Header() {
     day: 'numeric',
   });
 
+  const autoMissedTasks = useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return [];
+    return tasks.filter((t) => {
+      if (t.status === 'completed' || t.status === 'cancelled') return false;
+      return isTaskOverdue(t);
+    });
+  }, [tasks]);
+
+  const pendingRequests = (requests || []).filter((r) => r.status === 'pending');
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const totalAlertCount = unreadCount + autoMissedTasks.length + pendingRequests.length;
+
+  const handleMarkRequestComplete = (reqId) => {
+    completeWorkRequest(reqId);
+  };
+
+  const handleMarkTaskComplete = (task) => {
+    toggleTaskComplete(task.id);
+    showToast({
+      type: 'success',
+      title: 'Task Completed',
+      message: `"${task.title}" has been marked as completed.`,
+    });
+  };
+
+  const handleConfirmCancelItem = (remarks) => {
+    if (cancellingRequest) {
+      if (cancellingRequest.isTask) {
+        updateTask(cancellingRequest.id, {
+          status: 'cancelled',
+          cancelRemarks: remarks.trim(),
+          updatedAt: new Date().toISOString(),
+        });
+        showToast({
+          type: 'warning',
+          title: 'Task Cancelled',
+          message: `"${cancellingRequest.title}" cancelled with remarks: "${remarks.trim()}".`,
+        });
+      } else {
+        cancelWorkRequest(cancellingRequest.id, remarks);
+      }
+      setCancellingRequest(null);
+    }
+  };
+
+  const handleConfirmRescheduleItem = ({ date, startTime, endTime, remarks }) => {
+    if (reschedulingRequest) {
+      if (reschedulingRequest.isTask) {
+        updateTask(reschedulingRequest.id, {
+          date,
+          startTime,
+          endTime,
+          timeSlot: `${startTime} - ${endTime}`,
+          status: 'pending',
+          rescheduleNotes: remarks || '',
+          updatedAt: new Date().toISOString(),
+        });
+        showToast({
+          type: 'info',
+          title: 'Task Rescheduled',
+          message: `"${reschedulingRequest.title}" moved to ${date} (${startTime} - ${endTime}).`,
+        });
+      } else {
+        rescheduleWorkRequest(reschedulingRequest.id, { date, startTime, endTime, remarks });
+      }
+      setReschedulingRequest(null);
+    }
+  };
 
   return (
     <header className="top-header">
@@ -408,19 +490,27 @@ export function Header() {
             id="btn-notifications"
           >
             <Bell size={19} />
-            {unreadCount > 0 && (
+            {totalAlertCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
                   top: '6px',
                   right: '6px',
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--danger)',
-                  boxShadow: '0 0 6px var(--danger)',
+                  minWidth: '16px',
+                  height: '16px',
+                  borderRadius: '10px',
+                  backgroundColor: pendingRequests.length > 0 ? '#F59E0B' : 'var(--danger)',
+                  color: '#FFFFFF',
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 3px',
                 }}
-              />
+              >
+                {totalAlertCount}
+              </span>
             )}
           </button>
 
@@ -435,30 +525,31 @@ export function Header() {
                   position: 'absolute',
                   right: 0,
                   top: '110%',
-                  width: '320px',
+                  width: '360px',
                   background: 'var(--card-bg)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-lg)',
-                  boxShadow: 'var(--shadow-xl)',
+                  boxShadow: 'none',
                   zIndex: 50,
                   overflow: 'hidden',
                 }}
               >
                 <div
                   style={{
-                    padding: '14px 18px',
+                    padding: '12px 16px',
                     borderBottom: '1px solid var(--border-color)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    background: 'rgba(0,0,0,0.15)',
                   }}
                 >
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Notifications</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>Notifications & Requests</span>
                   {notifications.length > 0 && (
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      style={{ padding: '2px 6px', fontSize: '0.75rem' }}
+                      style={{ padding: '2px 6px', fontSize: '0.74rem' }}
                       onClick={clearNotifications}
                     >
                       Clear all
@@ -466,10 +557,261 @@ export function Header() {
                   )}
                 </div>
 
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {notifications.length === 0 ? (
+                <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                  {/* Automatically Detected Missed Tasks Section */}
+                  {autoMissedTasks.length > 0 && (
+                    <div style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                      <div
+                        style={{
+                          padding: '8px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          borderBottom: '1px solid rgba(239, 68, 68, 0.25)',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Unmarked Tasks ({autoMissedTasks.length})
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Time Passed</span>
+                      </div>
+
+                      {autoMissedTasks.map((t) => (
+                        <div
+                          key={t.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {t.title}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: '#EF4444', fontWeight: 700 }}>
+                              {t.date}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                            Scheduled: {t.startTime || ''} {t.endTime ? `- ${t.endTime}` : ''} (Not marked)
+                          </div>
+
+                          {/* The 3 Action Buttons */}
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr 1fr',
+                              gap: '6px',
+                              marginTop: '4px',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleMarkTaskComplete(t)}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#10B981',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <Check size={12} /> Complete
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setReschedulingRequest({ ...t, isTask: true })}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#3B82F6',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <Calendar size={12} /> Reschedule
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCancellingRequest({ ...t, isTask: true })}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#EF4444',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <XIcon size={12} /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pending Missed Work Requests Section */}
+                  {pendingRequests.length > 0 && (
+                    <div style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(245, 158, 11, 0.04)' }}>
+                      <div
+                        style={{
+                          padding: '8px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: 'rgba(245, 158, 11, 0.1)',
+                          borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Missed Work Requests ({pendingRequests.length})
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Action Required</span>
+                      </div>
+
+                      {pendingRequests.map((req) => (
+                        <div
+                          key={req.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {req.title}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                              {req.date}
+                            </span>
+                          </div>
+
+                          {/* Reason */}
+                          <div
+                            style={{
+                              fontSize: '0.78rem',
+                              color: 'var(--text-secondary)',
+                              background: 'rgba(0,0,0,0.2)',
+                              padding: '5px 8px',
+                              borderRadius: '6px',
+                              borderLeft: '2px solid #F59E0B',
+                            }}
+                          >
+                            <strong style={{ color: 'var(--text-primary)' }}>Reason:</strong> {req.reason}
+                          </div>
+
+                          {/* The 3 Action Buttons */}
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr 1fr',
+                              gap: '6px',
+                              marginTop: '4px',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleMarkRequestComplete(req.id)}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#10B981',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <Check size={12} /> Complete
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setReschedulingRequest(req)}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#3B82F6',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <Calendar size={12} /> Reschedule
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCancellingRequest(req)}
+                              style={{
+                                padding: '5px 4px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#EF4444',
+                                color: '#FFFFFF',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <XIcon size={12} /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Standard Notifications */}
+                  {notifications.length === 0 && pendingRequests.length === 0 && autoMissedTasks.length === 0 ? (
                     <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      No notifications at this time.
+                      No notifications or pending requests.
                     </div>
                   ) : (
                     notifications.map((item) => (
@@ -684,6 +1026,22 @@ export function Header() {
       <GlobalSearchModal
         isOpen={isGlobalSearchOpen}
         onClose={() => setIsGlobalSearchOpen(false)}
+      />
+
+      {/* Mandatory Cancel Remarks Modal */}
+      <CancelRemarksModal
+        isOpen={!!cancellingRequest}
+        requestTitle={cancellingRequest?.title || ''}
+        onClose={() => setCancellingRequest(null)}
+        onConfirm={handleConfirmCancelItem}
+      />
+
+      {/* Reschedule Request Modal */}
+      <RescheduleRequestModal
+        isOpen={!!reschedulingRequest}
+        request={reschedulingRequest}
+        onClose={() => setReschedulingRequest(null)}
+        onConfirm={handleConfirmRescheduleItem}
       />
     </header>
   );

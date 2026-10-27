@@ -306,71 +306,196 @@ export function WorkTracker() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '12px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: '16px',
         }}
       >
         {/* Total Time */}
-        <div className="dash-stat-card" style={{ borderLeft: '4px solid #10B981' }}>
+        <div
+          style={{
+            background: 'var(--card-bg, #1a2234)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            borderLeft: '4px solid #10B981',
+            borderRadius: '16px',
+            padding: '18px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Total Tracked Work
             </span>
-            <Clock size={18} color="#10B981" />
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(16, 185, 129, 0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#10B981',
+              }}
+            >
+              <Clock size={18} />
+            </div>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
-            {totalHours}h {totalMinutes}m {totalSecs}s
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Across {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'} on this date
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {totalHours}h {totalMinutes}m {totalSecs}s
+              </span>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              Across {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'} on this date
+            </div>
           </div>
         </div>
 
         {/* Total Sessions */}
-        <div className="dash-stat-card" style={{ borderLeft: '4px solid #3B82F6' }}>
+        <div
+          style={{
+            background: 'var(--card-bg, #1a2234)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            borderLeft: '4px solid #3B82F6',
+            borderRadius: '16px',
+            padding: '18px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Completed Sessions
             </span>
-            <Timer size={18} color="#3B82F6" />
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(59, 130, 246, 0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#3B82F6',
+              }}
+            >
+              <Timer size={18} />
+            </div>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
-            {sessionCount}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {isRunning ? '1 active currently running' : 'All sessions logged'}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {sessionCount}
+              </span>
+              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                {sessionCount === 1 ? 'Session' : 'Sessions'}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              {isRunning ? '1 active currently running' : 'All sessions logged'}
+            </div>
           </div>
         </div>
 
         {/* Avg Duration */}
-        <div className="dash-stat-card" style={{ borderLeft: '4px solid #8B5CF6' }}>
+        <div
+          style={{
+            background: 'var(--card-bg, #1a2234)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            borderLeft: '4px solid #8B5CF6',
+            borderRadius: '16px',
+            padding: '18px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Average Session
             </span>
-            <TrendingUp size={18} color="#8B5CF6" />
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(139, 92, 246, 0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#8B5CF6',
+              }}
+            >
+              <TrendingUp size={18} />
+            </div>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
-            {avgSessionMinutes} min
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Average focused duration per block
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {avgSessionMinutes}
+              </span>
+              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                min
+              </span>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              Average focused duration per block
+            </div>
           </div>
         </div>
 
         {/* Pause / Stop Count */}
-        <div className="dash-stat-card" style={{ borderLeft: '4px solid #F59E0B' }}>
+        <div
+          style={{
+            background: 'var(--card-bg, #1a2234)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            borderLeft: '4px solid #F59E0B',
+            borderRadius: '16px',
+            padding: '18px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Stop Reasons Logged
             </span>
-            <Coffee size={18} color="#F59E0B" />
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(245, 158, 11, 0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#F59E0B',
+              }}
+            >
+              <Coffee size={18} />
+            </div>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
-            {Object.keys(reasonBreakdown).length} Types
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Breaks, meals, meetings & interruptions
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {Object.keys(reasonBreakdown).length}
+              </span>
+              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                Types
+              </span>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              Breaks, meals, meetings & interruptions
+            </div>
           </div>
         </div>
       </div>
@@ -439,7 +564,6 @@ export function WorkTracker() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.4)',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -463,12 +587,11 @@ export function WorkTracker() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 20px rgba(239, 68, 68, 0.45)',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <Square size={16} fill="#FFFFFF" />
-                <span>Stop Work & Take Reason</span>
+                <span>Stop Work & Enter Remarks</span>
               </button>
             )}
           </div>
@@ -687,7 +810,7 @@ export function WorkTracker() {
                         gap: '5px',
                       }}
                     >
-                      <Square size={12} fill="#FFFFFF" /> Stop & Take Reason
+                      <Square size={12} fill="#FFFFFF" /> Stop & Enter Remarks
                     </button>
                   </div>
                 </div>
@@ -759,7 +882,7 @@ export function WorkTracker() {
                               gap: '4px',
                             }}
                           >
-                            <span>Stopped for:</span>
+                            <span>Remarks:</span>
                             <strong>{session.stopReason || 'Finished Work'}</strong>
                           </span>
                         </div>

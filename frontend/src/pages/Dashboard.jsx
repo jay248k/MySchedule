@@ -19,14 +19,13 @@ import {
   AlertTriangle,
   ListTodo,
   CalendarDays,
+  Calendar,
   ArrowRight,
   TrendingUp,
-  Sparkles,
   Zap,
   PieChart as PieChartIcon,
-  Wand2,
-  Headphones,
   Flame,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getTodayDateString, formatDate } from '../utils/dateUtils';
@@ -40,7 +39,6 @@ import {
 import { ProgressRing, ProgressBar } from '../components/common/ProgressRing';
 import { DailyScheduleTimeline } from '../components/tasks/DailyScheduleTimeline';
 import { WorkHoursClock } from '../components/dashboard/WorkHoursClock';
-import { SmartRescheduleModal } from '../components/tasks/SmartRescheduleModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -147,31 +145,39 @@ export function Dashboard() {
     return dist.filter((c) => c.value > 0);
   }, [tasks, categories]);
 
-  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
-  const overdueTasksCount = useMemo(() => {
-    return tasks.filter((t) => t.date < todayStr && t.status !== 'completed').length;
-  }, [tasks, todayStr]);
-
   // 365-Day Activity Contribution Graph (Past 52 weeks = 364 days)
   const heatmapDays = useMemo(() => {
     const days = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const currentDayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon...
-    const daysFromMonday = (currentDayOfWeek + 6) % 7;
+    const daysFromMonday = (currentDayOfWeek + 6) % 7; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
 
-    const totalDays = 52 * 7;
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (totalDays - 1 - (6 - daysFromMonday)));
+    // Monday of the current week
+    const currentWeekMonday = new Date(today);
+    currentWeekMonday.setDate(today.getDate() - daysFromMonday);
 
-    for (let i = 0; i < totalDays; i++) {
+    // Starting Monday 51 weeks before this week
+    const startDate = new Date(currentWeekMonday);
+    startDate.setDate(currentWeekMonday.getDate() - 51 * 7);
+
+    for (let i = 0; i < 52 * 7; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${dayNum}`;
+
       days.push({
         date: d,
         dateStr,
-        dayOfWeek: d.getDay(),
+        dayOfWeek: (d.getDay() + 6) % 7, // 0 is Mon, 6 is Sun
         month: d.getMonth(),
+        year: d.getFullYear(),
+        dayNumber: d.getDate(),
         isFuture: d > today,
       });
     }
@@ -200,13 +206,14 @@ export function Dashboard() {
 
     let currentStreak = 0;
     let checkDate = new Date();
-    const todayFormatted = checkDate.toISOString().split('T')[0];
+    const todayFormatted = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+    
     if (completedTaskCountsByDate[todayFormatted]) {
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
       checkDate.setDate(checkDate.getDate() - 1);
-      const yStr = checkDate.toISOString().split('T')[0];
+      const yStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
       if (completedTaskCountsByDate[yStr]) {
         currentStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -214,7 +221,7 @@ export function Dashboard() {
     }
     if (currentStreak > 0) {
       while (true) {
-        const dStr = checkDate.toISOString().split('T')[0];
+        const dStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
         if (completedTaskCountsByDate[dStr]) {
           currentStreak++;
           checkDate.setDate(checkDate.getDate() - 1);
@@ -227,24 +234,71 @@ export function Dashboard() {
     return { totalCompletedYear, currentStreak };
   }, [heatmapDays, completedTaskCountsByDate]);
 
-  // Month column labels for heatmap
+  // Month column labels accurately positioned above starting columns with year indicator
   const monthLabels = useMemo(() => {
     const labels = [];
     let lastMonth = -1;
+    let lastCol = -10;
+
     for (let col = 0; col < 52; col++) {
-      const day = heatmapDays[col * 7];
-      if (day && day.month !== lastMonth) {
-        lastMonth = day.month;
-        labels.push({
-          col,
-          label: day.date.toLocaleDateString('en-US', { month: 'short' }),
-        });
+      const weekDays = heatmapDays.slice(col * 7, col * 7 + 7);
+      const firstDay = weekDays[0];
+      const monthStartDay = weekDays.find((d) => d.dayNumber <= 7) || firstDay;
+
+      if (monthStartDay && monthStartDay.month !== lastMonth) {
+        if (col - lastCol >= 3) {
+          const isYearTransition = labels.length === 0 || monthStartDay.year !== labels[labels.length - 1].year;
+          lastMonth = monthStartDay.month;
+          lastCol = col;
+          labels.push({
+            col,
+            monthIndex: monthStartDay.month,
+            year: monthStartDay.year,
+            shortLabel: monthStartDay.date.toLocaleDateString('en-US', { month: 'short' }),
+            label: isYearTransition
+              ? `${monthStartDay.date.toLocaleDateString('en-US', { month: 'short' })} '${String(monthStartDay.year).slice(-2)}`
+              : monthStartDay.date.toLocaleDateString('en-US', { month: 'short' }),
+            fullLabel: monthStartDay.date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            isYearTransition,
+          });
+        }
       }
     }
     return labels;
   }, [heatmapDays]);
 
   const [heatmapTooltip, setHeatmapTooltip] = useState(null);
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [selectedHeatmapDay, setSelectedHeatmapDay] = useState(null);
+  const [selectedHeatmapMonth, setSelectedHeatmapMonth] = useState(null);
+
+  // Active day details for the date inspector bar (hovered > clicked > today)
+  const activeInspectionDay = useMemo(() => {
+    if (hoveredDay) return hoveredDay;
+    if (selectedHeatmapDay) {
+      const found = heatmapDays.find((d) => d.dateStr === selectedHeatmapDay);
+      if (found) {
+        return {
+          ...found,
+          count: completedTaskCountsByDate[found.dateStr] || 0,
+          dayName: found.date.toLocaleDateString('en-US', { weekday: 'long' }),
+          formattedDate: found.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          isSelected: true,
+        };
+      }
+    }
+    const todayMatch = heatmapDays.find((d) => d.dateStr === todayStr);
+    if (todayMatch) {
+      return {
+        ...todayMatch,
+        count: completedTaskCountsByDate[todayMatch.dateStr] || 0,
+        dayName: todayMatch.date.toLocaleDateString('en-US', { weekday: 'long' }),
+        formattedDate: todayMatch.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        isToday: true,
+      };
+    }
+    return null;
+  }, [hoveredDay, selectedHeatmapDay, heatmapDays, completedTaskCountsByDate, todayStr]);
 
   return (
     <motion.div
@@ -253,69 +307,7 @@ export function Dashboard() {
       animate="visible"
       style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
     >
-      {/* Smart Reschedule Overdue Alert Banner */}
-      {overdueTasksCount > 0 && (
-        <motion.div
-          variants={cardVariants}
-          style={{
-            padding: '14px 20px',
-            borderRadius: 'var(--radius-lg)',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.05) 100%)',
-            border: '1.5px solid rgba(245, 158, 11, 0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#F59E0B',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Wand2 size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {overdueTasksCount} Overdue Task{overdueTasksCount === 1 ? '' : 's'} Detected
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                You have unfinished tasks from previous days. Auto-balance them into open calendar slots with zero manual drag-and-drop.
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => setIsRescheduleOpen(true)}
-            style={{
-              background: '#F59E0B',
-              color: '#FFFFFF',
-              border: 'none',
-              fontWeight: 800,
-              padding: '7px 16px',
-              borderRadius: 'var(--radius-md)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Sparkles size={14} /> Smart Auto-Balance Schedule
-          </button>
-        </motion.div>
-      )}
-
-      {/* 2. Work Hours Live Clock Widget Card (Digital LED + Analog Clock) */}
+      {/* 1. Work Hours Live Clock Widget Card (Digital LED + Analog Clock) */}
       <motion.section variants={cardVariants}>
         <WorkHoursClock tasks={tasks} selectedDate={activeDate} />
       </motion.section>
@@ -791,63 +783,139 @@ export function Dashboard() {
       </motion.div>
 
       {/* 6. Today's Schedule Sequence (Full Screen Width) */}
-      <motion.div variants={cardVariants} className="card" style={{ padding: '16px 20px', width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <motion.div
+        variants={cardVariants}
+        style={{
+          padding: '22px 24px',
+          width: '100%',
+          borderRadius: '20px',
+          background: 'linear-gradient(135deg, rgba(22, 30, 49, 0.95) 0%, rgba(13, 20, 36, 0.98) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 16px 40px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Subtle ambient lighting accent */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-80px',
+            right: '-80px',
+            width: '280px',
+            height: '280px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(23, 105, 255, 0.14) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '14px', position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: '#0284C7',
+                width: '44px',
+                height: '44px',
+                borderRadius: '13px',
+                background: 'linear-gradient(135deg, #1769FF 0%, #38BDF8 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
+                boxShadow: '0 4px 16px rgba(23, 105, 255, 0.4)',
                 color: '#ffffff',
                 flexShrink: 0,
               }}
             >
-              <CalendarDays size={20} strokeWidth={2.2} />
+              <CalendarDays size={22} strokeWidth={2.4} />
             </div>
             <div>
-              <h2 className="card-title" style={{ margin: 0, fontSize: '1.08rem', fontWeight: 700 }}>
-                Today's Schedule Sequence
-              </h2>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Stay on track with your planned tasks
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+                  Today's Schedule Sequence
+                </h2>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 9px',
+                    borderRadius: '9999px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#34D399',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  <span className="live-pulse-dot" style={{ width: '6px', height: '6px', background: '#34D399' }} />
+                  Live Flow
+                </span>
+              </div>
+              <span style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 500, marginTop: '2px', display: 'block' }}>
+                Sequential timeline progression of planned tasks
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              {formatDate(todayStr, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {/* Progress Pill */}
+            {todayStats.total > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '5px 12px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                }}
+              >
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#FFFFFF' }}>
+                  {todayStats.completed}/{todayStats.total} Done
+                </span>
+                <div style={{ width: '56px', height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${todayStats.percentage}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #10B981 0%, #34D399 100%)',
+                      borderRadius: '999px',
+                      transition: 'width 0.4s ease',
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#34D399' }}>
+                  {todayStats.percentage}%
+                </span>
+              </div>
+            )}
+
+            <span style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600 }}>
+              {formatDate(todayStr, { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '3px 10px',
-                borderRadius: '9999px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                color: '#10B981',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-              }}
-            >
-              <span className="live-pulse-dot" style={{ width: '6px', height: '6px' }} />
-              Live
-            </span>
+
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="btn btn-sm"
               onClick={() => navigate('/calendar')}
-              style={{ color: 'var(--primary-color)', fontWeight: 700, gap: '4px', fontSize: '0.78rem', padding: '4px 8px' }}
+              style={{
+                background: 'rgba(23, 105, 255, 0.14)',
+                border: '1px solid rgba(23, 105, 255, 0.35)',
+                color: '#60A5FA',
+                fontWeight: 700,
+                gap: '6px',
+                fontSize: '0.78rem',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
             >
-              Calendar View <ArrowRight size={13} />
+              <span>Calendar View</span>
+              <ArrowRight size={13} />
             </button>
           </div>
         </div>
@@ -1000,137 +1068,325 @@ export function Dashboard() {
         </div>
 
         {/* Heatmap Grid */}
-        <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
-          <div style={{ minWidth: '760px' }}>
+        <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
+          <div style={{ minWidth: '780px' }}>
             {/* Months row */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '28px repeat(52, 1fr)',
+                gridTemplateColumns: '36px repeat(52, 1fr)',
                 gap: '3px',
-                marginBottom: '6px',
+                marginBottom: '8px',
                 fontSize: '0.72rem',
                 color: 'var(--text-muted)',
                 fontWeight: 600,
+                alignItems: 'center',
               }}
             >
               <div />
-              {monthLabels.map((m, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    gridColumnStart: m.col + 2,
-                    textAlign: 'left',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {m.label}
-                </div>
-              ))}
+              {monthLabels.map((m, idx) => {
+                const isSelectedMonth = selectedHeatmapMonth === m.monthIndex;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedHeatmapMonth(isSelectedMonth ? null : m.monthIndex)}
+                    style={{
+                      gridColumnStart: m.col + 2,
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      color: isSelectedMonth ? '#38BDF8' : m.isYearTransition ? '#93C5FD' : '#94A3B8',
+                      fontWeight: m.isYearTransition || isSelectedMonth ? 700 : 600,
+                      cursor: 'pointer',
+                      transition: 'color 0.15s ease',
+                      padding: '2px 0',
+                    }}
+                    title={`${m.fullLabel} - Click to filter month`}
+                  >
+                    {m.label}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* 7-Row Grid with Mon, Wed, Fri labels */}
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  height: '95px',
-                  fontSize: '0.68rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  paddingRight: '6px',
-                  width: '28px',
-                  flexShrink: 0,
-                  userSelect: 'none',
-                }}
-              >
-                <span>Mon</span>
-                <span>Wed</span>
-                <span>Fri</span>
-              </div>
-
-              {/* 52 Columns */}
+            {/* Main Heatmap: 36px Day Labels Column + 52 Week Columns */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '36px repeat(52, 1fr)',
+                gap: '3px',
+                alignItems: 'stretch',
+              }}
+            >
+              {/* Day labels column - Exactly 7 rows matching the 7 cell rows */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(52, 1fr)',
+                  gridTemplateRows: 'repeat(7, 1fr)',
                   gap: '3px',
-                  flex: 1,
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  userSelect: 'none',
+                  paddingRight: '6px',
                 }}
               >
-                {Array.from({ length: 52 }).map((_, colIdx) => {
-                  const weekDays = heatmapDays.slice(colIdx * 7, colIdx * 7 + 7);
-                  return (
-                    <div
-                      key={colIdx}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '3px',
-                      }}
-                    >
-                      {weekDays.map((day) => {
-                        const count = completedTaskCountsByDate[day.dateStr] || 0;
-                        const isTodayDate = day.dateStr === todayStr;
+                <div style={{ display: 'flex', alignItems: 'center', color: '#CBD5E1', fontWeight: 700 }}>Mon</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#64748B', fontSize: '0.62rem' }}>Tue</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#CBD5E1', fontWeight: 700 }}>Wed</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#64748B', fontSize: '0.62rem' }}>Thu</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#CBD5E1', fontWeight: 700 }}>Fri</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#64748B', fontSize: '0.62rem' }}>Sat</div>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#CBD5E1', fontWeight: 700 }}>Sun</div>
+              </div>
 
-                        let bg = 'rgba(255, 255, 255, 0.04)';
-                        let border = '1px solid rgba(255, 255, 255, 0.07)';
+              {/* 52 Columns */}
+              {Array.from({ length: 52 }).map((_, colIdx) => {
+                const weekDays = heatmapDays.slice(colIdx * 7, colIdx * 7 + 7);
+                return (
+                  <div
+                    key={colIdx}
+                    style={{
+                      display: 'grid',
+                      gridTemplateRows: 'repeat(7, 1fr)',
+                      gap: '3px',
+                    }}
+                  >
+                    {weekDays.map((day) => {
+                      const count = completedTaskCountsByDate[day.dateStr] || 0;
+                      const isTodayDate = day.dateStr === todayStr;
+                      const isSelected = selectedHeatmapDay === day.dateStr;
+                      const isMonthMatch = selectedHeatmapMonth === null || day.month === selectedHeatmapMonth;
 
-                        if (day.isFuture) {
-                          bg = 'transparent';
-                          border = '1px dashed rgba(255, 255, 255, 0.05)';
-                        } else if (count >= 4) {
-                          bg = '#34D399';
-                          border = '1px solid #10B981';
-                        } else if (count === 3) {
-                          bg = '#10B981';
-                          border = '1px solid #059669';
-                        } else if (count === 2) {
-                          bg = 'rgba(16, 185, 129, 0.65)';
-                          border = '1px solid rgba(16, 185, 129, 0.8)';
-                        } else if (count === 1) {
-                          bg = 'rgba(16, 185, 129, 0.35)';
-                          border = '1px solid rgba(16, 185, 129, 0.5)';
-                        }
+                      let bg = 'rgba(255, 255, 255, 0.04)';
+                      let border = '1px solid rgba(255, 255, 255, 0.07)';
 
-                        if (isTodayDate) {
-                          border = '1.5px solid var(--primary-color)';
-                        }
+                      if (day.isFuture) {
+                        bg = 'transparent';
+                        border = '1px dashed rgba(255, 255, 255, 0.05)';
+                      } else if (count >= 4) {
+                        bg = '#34D399';
+                        border = '1px solid #10B981';
+                      } else if (count === 3) {
+                        bg = '#10B981';
+                        border = '1px solid #059669';
+                      } else if (count === 2) {
+                        bg = 'rgba(16, 185, 129, 0.65)';
+                        border = '1px solid rgba(16, 185, 129, 0.8)';
+                      } else if (count === 1) {
+                        bg = 'rgba(16, 185, 129, 0.35)';
+                        border = '1px solid rgba(16, 185, 129, 0.5)';
+                      }
 
-                        return (
-                          <div
-                            key={day.dateStr}
-                            style={{
-                              width: '100%',
-                              aspectRatio: '1 / 1',
-                              minWidth: '10px',
-                              minHeight: '10px',
-                              borderRadius: '3px',
-                              background: bg,
-                              border,
-                              cursor: day.isFuture ? 'default' : 'pointer',
-                              transition: 'transform 0.15s ease, filter 0.15s ease',
-                              boxShadow: count >= 3 ? '0 0 5px rgba(16, 185, 129, 0.4)' : 'none',
-                            }}
-                            onMouseEnter={(e) => {
-                              if (day.isFuture) return;
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setHeatmapTooltip({
-                                x: rect.left + rect.width / 2,
-                                y: rect.top - 8,
-                                dateStr: day.dateStr,
-                                count,
-                              });
-                            }}
-                            onMouseLeave={() => setHeatmapTooltip(null)}
-                          />
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                      let opacity = isMonthMatch ? 1 : 0.22;
+                      let outline = isSelected ? '2px solid #F59E0B' : 'none';
+                      let boxShadow = isSelected
+                        ? '0 0 10px rgba(245, 158, 11, 0.7)'
+                        : isTodayDate
+                        ? '0 0 8px rgba(56, 189, 248, 0.8)'
+                        : count >= 3
+                        ? '0 0 5px rgba(16, 185, 129, 0.4)'
+                        : 'none';
+
+                      if (isTodayDate) {
+                        border = '2px solid #38BDF8';
+                      }
+
+                      return (
+                        <div
+                          key={day.dateStr}
+                          onClick={() => {
+                            if (day.isFuture) return;
+                            setSelectedHeatmapDay(isSelected ? null : day.dateStr);
+                          }}
+                          onMouseEnter={(e) => {
+                            if (day.isFuture) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const dayName = day.date.toLocaleDateString('en-US', { weekday: 'long' });
+                            const formattedDate = day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            setHeatmapTooltip({
+                              x: rect.left + rect.width / 2,
+                              y: rect.top - 8,
+                              dateStr: day.dateStr,
+                              dayName,
+                              formattedDate,
+                              count,
+                            });
+                            setHoveredDay({
+                              ...day,
+                              count,
+                              dayName,
+                              formattedDate: day.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                            });
+                          }}
+                          onMouseLeave={() => {
+                            setHeatmapTooltip(null);
+                            setHoveredDay(null);
+                          }}
+                          style={{
+                            width: '100%',
+                            aspectRatio: '1 / 1',
+                            minWidth: '10px',
+                            minHeight: '10px',
+                            borderRadius: '3px',
+                            background: bg,
+                            border,
+                            outline,
+                            opacity,
+                            boxShadow,
+                            cursor: day.isFuture ? 'default' : 'pointer',
+                            position: 'relative',
+                            transition: 'transform 0.15s ease, filter 0.15s ease, opacity 0.2s ease',
+                          }}
+                        >
+                          {isTodayDate && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '3px',
+                                height: '3px',
+                                borderRadius: '50%',
+                                background: '#38BDF8',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Live Date, Day & Month Inspector Bar */}
+        <div
+          style={{
+            marginTop: '14px',
+            padding: '12px 18px',
+            borderRadius: '12px',
+            background: 'rgba(15, 23, 42, 0.65)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          {/* Left: Active/Hovered Day details */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                color: activeInspectionDay?.count > 0 ? '#34D399' : '#94A3B8',
+                border: `1px solid ${activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                flexShrink: 0,
+              }}
+            >
+              <CalendarDays size={18} />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {activeInspectionDay?.dayName}, {activeInspectionDay?.formattedDate}
+                </span>
+                {activeInspectionDay?.isToday && (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38BDF8',
+                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                    }}
+                  >
+                    Today
+                  </span>
+                )}
+                {selectedHeatmapDay && selectedHeatmapDay === activeInspectionDay?.dateStr && (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#F59E0B',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                    }}
+                  >
+                    Selected
+                  </span>
+                )}
+                {selectedHeatmapMonth !== null && (
+                  <button
+                    onClick={() => setSelectedHeatmapMonth(null)}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#94A3B8',
+                      fontSize: '0.68rem',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Reset Month Filter ✕
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', fontSize: '0.78rem' }}>
+                {activeInspectionDay?.isFuture ? (
+                  <span style={{ color: 'var(--text-muted)' }}>Upcoming date (future)</span>
+                ) : activeInspectionDay?.count > 0 ? (
+                  <span style={{ color: '#34D399', fontWeight: 700 }}>
+                    ✓ {activeInspectionDay.count} task{activeInspectionDay.count === 1 ? '' : 's'} completed on this day
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)' }}>No completed tasks recorded on this date</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Year Range & Total Completed */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              fontSize: '0.78rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>52-Week Range</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                {heatmapDays[0]?.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            </div>
+
+            <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.1)' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Total Year Activity</div>
+              <div style={{ color: '#34D399', fontWeight: 800 }}>
+                {heatmapStats.totalCompletedYear} completed tasks
               </div>
             </div>
           </div>
@@ -1147,31 +1403,43 @@ export function Dashboard() {
               background: '#0F172A',
               color: '#FFFFFF',
               border: '1px solid #334155',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '0.76rem',
               fontWeight: 600,
               pointerEvents: 'none',
               zIndex: 9999,
-              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
               whiteSpace: 'nowrap',
             }}
           >
-            <div style={{ color: heatmapTooltip.count > 0 ? '#34D399' : 'var(--text-muted)' }}>
-              {heatmapTooltip.count} task{heatmapTooltip.count === 1 ? '' : 's'} completed
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <span style={{ fontWeight: 800, color: '#F8FAFC' }}>
+                {heatmapTooltip.dayName}, {heatmapTooltip.formattedDate}
+              </span>
+              {heatmapTooltip.dateStr === todayStr && (
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    background: 'rgba(56, 189, 248, 0.2)',
+                    color: '#38BDF8',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                  }}
+                >
+                  Today
+                </span>
+              )}
             </div>
-            <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
-              {formatDate(heatmapTooltip.dateStr, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+            <div style={{ color: heatmapTooltip.count > 0 ? '#34D399' : '#94A3B8', fontSize: '0.74rem' }}>
+              {heatmapTooltip.count > 0
+                ? `✓ ${heatmapTooltip.count} task{heatmapTooltip.count === 1 ? '' : 's'} completed`
+                : '0 tasks completed'}
             </div>
           </div>
         )}
       </motion.div>
-
-      {/* Smart Schedule Auto-Balancing Modal */}
-      <SmartRescheduleModal
-        isOpen={isRescheduleOpen}
-        onClose={() => setIsRescheduleOpen(false)}
-      />
     </motion.div>
   );
 }

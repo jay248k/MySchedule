@@ -84,6 +84,8 @@ export function AppProvider({ children }) {
   const [workSessions, setWorkSessions] = useState(() => storageService.getWorkSessions());
   const [activeWorkSession, setActiveWorkSession] = useState(() => storageService.getActiveWorkSession());
   const [isStopModalOpen, setIsStopModalOpen] = useState(false);
+  const [deviations, setDeviations] = useState(() => storageService.getDeviations());
+  const [requests, setRequests] = useState(() => storageService.getRequests());
 
   // Keep local user state synchronized with Redux auth user
   useEffect(() => {
@@ -109,18 +111,22 @@ export function AppProvider({ children }) {
   // Real-time backend data synchronization across Web & Mobile
   const fetchAllData = useCallback(async () => {
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes] = await Promise.all([
+      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes] = await Promise.all([
         api.getTasks().catch(() => null),
         api.getCategories().catch(() => null),
         api.getGoals().catch(() => null),
         api.getEvents().catch(() => null),
         api.getWorkSessions().catch(() => null),
+        api.getDeviations().catch(() => null),
+        api.getRequests().catch(() => null),
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
         const serverIds = new Set(tasksRes.data.map((t) => t.id));
         const localTasks = storageService.getTasks().filter((t) => !serverIds.has(t.id));
-        dispatch(setTasks([...tasksRes.data, ...localTasks]));
+        const combinedTasks = [...tasksRes.data, ...localTasks];
+        dispatch(setTasks(combinedTasks));
+        storageService.saveTasks(combinedTasks);
       }
       if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
         const serverIds = new Set(categoriesRes.data.map((c) => c.id));
@@ -143,6 +149,20 @@ export function AppProvider({ children }) {
         const combined = [...workSessionsRes.data, ...localSessions];
         setWorkSessions(combined);
         storageService.saveWorkSessions(combined);
+      }
+      if (deviationsRes?.data && Array.isArray(deviationsRes.data)) {
+        const serverIds = new Set(deviationsRes.data.map((d) => d.id));
+        const localDeviations = storageService.getDeviations().filter((d) => !serverIds.has(d.id));
+        const combined = [...deviationsRes.data, ...localDeviations];
+        setDeviations(combined);
+        storageService.saveDeviations(combined);
+      }
+      if (requestsRes?.data && Array.isArray(requestsRes.data)) {
+        const serverIds = new Set(requestsRes.data.map((r) => r.id));
+        const localRequests = storageService.getRequests().filter((r) => !serverIds.has(r.id));
+        const combined = [...requestsRes.data, ...localRequests];
+        setRequests(combined);
+        storageService.saveRequests(combined);
       }
     } catch (err) {
       console.warn('Backend sync warning:', err);
@@ -1081,6 +1101,276 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
+  // Schedule Deviations Handlers (Planned vs Actual / Mistakes)
+  const addDeviation = useCallback(
+    async (deviationData) => {
+      const payload = {
+        id: `dev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: deviationData.date || getTodayDateString(),
+        startTime: deviationData.startTime || '10:00',
+        endTime: deviationData.endTime || '11:00',
+        durationMinutes: Number(deviationData.durationMinutes) || 60,
+        plannedAction: deviationData.plannedAction || '',
+        actualAction: deviationData.actualAction || '',
+        reasonCategory: deviationData.reasonCategory || 'Distraction',
+        rootCause: deviationData.rootCause || '',
+        lessonLearned: deviationData.lessonLearned || '',
+        deviationType: deviationData.deviationType || 'unproductive',
+        taskId: deviationData.taskId || null,
+      };
+
+      setDeviations((prev) => {
+        const updated = [payload, ...prev];
+        storageService.saveDeviations(updated);
+        return updated;
+      });
+
+      try {
+        const res = await api.createDeviation(payload);
+        if (res?.data) {
+          setDeviations((prev) =>
+            prev.map((d) => (d.id === payload.id ? res.data : d))
+          );
+        }
+      } catch (e) {
+        console.warn('Saved deviation locally:', e);
+      }
+
+      showToast({
+        type: 'info',
+        title: 'Deviation Logged',
+        message: 'Recorded what happened vs what was planned.',
+      });
+    },
+    [showToast]
+  );
+
+  const updateDeviation = useCallback(
+    async (id, updates) => {
+      setDeviations((prev) => {
+        const updated = prev.map((d) => (d.id === id ? { ...d, ...updates } : d));
+        storageService.saveDeviations(updated);
+        return updated;
+      });
+
+      try {
+        await api.updateDeviation(id, updates);
+      } catch (e) {
+        console.warn('Updated deviation locally:', e);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Log Updated',
+        message: 'Deviation details updated.',
+      });
+    },
+    [showToast]
+  );
+
+  const deleteDeviation = useCallback(
+    async (id) => {
+      setDeviations((prev) => {
+        const filtered = prev.filter((d) => d.id !== id);
+        storageService.saveDeviations(filtered);
+        return filtered;
+      });
+
+      try {
+        await api.deleteDeviation(id);
+      } catch (e) {
+        console.warn('Deleted deviation locally:', e);
+      }
+
+      showToast({
+        type: 'info',
+        title: 'Log Removed',
+        message: 'Deviation record deleted.',
+      });
+    },
+    [showToast]
+  );
+
+  // Work & Missed Work Requests Handlers
+  const submitWorkRequest = useCallback(
+    async (requestData) => {
+      if (!requestData?.reason || !requestData.reason.trim()) {
+        showToast({
+          type: 'error',
+          title: 'Reason Required',
+          message: 'Please provide a reason for this missed work request.',
+        });
+        return { success: false, error: 'Reason is required' };
+      }
+
+      const payload = {
+        id: `req-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        title: requestData.title?.trim() || 'Missed Work Entry',
+        date: requestData.date || getTodayDateString(),
+        startTime: requestData.startTime || '09:00',
+        endTime: requestData.endTime || '10:00',
+        reason: requestData.reason.trim(),
+        status: 'pending',
+        actionRemarks: '',
+        taskId: requestData.taskId || null,
+        taskTitle: requestData.taskTitle || '',
+        createdAt: new Date().toISOString(),
+      };
+
+      setRequests((prev) => {
+        const updated = [payload, ...prev];
+        storageService.saveRequests(updated);
+        return updated;
+      });
+
+      try {
+        const res = await api.createRequest(payload);
+        if (res?.data) {
+          setRequests((prev) =>
+            prev.map((r) => (r.id === payload.id ? res.data : r))
+          );
+        }
+      } catch (e) {
+        console.warn('Saved work request locally:', e);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Request Submitted',
+        message: 'Your missed work request has been recorded.',
+      });
+      return { success: true, request: payload };
+    },
+    [showToast]
+  );
+
+  const completeWorkRequest = useCallback(
+    async (requestId, remarks = '') => {
+      setRequests((prev) => {
+        const updated = prev.map((r) =>
+          r.id === requestId
+            ? { ...r, status: 'completed', actionRemarks: remarks || 'Marked completed by user', updatedAt: new Date().toISOString() }
+            : r
+        );
+        storageService.saveRequests(updated);
+        return updated;
+      });
+
+      try {
+        await api.completeRequest(requestId, { remarks });
+      } catch (e) {
+        console.warn('Completed work request locally:', e);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Marked Completed',
+        message: 'Work request has been marked as completed.',
+      });
+    },
+    [showToast]
+  );
+
+  const rescheduleWorkRequest = useCallback(
+    async (requestId, { date, startTime, endTime, remarks = '' }) => {
+      setRequests((prev) => {
+        const updated = prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: 'rescheduled',
+                rescheduledDate: date || r.date,
+                rescheduledStartTime: startTime || r.startTime,
+                rescheduledEndTime: endTime || r.endTime,
+                actionRemarks: remarks || 'Rescheduled by user',
+                updatedAt: new Date().toISOString(),
+              }
+            : r
+        );
+        storageService.saveRequests(updated);
+        return updated;
+      });
+
+      try {
+        await api.rescheduleRequest(requestId, { date, startTime, endTime, remarks });
+      } catch (e) {
+        console.warn('Rescheduled work request locally:', e);
+      }
+
+      showToast({
+        type: 'info',
+        title: 'Work Rescheduled',
+        message: `Rescheduled to ${date || 'new date'}${startTime ? ` at ${startTime}` : ''}.`,
+      });
+    },
+    [showToast]
+  );
+
+  const cancelWorkRequest = useCallback(
+    async (requestId, remarks) => {
+      if (!remarks || !remarks.trim()) {
+        showToast({
+          type: 'error',
+          title: 'Remarks Required',
+          message: 'You must provide a cancellation reason/remark to cancel.',
+        });
+        return false;
+      }
+
+      setRequests((prev) => {
+        const updated = prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: 'cancelled',
+                actionRemarks: remarks.trim(),
+                updatedAt: new Date().toISOString(),
+              }
+            : r
+        );
+        storageService.saveRequests(updated);
+        return updated;
+      });
+
+      try {
+        await api.cancelRequest(requestId, { remarks: remarks.trim() });
+      } catch (e) {
+        console.warn('Cancelled work request locally:', e);
+      }
+
+      showToast({
+        type: 'warning',
+        title: 'Request Cancelled',
+        message: `Cancelled with remarks: "${remarks.trim()}".`,
+      });
+      return true;
+    },
+    [showToast]
+  );
+
+  const deleteWorkRequest = useCallback(
+    async (requestId) => {
+      setRequests((prev) => {
+        const filtered = prev.filter((r) => r.id !== requestId);
+        storageService.saveRequests(filtered);
+        return filtered;
+      });
+
+      try {
+        await api.deleteRequest(requestId);
+      } catch (e) {
+        console.warn('Deleted work request locally:', e);
+      }
+
+      showToast({
+        type: 'info',
+        title: 'Request Deleted',
+        message: 'Missed work request removed.',
+      });
+    },
+    [showToast]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -1146,6 +1436,16 @@ export function AppProvider({ children }) {
         addManualWorkSession,
         deleteWorkSession,
         updateWorkSession,
+        deviations,
+        addDeviation,
+        updateDeviation,
+        deleteDeviation,
+        requests,
+        submitWorkRequest,
+        completeWorkRequest,
+        rescheduleWorkRequest,
+        cancelWorkRequest,
+        deleteWorkRequest,
       }}
     >
       {children}

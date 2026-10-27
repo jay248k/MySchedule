@@ -116,13 +116,15 @@ input, select, textarea {
 .btn-primary {
   background: var(--primary-color);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(23, 105, 255, 0.25);
+  border-color: var(--primary-color);
+  box-shadow: none !important;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
+  border-color: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(23, 105, 255, 0.35);
+  box-shadow: none !important;
 }
 
 .btn-secondary {
@@ -347,4 +349,39 @@ select option, .form-select option {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Sharp, Crisp Buttons - Remove all blurry glows and shadows everywhere */
+button,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger,
+.btn-icon,
+.mobile-menu-btn,
+.header-date-badge,
+.sidebar-nav-item,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+button:hover,
+.btn:hover,
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-ghost:hover,
+.btn-danger:hover,
+.btn-icon:hover,
+.sidebar-nav-item:hover,
+[role="button"]:hover {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
 }

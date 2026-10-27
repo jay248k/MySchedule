@@ -93,7 +93,7 @@ export function CategoryModal() {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g., Fitness, Engineering, Research"
+                placeholder="Enter category name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus

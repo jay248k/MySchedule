@@ -994,7 +994,6 @@ export function Reports() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        boxShadow: '0 4px 14px rgba(var(--primary-rgb, 16, 185, 129), 0.3)',
                       }}
                     >
                       <Save size={15} /> Save Report
@@ -1579,7 +1578,6 @@ export function Reports() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        boxShadow: '0 4px 16px rgba(var(--primary-rgb, 16, 185, 129), 0.35)',
                       }}
                     >
                       <Save size={15} /> Save Daily Report

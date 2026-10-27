@@ -95,7 +95,7 @@ export function GoalModal() {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g., Complete VLSI Concepts"
+                placeholder="Enter goal title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus

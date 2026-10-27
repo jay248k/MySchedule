@@ -21,17 +21,17 @@
 }
 
 .sidebar-brand {
-  padding: 22px 20px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08));
 }
 
 .sidebar-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 8px);
   background: var(--primary-gradient);
   display: flex;
   align-items: center;
@@ -50,34 +50,35 @@
 }
 
 .sidebar-title {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--sidebar-text-title, #ffffff);
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .sidebar-tagline {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--sidebar-muted);
   font-weight: 500;
 }
 
 .sidebar-menu {
-  padding: 16px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: var(--radius-md);
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
   color: var(--sidebar-muted);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
   transition: all var(--transition-fast);
   position: relative;
@@ -103,9 +104,9 @@
   margin-left: auto;
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: var(--radius-full);
 }
 
@@ -115,29 +116,29 @@
 
 /* Sidebar Motivational Card */
 .sidebar-motivation {
-  margin: 12px 14px 20px;
-  padding: 16px;
+  margin: 6px 10px 10px;
+  padding: 10px 12px;
   background: var(--sidebar-card-bg, linear-gradient(135deg, rgba(23, 105, 255, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%));
   border: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.1));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .sidebar-motivation-title {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--sidebar-text-title, #ffffff);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .sidebar-motivation-quote {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--sidebar-muted);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 /* Mobile Sidebar Drawer */
@@ -765,7 +766,7 @@ body.calendar-fullpage-active .page-container,
 .cal-day-num.is-today {
   background: var(--primary-color);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(23, 105, 255, 0.4);
+  box-shadow: none;
   font-weight: 800;
 }
 
@@ -1422,7 +1423,7 @@ body.calendar-fullpage-active .page-container,
   background: var(--primary-color);
   color: #ffffff;
   border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(23, 105, 255, 0.3);
+  box-shadow: none;
 }
 
 .report-task-row {
@@ -2288,20 +2289,27 @@ body.calendar-fullpage-active .page-container,
 
 /* Modern Horizontal Timeline Schedule Sequence Cards */
 .timeline-seq-card {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
 }
 
 .timeline-seq-card:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px) translateX(3px);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 16px rgba(23, 105, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
 .timeline-seq-card.status-in_progress:hover {
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.45) !important;
+  border-color: rgba(56, 189, 248, 0.8) !important;
 }
 
 .timeline-seq-card.status-completed:hover {
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.3) !important;
+}
+
+.timeline-seq-card.status-overdue:hover {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 22px rgba(239, 68, 68, 0.4) !important;
 }
 
 @media (max-width: 768px) {
