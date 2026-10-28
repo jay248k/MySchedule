@@ -35,7 +35,7 @@ exports.getRequestById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const request = await WorkRequest.findByPk(id, {
-      include: Task ? [{ model: Task, as: 'task' }] : [],
+      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category', 'status'] }] : [],
     });
 
     if (!request) {

@@ -1,4 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Check,
+  Calendar,
+  X,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { isTaskOverdue } from '../../utils/dateUtils';
 import CancelRemarksModal from '../requests/CancelRemarksModal';
@@ -116,168 +126,294 @@ export default function MissedTaskFloatingPopup() {
 
   return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '18px',
-          right: '18px',
-          zIndex: 9999,
-          width: '320px',
-          maxWidth: 'calc(100vw - 36px)',
-          background: 'var(--bg-secondary, #1a2234)',
-          border: '1.5px solid rgba(239, 68, 68, 0.45)',
-          borderRadius: '10px',
-          padding: '8px 12px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-        }}
-      >
-        {/* Name Row + compact counter if multiple */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <span
-            title={currentItem.title}
+      <AnimatePresence>
+        {!isDismissed && currentItem && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.94 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              fontSize: '0.84rem',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              whiteSpace: 'nowrap',
+              position: 'fixed',
+              bottom: '22px',
+              right: '22px',
+              zIndex: 9999,
+              width: '350px',
+              maxWidth: 'calc(100vw - 32px)',
+              background: 'linear-gradient(135deg, rgba(22, 30, 49, 0.96) 0%, rgba(13, 20, 36, 0.98) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '16px',
+              padding: '14px 16px',
+              boxShadow: '0 24px 48px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              flex: 1,
             }}
           >
-            {currentItem.title}
-          </span>
+            {/* Subtle ambient lighting accent */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '-45px',
+                left: '-45px',
+                width: '130px',
+                height: '130px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }}
+            />
 
-          {items.length > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            {/* Header: Attention Pill + Counter + Close Button */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
+                zIndex: 2,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    background: 'rgba(239, 68, 68, 0.16)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: '#F87171',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <AlertTriangle size={11} strokeWidth={2.6} />
+                  {currentItem.isRequest ? 'Pending Request' : 'Overdue Task'}
+                </span>
+
+                {(currentItem.startTime || currentItem.timeSlot) && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.72rem',
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Clock size={11} />
+                    {currentItem.timeSlot || `${currentItem.startTime}${currentItem.endTime ? ` - ${currentItem.endTime}` : ''}`}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                {items.length > 1 && (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      padding: '2px 4px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1))}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'rgba(255, 255, 255, 0.75)',
+                        cursor: 'pointer',
+                        padding: '1px 3px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title="Previous"
+                    >
+                      <ChevronLeft size={13} />
+                    </button>
+                    <span
+                      style={{
+                        fontSize: '0.68rem',
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        fontWeight: 700,
+                        padding: '0 3px',
+                      }}
+                    >
+                      {safeIndex + 1}/{items.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0))}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'rgba(255, 255, 255, 0.75)',
+                        cursor: 'pointer',
+                        padding: '1px 3px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title="Next"
+                    >
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsDismissed(true)}
+                  title="Dismiss alert"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: 'rgba(255, 255, 255, 0.55)',
+                    cursor: 'pointer',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '7px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <X size={13} strokeWidth={2.4} />
+                </button>
+              </div>
+            </div>
+
+            {/* Task Title & Details */}
+            <div style={{ position: 'relative', zIndex: 2, padding: '2px 0' }}>
+              <h3
+                title={currentItem.title}
+                style={{
+                  margin: 0,
+                  fontSize: '0.96rem',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  lineHeight: 1.35,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {currentItem.title}
+              </h3>
+              {currentItem.date && (
+                <div
+                  style={{
+                    fontSize: '0.74rem',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    marginTop: '2px',
+                    fontWeight: 500,
+                  }}
+                >
+                  Scheduled: {currentItem.date}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons: Completed, Reschedule, Cancel */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1.2fr 1.25fr 0.95fr',
+                gap: '8px',
+                marginTop: '4px',
+                position: 'relative',
+                zIndex: 2,
+              }}
+            >
               <button
                 type="button"
-                onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1))}
+                onClick={() => handleComplete(currentItem)}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '7px 10px',
+                  borderRadius: '9px',
                   border: 'none',
+                  background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
                   color: '#FFFFFF',
-                  borderRadius: '4px',
-                  width: '18px',
-                  height: '18px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  padding: 0,
+                  gap: '5px',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.35)',
+                  transition: 'opacity 0.15s ease',
                 }}
-                title="Previous"
               >
-                ‹
+                <Check size={13} strokeWidth={2.6} />
+                <span>Completed</span>
               </button>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.65)', fontWeight: 600 }}>
-                {safeIndex + 1}/{items.length}
-              </span>
+
               <button
                 type="button"
-                onClick={() => setCurrentIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0))}
+                onClick={() => setReschedulingItem(currentItem)}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '7px 10px',
+                  borderRadius: '9px',
                   border: 'none',
+                  background: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)',
                   color: '#FFFFFF',
-                  borderRadius: '4px',
-                  width: '18px',
-                  height: '18px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  padding: 0,
+                  gap: '5px',
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
+                  transition: 'opacity 0.15s ease',
                 }}
-                title="Next"
               >
-                ›
+                <Calendar size={13} strokeWidth={2.4} />
+                <span>Reschedule</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCancellingItem(currentItem)}
+                style={{
+                  padding: '7px 8px',
+                  borderRadius: '9px',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  color: '#FCA5A5',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <X size={12} strokeWidth={2.6} />
+                <span>Canceled</span>
               </button>
             </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setIsDismissed(true)}
-            title="Close"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255, 255, 255, 0.5)',
-              cursor: 'pointer',
-              padding: '2px',
-              fontSize: '0.78rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* The 3 Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-          <button
-            type="button"
-            onClick={() => handleComplete(currentItem)}
-            style={{
-              padding: '5px 4px',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#10B981',
-              color: '#FFFFFF',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textAlign: 'center',
-            }}
-          >
-            Completed
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setReschedulingItem(currentItem)}
-            style={{
-              padding: '5px 4px',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#3B82F6',
-              color: '#FFFFFF',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textAlign: 'center',
-            }}
-          >
-            Reschedule
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setCancellingItem(currentItem)}
-            style={{
-              padding: '5px 4px',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#EF4444',
-              color: '#FFFFFF',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textAlign: 'center',
-            }}
-          >
-            Canceled
-          </button>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mandatory Cancel Remarks Modal */}
       <CancelRemarksModal

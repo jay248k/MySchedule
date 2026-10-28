@@ -1,64 +1,123 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, Search, X, Check } from 'lucide-react';
 
+/**
+ * CustomSelect - Reusable theme-based searchable dropdown component
+ * 
+ * Props:
+ * - value: currently selected value
+ * - onChange: callback(value, selectedOption)
+ * - options: array of { value, label, color, icon, badge, description } or array of strings
+ * - placeholder: string
+ * - searchPlaceholder: string (default "Search options...")
+ * - disabled: boolean
+ * - icon: ReactNode (optional icon for the select trigger)
+ * - className: string
+ * - style: object
+ * - menuStyle: object
+ * - showSearch: boolean (default true)
+ * - isClearable: boolean (default false)
+ */
 export function CustomSelect({
   value,
   onChange,
   options = [],
-  placeholder = 'Select option...',
-  size = 'md',
-  style = {},
+  placeholder = 'Select an option...',
+  searchPlaceholder = 'Search...',
+  disabled = false,
+  icon = null,
   className = '',
-  id,
+  style = {},
+  menuStyle = {},
+  showSearch = true,
+  isClearable = false,
+  ariaLabel = 'Select option',
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const listRef = useRef(null);
 
-  // Close on outside click
+  // Normalize options to { value, label, ... }
+  const normalizedOptions = useMemo(() => {
+    return options.map((opt) => {
+      if (typeof opt === 'string' || typeof opt === 'number') {
+        return { value: opt, label: String(opt) };
+      }
+      return {
+        ...opt,
+        value: opt.value !== undefined ? opt.value : opt.id,
+        label: opt.label || opt.name || opt.title || String(opt.value || opt.id || ''),
+      };
+    });
+  }, [options]);
+
+  // Find currently selected option
+  const selectedOption = useMemo(() => {
+    return normalizedOptions.find((opt) => String(opt.value) === String(value)) || null;
+  }, [normalizedOptions, value]);
+
+  // Filter options based on search query
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery.trim()) return normalizedOptions;
+    const q = searchQuery.toLowerCase().trim();
+    return normalizedOptions.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        (opt.description && opt.description.toLowerCase().includes(q))
+    );
+  }, [normalizedOptions, searchQuery]);
+
+  // Close when clicking outside
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleOutsideClick = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
-      document.addEventListener('touchstart', handleOutsideClick);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('touchstart', handleOutsideClick);
-    };
-  }, [isOpen]);
 
-  // Close on Escape
-  useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         setIsOpen(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
-  // Normalize options: can be array of strings or { value, label, color, icon }
-  const normalizedOptions = options.map((opt) => {
-    if (typeof opt === 'object' && opt !== null) {
-      return {
-        value: opt.value !== undefined ? opt.value : opt.id,
-        label: opt.label !== undefined ? opt.label : opt.name || String(opt.value),
-        color: opt.color,
-        icon: opt.icon,
-      };
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && showSearch && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
     }
-    return { value: opt, label: String(opt) };
-  });
+    if (!isOpen) {
+      setSearchQuery('');
+    }
+  }, [isOpen, showSearch]);
 
-  const selectedOpt = normalizedOptions.find((opt) => String(opt.value) === String(value));
-  const displayLabel = selectedOpt ? selectedOpt.label : placeholder;
+  const handleSelect = (option) => {
+    if (onChange) {
+      onChange(option.value, option);
+    }
+    setIsOpen(false);
+  };
 
-  const isSmall = size === 'sm';
+  const handleClear = (e) => {
+    e.stopPropagation();
+    if (onChange) {
+      onChange('', null);
+    }
+  };
 
   return (
     <div
@@ -66,8 +125,8 @@ export function CustomSelect({
       className={`custom-select-container ${className}`}
       style={{
         position: 'relative',
-        display: 'inline-block',
-        minWidth: isSmall ? '130px' : '160px',
+        width: '100%',
+        minWidth: '120px',
         userSelect: 'none',
         ...style,
       }}
@@ -75,136 +134,333 @@ export function CustomSelect({
       {/* Trigger Button */}
       <button
         type="button"
-        id={id}
-        onClick={() => setIsOpen((prev) => !prev)}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         style={{
           width: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '8px',
-          padding: isSmall ? '5px 10px' : '8px 14px',
-          background: 'var(--card-bg)',
-          color: 'var(--text-primary)',
-          border: `1.5px solid ${isOpen ? 'var(--primary-color)' : 'var(--border-color)'}`,
-          borderRadius: 'var(--radius-md)',
-          fontSize: isSmall ? '0.8rem' : '0.86rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: isOpen ? '0 0 0 3px rgba(var(--primary-rgb, 16, 185, 129), 0.12)' : 'var(--shadow-sm)',
-          transition: 'all 0.15s ease',
+          padding: '9px 12px',
+          background: 'var(--card-bg, #0F172A)',
+          border: isOpen
+            ? '1.5px solid var(--primary-color, #1769FF)'
+            : '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
+          borderRadius: 'var(--radius-md, 10px)',
+          color: selectedOption ? 'var(--text-primary, #FFFFFF)' : 'var(--text-muted, #94A3B8)',
+          fontSize: '0.86rem',
+          fontWeight: selectedOption ? 600 : 500,
+          cursor: disabled ? 'not-allowed' : 'pointer',
           outline: 'none',
-          whiteSpace: 'nowrap',
+          boxShadow: isOpen
+            ? '0 0 0 3px rgba(23, 105, 255, 0.2)'
+            : 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.1))',
+          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+          textAlign: 'left',
+          minHeight: '38px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-          {selectedOpt?.color && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          {icon && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--primary-color)', flexShrink: 0 }}>
+              {icon}
+            </span>
+          )}
+
+          {selectedOption?.color && (
             <span
               style={{
-                width: 8,
-                height: 8,
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
-                backgroundColor: selectedOpt.color,
+                background: selectedOption.color,
                 flexShrink: 0,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
             />
           )}
-          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-            {displayLabel}
+
+          {selectedOption?.icon && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+              {selectedOption.icon}
+            </span>
+          )}
+
+          <span
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              flex: 1,
+            }}
+          >
+            {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
 
-        <ChevronDown
-          size={isSmall ? 14 : 16}
-          color="var(--text-muted)"
-          style={{
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.18s ease',
-            flexShrink: 0,
-          }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {isClearable && selectedOption && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              title="Clear selection"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                background: 'rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <X size={12} />
+            </span>
+          )}
+
+          <ChevronDown
+            size={16}
+            style={{
+              color: 'var(--text-muted, #94A3B8)',
+              transition: 'transform 0.2s ease',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        </div>
       </button>
 
-      {/* Floating Dropdown List Menu */}
+      {/* Dropdown Menu Modal / Popover */}
       {isOpen && (
         <div
+          role="listbox"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 5px)',
+            top: 'calc(100% + 6px)',
             left: 0,
             right: 0,
-            minWidth: '100%',
-            width: 'max-content',
-            maxWidth: '280px',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: '0 12px 28px -6px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border-color)',
-            padding: '5px',
-            zIndex: 999,
-            maxHeight: '260px',
-            overflowY: 'auto',
+            zIndex: 99999,
+            background: 'var(--card-bg, #0F172A)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.15))',
+            borderRadius: 'var(--radius-md, 12px)',
+            boxShadow: '0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+            padding: '6px',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: '2px',
-            animation: 'fadeInUp 0.12s ease-out',
+            gap: '4px',
+            animation: 'fadeIn 0.15s ease-out',
+            ...menuStyle,
           }}
         >
-          {normalizedOptions.map((opt) => {
-            const isSelected = String(opt.value) === String(value);
-
-            return (
-              <div
-                key={String(opt.value)}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
+          {/* Search Bar inside Dropdown */}
+          {showSearch && (
+            <div
+              style={{
+                position: 'relative',
+                padding: '4px 6px',
+                borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                marginBottom: '4px',
+              }}
+            >
+              <Search
+                size={14}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: isSmall ? '6px 10px' : '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: isSmall ? '0.78rem' : '0.84rem',
-                  fontWeight: isSelected ? 700 : 500,
-                  color: isSelected ? 'var(--primary-color)' : 'var(--text-primary)',
-                  background: isSelected ? 'rgba(var(--primary-rgb, 16, 185, 129), 0.12)' : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'background 0.1s ease',
-                  gap: '8px',
+                  position: 'absolute',
+                  left: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-muted, #94A3B8)',
+                  pointerEvents: 'none',
                 }}
-                className="custom-select-option"
-                onMouseEnter={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'var(--card-hover)';
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '7px 28px 7px 32px',
+                  background: 'var(--page-bg, #090D16)',
+                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  color: 'var(--text-primary, #FFFFFF)',
+                  fontSize: '0.82rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
                 }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'transparent';
+                onClick={(e) => e.stopPropagation()}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Options Scroll List */}
+          <div
+            ref={listRef}
+            style={{
+              maxHeight: '220px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              paddingRight: '2px',
+            }}
+          >
+            {filteredOptions.length === 0 ? (
+              <div
+                style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: 'var(--text-muted, #94A3B8)',
+                  fontSize: '0.8rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  {opt.color && (
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: opt.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {opt.label}
-                  </span>
-                </div>
-
-                {isSelected && (
-                  <Check size={14} color="var(--primary-color)" style={{ flexShrink: 0 }} />
-                )}
+                No matching options found
               </div>
-            );
-          })}
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = String(opt.value) === String(value);
+
+                return (
+                  <div
+                    key={String(opt.value)}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(opt)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm, 6px)',
+                      background: isSelected
+                        ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.18)'
+                        : 'transparent',
+                      color: isSelected
+                        ? 'var(--primary-color, #38BDF8)'
+                        : 'var(--text-primary, #FFFFFF)',
+                      fontWeight: isSelected ? 700 : 500,
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      transition: 'background 0.12s ease',
+                      gap: '8px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = 'var(--card-hover, rgba(255, 255, 255, 0.06))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                      {opt.color && (
+                        <span
+                          style={{
+                            width: '9px',
+                            height: '9px',
+                            borderRadius: '50%',
+                            background: opt.color,
+                            flexShrink: 0,
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                          }}
+                        />
+                      )}
+
+                      {opt.icon && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                          {opt.icon}
+                        </span>
+                      )}
+
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                        <span
+                          style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {opt.label}
+                        </span>
+                        {opt.description && (
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              color: 'var(--text-muted, #94A3B8)',
+                              fontWeight: 400,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {opt.description}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      {opt.badge && (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '999px',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            color: 'var(--text-secondary, #94A3B8)',
+                          }}
+                        >
+                          {opt.badge}
+                        </span>
+                      )}
+
+                      {isSelected && (
+                        <Check size={14} strokeWidth={2.8} color="var(--primary-color, #38BDF8)" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>

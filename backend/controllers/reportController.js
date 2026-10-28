@@ -1,7 +1,14 @@
 const { DailyReport } = require('../models');
+const cacheManager = require('../utils/cacheManager');
 
 exports.getAllReports = async (req, res, next) => {
   try {
+    const cacheKey = `reports_${req.userId || 'public'}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return res.json({ success: true, count: cached.length, data: cached, fromCache: true });
+    }
+
     const where = {};
     if (req.userId) {
       where.userId = req.userId;
@@ -11,6 +18,8 @@ exports.getAllReports = async (req, res, next) => {
       where,
       order: [['date', 'DESC']],
     });
+
+    cacheManager.set(cacheKey, reports, 60);
     res.json({ success: true, count: reports.length, data: reports });
   } catch (error) {
     next(error);
@@ -74,6 +83,7 @@ exports.saveReport = async (req, res, next) => {
       submittedAt: new Date(),
     });
 
+    cacheManager.invalidateReports(userId);
     res.json({ success: true, data: report });
   } catch (error) {
     next(error);
@@ -91,6 +101,7 @@ exports.deleteReport = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Report not found' });
     }
     await report.destroy();
+    cacheManager.invalidateReports(req.userId);
     res.json({ success: true, message: 'Report deleted successfully' });
   } catch (error) {
     next(error);

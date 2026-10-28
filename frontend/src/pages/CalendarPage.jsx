@@ -15,6 +15,7 @@ import {
 import { GoogleWeekGrid } from '../components/calendar/GoogleWeekGrid';
 import { DayGoogleCalendar } from '../components/tasks/DayGoogleCalendar';
 import { DayDetailModal } from '../components/calendar/DayDetailModal';
+import { CustomSelect } from '../components/common/CustomSelect';
 
 // Helper to shift a date by N days
 const shiftDate = (dateStr, days) => {
@@ -212,31 +213,38 @@ export function CalendarPage() {
         {/* View Mode Toggle, Filters, and Add Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Item Type filter */}
-          <select
-            className="form-select"
-            style={{ width: 'auto', fontSize: '0.85rem' }}
-            value={itemTypeFilter}
-            onChange={(e) => setItemTypeFilter(e.target.value)}
-          >
-            <option value="all">All (Events & Tasks)</option>
-            <option value="events">Events Only</option>
-            <option value="tasks">Tasks Only</option>
-          </select>
+          <div style={{ width: '180px' }}>
+            <CustomSelect
+              value={itemTypeFilter}
+              onChange={(val) => setItemTypeFilter(val)}
+              options={[
+                { value: 'all', label: 'All (Events & Tasks)' },
+                { value: 'events', label: 'Events Only' },
+                { value: 'tasks', label: 'Tasks Only' },
+              ]}
+              placeholder="Item Type"
+              showSearch={false}
+            />
+          </div>
 
           {/* Category Filter */}
-          <select
-            className="form-select"
-            style={{ width: 'auto', fontSize: '0.85rem' }}
-            value={selectedCategoryId}
-            onChange={(e) => setSelectedCategoryId(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div style={{ width: '180px' }}>
+            <CustomSelect
+              value={selectedCategoryId}
+              onChange={(val) => setSelectedCategoryId(val)}
+              options={[
+                { value: 'all', label: 'All Categories' },
+                ...categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                  color: c.color,
+                })),
+              ]}
+              placeholder="All Categories"
+              searchPlaceholder="Search categories..."
+              showSearch={categories.length > 5}
+            />
+          </div>
 
           {/* View Mode Switcher (Month, Week, Day) */}
           <div

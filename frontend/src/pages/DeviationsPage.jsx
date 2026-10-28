@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
+import { CustomSelect } from '../components/common/CustomSelect';
 
 const REASON_CATEGORIES = [
   { id: 'Social Media / Browsing', label: '📱 Social Media / Browsing', color: '#EF4444' },
@@ -793,157 +794,263 @@ export function DeviationsPage() {
             </div>
 
             {/* Modal Body Form */}
-            <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Date & Time Slot Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
-                    Date:
-                  </label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    required
-                  />
+            <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Date & Time Slot Grid with Dynamic Duration */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                      <Calendar size={13} color="var(--primary-color)" />
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={form.date}
+                      onChange={(e) => setForm({ ...form, date: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                      <Clock size={13} color="var(--primary-color)" />
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={form.startTime}
+                      onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                      <Clock size={13} color="var(--primary-color)" />
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={form.endTime}
+                      onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
-                    Start Time:
-                  </label>
-                  <input
-                    type="time"
-                    className="form-input"
-                    value={form.startTime}
-                    onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
-                    End Time:
-                  </label>
-                  <input
-                    type="time"
-                    className="form-input"
-                    value={form.endTime}
-                    onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                    required
-                  />
-                </div>
+                {/* Quick Pick From Scheduled Tasks with Searchable CustomSelect */}
+                {dateTasks.length > 0 && !editingId && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                      Quick Pick From Scheduled Tasks:
+                    </label>
+                    <CustomSelect
+                      value={form.taskId || ''}
+                      onChange={(selectedId) => {
+                        if (!selectedId) {
+                          setForm({ ...form, taskId: '', plannedAction: '' });
+                          return;
+                        }
+                        const t = dateTasks.find((item) => item.id === selectedId);
+                        if (t) {
+                          setForm({
+                            ...form,
+                            plannedAction: t.title,
+                            taskId: t.id,
+                            ...(t.startTime && { startTime: t.startTime }),
+                            ...(t.endTime && { endTime: t.endTime }),
+                          });
+                        }
+                      }}
+                      placeholder="-- Choose a scheduled task to auto-fill --"
+                      searchPlaceholder="Search today's tasks..."
+                      isClearable={true}
+                      options={[
+                        { value: '', label: '-- Choose a scheduled task or enter custom below --' },
+                        ...dateTasks.map((t) => ({
+                          value: t.id,
+                          label: t.title,
+                          description: `${t.startTime || 'No time'}${t.endTime ? ` - ${t.endTime}` : ''}`,
+                          color: t.color || '#3B82F6',
+                        })),
+                      ]}
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Quick Pick From Today's Scheduled Tasks as Dropdown */}
-              {dateTasks.length > 0 && !editingId && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
-                    Select from Scheduled Tasks:
+              {/* Comparative Section: Planned vs Actual Mistake */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                {/* 1. Planned Task Card */}
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#EF4444' }}>
+                    <Target size={15} />
+                    <span>What I Was Supposed To Do (Planned):</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="e.g., Code API endpoints for work session"
                     className="form-input"
-                    value={form.taskId || ''}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      if (!selectedId) {
-                        setForm({ ...form, taskId: '', plannedAction: '' });
-                        return;
-                      }
-                      const t = dateTasks.find((item) => item.id === selectedId);
-                      if (t) {
-                        setForm({
-                          ...form,
-                          plannedAction: t.title,
-                          taskId: t.id,
-                          ...(t.startTime && { startTime: t.startTime }),
-                          ...(t.endTime && { endTime: t.endTime }),
-                        });
-                      }
+                    style={{
+                      width: '100%',
+                      background: 'var(--card-bg)',
+                      borderColor: 'rgba(239, 68, 68, 0.35)',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
                     }}
-                    style={{ width: '100%', padding: '9px 12px' }}
-                  >
-                    <option value="">-- Select a scheduled task --</option>
-                    {dateTasks.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.title} ({t.startTime || 'No time'}{t.endTime ? ` - ${t.endTime}` : ''})
-                      </option>
-                    ))}
-                  </select>
+                    value={form.plannedAction}
+                    onChange={(e) => setForm({ ...form, plannedAction: e.target.value })}
+                    required
+                  />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Original planned schedule commitment
+                  </span>
                 </div>
-              )}
 
-              {/* What I Had To Do */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#EF4444', marginBottom: '6px' }}>
-                  ❌ What I Was Supposed To Do (Planned Task / Goal):
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter planned task or goal"
-                  className="form-input"
+                {/* 2. What I Actually Did (The Mistake) */}
+                <div
                   style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
                   }}
-                  value={form.plannedAction}
-                  onChange={(e) => setForm({ ...form, plannedAction: e.target.value })}
-                  required
-                />
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#F59E0B' }}>
+                    <AlertTriangle size={15} />
+                    <span>What I Actually Did Instead (The Mistake):</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Scrolled social media, watched videos..."
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      background: 'var(--card-bg)',
+                      borderColor: 'rgba(245, 158, 11, 0.35)',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                    }}
+                    value={form.actualAction}
+                    onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
+                    required
+                  />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Honest description of deviation or mistake
+                  </span>
+                </div>
               </div>
 
-              {/* What I Actually Did Instead */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: '#F59E0B', marginBottom: '6px' }}>
-                  ⚠️ What I Actually Did Instead (The Mistake / Action Done):
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter what you actually did instead"
-                  className="form-input"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderColor: 'rgba(245, 158, 11, 0.4)',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                  }}
-                  value={form.actualAction}
-                  onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
-                  required
-                />
-              </div>
+              {/* Root Cause & Common Friction Preset Chips */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <HelpCircle size={14} color="var(--primary-color)" />
+                    Why Did This Happen? (Root Cause):
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Click a preset chip or write custom
+                  </span>
+                </div>
 
-              {/* Root Cause & Lesson Learned */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
-                  🔍 Why Did This Happen? (Root Cause / Friction):
-                </label>
+                {/* Preset Chips */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {REASON_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        const newCause = form.rootCause
+                          ? `${form.rootCause}; ${cat.id}`
+                          : cat.id;
+                        setForm({ ...form, rootCause: newCause });
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
                 <textarea
                   rows={2}
-                  className="form-input"
-                  placeholder="Enter root cause or friction"
+                  className="form-textarea"
+                  placeholder="Detail the root friction or mental trigger (e.g. felt bored, task too overwhelming)..."
                   value={form.rootCause}
                   onChange={(e) => setForm({ ...form, rootCause: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', fontSize: '0.84rem' }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#10B981', marginBottom: '5px' }}>
-                  💡 How Will I Fix / Avoid This Next Time? (Actionable Lesson):
+              {/* Actionable Lesson Learned */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#10B981' }}>
+                  <Lightbulb size={16} />
+                  <span>How Will I Avoid This Next Time? (Actionable Lesson):</span>
                 </label>
                 <textarea
                   rows={2}
-                  className="form-input"
-                  placeholder="Enter actionable lesson learned"
+                  className="form-textarea"
+                  placeholder="e.g., Turn on Do Not Disturb before starting, break large tasks into 15m chunks..."
                   value={form.lessonLearned}
                   onChange={(e) => setForm({ ...form, lessonLearned: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', fontSize: '0.85rem', borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                  style={{ width: '100%', fontSize: '0.84rem', borderColor: 'rgba(16, 185, 129, 0.4)' }}
                 />
               </div>
 
@@ -953,7 +1060,7 @@ export function DeviationsPage() {
                   display: 'flex',
                   justifyContent: 'flex-end',
                   gap: '10px',
-                  paddingTop: '10px',
+                  paddingTop: '12px',
                   borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
                 }}
               >
@@ -964,8 +1071,17 @@ export function DeviationsPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ background: '#EF4444', borderColor: '#DC2626' }}>
-                  {editingId ? 'Update Log' : 'Save Deviation Log'}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                    borderColor: '#DC2626',
+                    boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+                    fontWeight: 700,
+                  }}
+                >
+                  {editingId ? 'Update Deviation Log' : 'Save Deviation Log'}
                 </button>
               </div>
             </form>

@@ -1,7 +1,14 @@
 const { Goal, Task } = require('../models');
+const cacheManager = require('../utils/cacheManager');
 
 exports.getAllGoals = async (req, res, next) => {
   try {
+    const cacheKey = `goals_${req.userId || 'public'}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return res.json({ success: true, count: cached.length, data: cached, fromCache: true });
+    }
+
     const where = {};
     if (req.userId) {
       where.userId = req.userId;
@@ -9,9 +16,11 @@ exports.getAllGoals = async (req, res, next) => {
 
     const goals = await Goal.findAll({
       where,
-      include: [{ model: Task, as: 'tasks' }],
+      include: [{ model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'priority', 'date'] }],
       order: [['targetDate', 'ASC']],
     });
+
+    cacheManager.set(cacheKey, goals, 120);
     res.json({ success: true, count: goals.length, data: goals });
   } catch (error) {
     next(error);
@@ -25,7 +34,7 @@ exports.getGoalById = async (req, res, next) => {
 
     const goal = await Goal.findOne({
       where,
-      include: [{ model: Task, as: 'tasks' }],
+      include: [{ model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'priority', 'date'] }],
     });
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
@@ -59,6 +68,7 @@ exports.createGoal = async (req, res, next) => {
       userId: req.userId || req.body.userId || null,
     });
 
+    cacheManager.invalidateGoals(req.userId);
     res.status(201).json({ success: true, data: goal });
   } catch (error) {
     next(error);
@@ -111,6 +121,7 @@ exports.bulkCreateGoals = async (req, res, next) => {
     }
 
     const created = await Goal.bulkCreate(validGoals, { returning: true });
+    cacheManager.invalidateGoals(req.userId);
 
     res.status(201).json({
       success: true,
@@ -144,9 +155,10 @@ exports.updateGoal = async (req, res, next) => {
     });
 
     const updatedGoal = await Goal.findByPk(goal.id, {
-      include: [{ model: Task, as: 'tasks' }],
+      include: [{ model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'priority', 'date'] }],
     });
 
+    cacheManager.invalidateGoals(req.userId);
     res.json({ success: true, data: updatedGoal });
   } catch (error) {
     next(error);
@@ -166,6 +178,7 @@ exports.deleteGoal = async (req, res, next) => {
     await Task.update({ goalId: null }, { where: { goalId: goal.id } });
 
     await goal.destroy();
+    cacheManager.invalidateGoals(req.userId);
     res.json({ success: true, message: 'Goal deleted successfully' });
   } catch (error) {
     next(error);

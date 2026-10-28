@@ -1086,7 +1086,6 @@ body.calendar-fullpage-active .page-container,
 }
 
 .timeline-node:hover {
-  transform: scale(1.15);
   box-shadow: none !important;
 }
 
@@ -1136,7 +1135,7 @@ body.calendar-fullpage-active .page-container,
 }
 
 .timeline-node:hover .timeline-node-dot {
-  transform: scale(1.2);
+  opacity: 1;
 }
 
 /* Modern Timeline Card - Clean Solid Background & Crisp Borders */
@@ -1165,7 +1164,6 @@ body.calendar-fullpage-active .page-container,
 }
 
 .timeline-card:hover {
-  transform: translateX(3px);
   box-shadow: var(--shadow-md);
   border-color: var(--primary-color);
 }
@@ -1243,7 +1241,7 @@ body.calendar-fullpage-active .page-container,
 }
 
 .timeline-status-btn:hover {
-  transform: scale(1.05);
+  opacity: 0.9;
 }
 
 /* Card Body */
@@ -1440,7 +1438,6 @@ body.calendar-fullpage-active .page-container,
 
 .report-task-row:hover {
   border-color: rgba(23, 105, 255, 0.4);
-  transform: translateY(-1px);
 }
 
 .report-task-row.completed {
@@ -1483,7 +1480,6 @@ body.calendar-fullpage-active .page-container,
 .history-report-card:hover {
   border-color: var(--primary-color);
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .history-report-card.selected {
@@ -1703,12 +1699,11 @@ body.calendar-fullpage-active .page-container,
 }
 
 .dash-stat-card:hover {
-  transform: translateY(-3px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
 }
 
 .dash-stat-card:hover .dash-stat-icon-wrapper {
-  transform: scale(1.1) rotate(4deg);
+  opacity: 1;
 }
 
 .dash-stat-card.total {
@@ -1768,12 +1763,10 @@ body.calendar-fullpage-active .page-container,
 }
 
 .quick-nav-tile:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
 }
 
 .quick-nav-tile:hover .quick-nav-chevron {
-  transform: translateX(3px);
   color: var(--primary-color);
 }
 
@@ -1785,11 +1778,11 @@ body.calendar-fullpage-active .page-container,
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.2s ease;
 }
 
 .quick-nav-tile:hover .quick-nav-icon-pod {
-  transform: scale(1.1);
+  opacity: 1;
 }
 
 .quick-nav-chevron {
@@ -1960,7 +1953,7 @@ body.calendar-fullpage-active .page-container,
   cursor: grab;
   user-select: none;
   z-index: 5;
-  transition: box-shadow 0.2s ease, transform 0.15s ease, opacity 0.15s ease;
+  transition: box-shadow 0.2s ease, opacity 0.15s ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1973,14 +1966,24 @@ body.calendar-fullpage-active .page-container,
 }
 
 .gcal-task-block:hover {
+  transform: none !important;
   z-index: 12;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+.gcal-task-block.is-short-block {
+  padding: 0 6px !important;
+  justify-content: center !important;
+}
+
+.gcal-task-block.is-short-block > div:first-child {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .gcal-task-block.is-dragging {
   opacity: 0.45;
-  transform: scale(0.98);
 }
 
 .gcal-card-check {
@@ -2184,7 +2187,7 @@ body.calendar-fullpage-active .page-container,
 }
 
 .gcal-all-day-pill:hover {
-  transform: translateY(-1px);
+  opacity: 0.95;
 }
 
 .gcal-week-scroll-canvas {
@@ -2273,7 +2276,6 @@ body.calendar-fullpage-active .page-container,
 }
 
 .task-card-box:hover {
-  transform: translateY(-2px);
   border-color: rgba(var(--primary-rgb, 23, 105, 255), 0.5) !important;
   box-shadow: var(--shadow-md) !important;
 }
@@ -2287,29 +2289,13 @@ body.calendar-fullpage-active .page-container,
   box-shadow: var(--shadow-sm);
 }
 
-/* Modern Horizontal Timeline Schedule Sequence Cards */
+/* Modern Horizontal Timeline Schedule Sequence Cards - Completely Static (No Hover Effect) */
 .timeline-seq-card {
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(8px);
 }
 
 .timeline-seq-card:hover {
-  transform: translateY(-2px) translateX(3px);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 16px rgba(23, 105, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
-}
-
-.timeline-seq-card.status-in_progress:hover {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.45) !important;
-  border-color: rgba(56, 189, 248, 0.8) !important;
-}
-
-.timeline-seq-card.status-completed:hover {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.3) !important;
-}
-
-.timeline-seq-card.status-overdue:hover {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 22px rgba(239, 68, 68, 0.4) !important;
+  /* No hover effects on Today's Schedule Sequence card */
 }
 
 @media (max-width: 768px) {

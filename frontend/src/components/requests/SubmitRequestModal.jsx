@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { FileText, Calendar, Clock, AlertCircle, X, PlusCircle } from 'lucide-react';
 import { getTodayDateString } from '../../utils/dateUtils';
+import { CustomSelect } from '../common/CustomSelect';
 
 export default function SubmitRequestModal({ isOpen, onClose }) {
   const { tasks, submitWorkRequest } = useApp();
@@ -158,28 +159,22 @@ export default function SubmitRequestModal({ isOpen, onClose }) {
               >
                 Select Existing Task (Optional)
               </label>
-              <select
+              <CustomSelect
                 value={selectedTaskId}
-                onChange={(e) => handleTaskSelect(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  background: 'var(--bg-primary, #0f172a)',
-                  border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.88rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <option value="">-- Choose task or type custom title below --</option>
-                {tasks.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title} ({t.date || 'No date'}{t.timeSlot ? ` • ${t.timeSlot}` : ''})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleTaskSelect(val)}
+                placeholder="-- Choose task or type custom title below --"
+                searchPlaceholder="Search tasks..."
+                isClearable={true}
+                options={[
+                  { value: '', label: '-- Choose task or type custom title below --' },
+                  ...tasks.map((t) => ({
+                    value: t.id,
+                    label: t.title,
+                    description: `${t.date || 'No date'}${t.startTime ? ` • ${t.startTime} - ${t.endTime || ''}` : t.timeSlot ? ` • ${t.timeSlot}` : ''}`,
+                    badge: t.priority || undefined,
+                  })),
+                ]}
+              />
             </div>
           )}
 

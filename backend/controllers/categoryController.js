@@ -1,8 +1,15 @@
 const { Category, Task, Event } = require('../models');
 const { Op } = require('sequelize');
+const cacheManager = require('../utils/cacheManager');
 
 exports.getAllCategories = async (req, res, next) => {
   try {
+    const cacheKey = `categories_${req.userId || 'public'}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return res.json({ success: true, data: cached, fromCache: true });
+    }
+
     const where = req.userId
       ? { [Op.or]: [{ userId: null }, { userId: req.userId }] }
       : {};
@@ -11,6 +18,8 @@ exports.getAllCategories = async (req, res, next) => {
       where,
       order: [['createdAt', 'ASC']],
     });
+
+    cacheManager.set(cacheKey, categories, 120); // 2-min cache with instant invalidation
     res.json({ success: true, data: categories });
   } catch (error) {
     next(error);
@@ -21,8 +30,8 @@ exports.getCategoryById = async (req, res, next) => {
   try {
     const category = await Category.findByPk(req.params.id, {
       include: [
-        { model: Task, as: 'tasks' },
-        { model: Event, as: 'events' },
+        { model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'date'] },
+        { model: Event, as: 'events', attributes: ['id', 'title', 'date'] },
       ],
     });
     if (!category) {
@@ -50,6 +59,7 @@ exports.createCategory = async (req, res, next) => {
       userId: req.userId || req.body.userId || null,
     });
 
+    cacheManager.invalidateCategories(req.userId);
     res.status(201).json({ success: true, data: category });
   } catch (error) {
     next(error);
@@ -93,6 +103,7 @@ exports.bulkCreateCategories = async (req, res, next) => {
       returning: true,
     });
 
+    cacheManager.invalidateCategories(req.userId);
     res.status(201).json({
       success: true,
       count: created.length,
@@ -120,6 +131,7 @@ exports.updateCategory = async (req, res, next) => {
       description: description !== undefined ? description : category.description,
     });
 
+    cacheManager.invalidateCategories(req.userId);
     res.json({ success: true, data: category });
   } catch (error) {
     next(error);
@@ -142,6 +154,7 @@ exports.deleteCategory = async (req, res, next) => {
     await Event.update({ categoryId: null }, { where: { categoryId: category.id } });
 
     await category.destroy();
+    cacheManager.invalidateCategories(req.userId);
     res.json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
     next(error);

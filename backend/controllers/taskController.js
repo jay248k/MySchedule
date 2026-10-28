@@ -35,8 +35,8 @@ exports.getAllTasks = async (req, res, next) => {
     const tasks = await Task.findAll({
       where,
       include: [
-        { model: Category, as: 'category' },
-        { model: Goal, as: 'goal' },
+        { model: Category, as: 'category', attributes: ['id', 'name', 'color', 'icon'] },
+        { model: Goal, as: 'goal', attributes: ['id', 'title', 'category'] },
       ],
       order: [
         ['date', 'ASC'],
@@ -101,7 +101,10 @@ const checkTaskConflict = async ({ date, startTime, endTime, excludeTaskId, user
     where.userId = userId;
   }
 
-  const existingTasks = await Task.findAll({ where });
+  const existingTasks = await Task.findAll({
+    where,
+    attributes: ['id', 'title', 'startTime', 'endTime'],
+  });
   for (const existing of existingTasks) {
     const exS = timeToMinutes(existing.startTime);
     const exE = timeToMinutes(existing.endTime);
@@ -116,7 +119,7 @@ const checkTaskConflict = async ({ date, startTime, endTime, excludeTaskId, user
 
 exports.createTask = async (req, res, next) => {
   try {
-    const { id, title, description, date, startTime, endTime, categoryId, category, priority, goalId, status } =
+    const { id, title, description, date, startTime, endTime, categoryId, category, priority, goalId, status, color } =
       req.body;
 
     if (!title || !title.trim()) {
@@ -169,6 +172,7 @@ exports.createTask = async (req, res, next) => {
       startTime: startTime || null,
       endTime: endTime || null,
       categoryId: resolvedCategoryId,
+      color: color || null,
       priority: normalizePriority(priority),
       goalId: goalId || null,
       status: status || 'pending',
@@ -307,7 +311,7 @@ exports.updateTask = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    const { title, description, date, startTime, endTime, categoryId, category, priority, goalId, status } =
+    const { title, description, date, startTime, endTime, categoryId, category, priority, goalId, status, color } =
       req.body;
 
     let resolvedCategoryId = categoryId !== undefined ? categoryId : task.categoryId;
@@ -361,6 +365,7 @@ exports.updateTask = async (req, res, next) => {
       startTime: startTime !== undefined ? startTime : task.startTime,
       endTime: endTime !== undefined ? endTime : task.endTime,
       categoryId: resolvedCategoryId,
+      color: color !== undefined ? color : task.color,
       priority: priority !== undefined ? normalizePriority(priority) : task.priority,
       goalId: goalId !== undefined ? goalId : task.goalId,
       status: status !== undefined ? status : task.status,

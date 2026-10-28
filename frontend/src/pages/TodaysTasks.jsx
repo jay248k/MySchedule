@@ -29,6 +29,7 @@ import { SmartRescheduleModal } from '../components/tasks/SmartRescheduleModal';
 import { TaskItem } from '../components/tasks/TaskItem';
 import { EmptyState } from '../components/common/EmptyState';
 import { DayGoogleCalendar } from '../components/tasks/DayGoogleCalendar';
+import { CustomSelect } from '../components/common/CustomSelect';
 
 export function TodaysTasks() {
   const { tasks, categories, events, openModal, selectedDate, setSelectedDate } = useApp();
@@ -204,7 +205,7 @@ export function TodaysTasks() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn btn-secondary"
@@ -361,6 +362,9 @@ export function TodaysTasks() {
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
+          overflow: 'visible',
+          position: 'relative',
+          zIndex: 20,
         }}
       >
         {/* Status Filter Tabs with Counts */}
@@ -427,44 +431,48 @@ export function TodaysTasks() {
           </div>
 
           {/* Category Filter */}
-          <select
-            className="form-select"
-            style={{ fontSize: '0.85rem' }}
+          <CustomSelect
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setSelectedCategory(val)}
+            options={[
+              { value: 'all', label: 'All Categories' },
+              ...categories.map((c) => ({
+                value: c.id,
+                label: c.name,
+                color: c.color,
+              })),
+            ]}
+            placeholder="All Categories"
+            searchPlaceholder="Search categories..."
+            showSearch={categories.length > 5}
+          />
 
           {/* Priority Filter */}
-          <select
-            className="form-select"
-            style={{ fontSize: '0.85rem' }}
+          <CustomSelect
             value={selectedPriority}
-            onChange={(e) => setSelectedPriority(e.target.value)}
-          >
-            <option value="all">All Priorities</option>
-            <option value="high">High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
-          </select>
+            onChange={(val) => setSelectedPriority(val)}
+            options={[
+              { value: 'all', label: 'All Priorities' },
+              { value: 'high', label: '🔴 High Priority' },
+              { value: 'medium', label: '🟡 Medium Priority' },
+              { value: 'low', label: '🟢 Low Priority' },
+            ]}
+            placeholder="All Priorities"
+            showSearch={false}
+          />
 
           {/* Sort By */}
-          <select
-            className="form-select"
-            style={{ fontSize: '0.85rem' }}
+          <CustomSelect
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="time">Sort: Scheduled Time</option>
-            <option value="priority">Sort: Priority</option>
-            <option value="created">Sort: Creation Date</option>
-          </select>
+            onChange={(val) => setSortBy(val)}
+            options={[
+              { value: 'time', label: '⏰ Sort: Scheduled Time' },
+              { value: 'priority', label: '🚩 Sort: Priority' },
+              { value: 'created', label: '📅 Sort: Creation Date' },
+            ]}
+            placeholder="Sort By"
+            showSearch={false}
+          />
         </div>
       </div>
 

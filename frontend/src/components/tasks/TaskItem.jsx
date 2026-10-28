@@ -17,6 +17,7 @@ export function TaskItem({ task, showDate = false, compact = false, asCard = fal
     name: 'General',
     color: '#64748B',
   };
+  const taskColor = task.color || category.color || '#3B82F6';
 
   const linkedGoal = goals.find((g) => g.id === task.goalId || g.relatedTaskIds?.includes(task.id));
 
@@ -36,7 +37,7 @@ export function TaskItem({ task, showDate = false, compact = false, asCard = fal
           padding: '14px 16px',
           background: 'var(--card-bg)',
           border: '1px solid var(--border-color)',
-          borderLeft: `4px solid ${category.color}`,
+          borderLeft: `4px solid ${taskColor}`,
           borderRadius: 'var(--radius-md)',
           boxShadow: isCompleted ? 'none' : 'var(--shadow-sm)',
           position: 'relative',
@@ -315,7 +316,7 @@ export function TaskItem({ task, showDate = false, compact = false, asCard = fal
           bottom: 0,
           width: '4px',
           borderRadius: 'var(--radius-md) 0 0 var(--radius-md)',
-          backgroundColor: category.color,
+          backgroundColor: taskColor,
         }}
       />
 

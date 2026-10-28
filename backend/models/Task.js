@@ -37,6 +37,10 @@ module.exports = (sequelize) => {
           key: 'id',
         },
       },
+      color: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       priority: {
         type: DataTypes.STRING,
         defaultValue: 'Medium',

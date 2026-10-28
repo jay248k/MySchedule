@@ -22,7 +22,7 @@ exports.getAllEvents = async (req, res, next) => {
 
     const events = await Event.findAll({
       where,
-      include: [{ model: Category, as: 'category' }],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'color', 'icon'] }],
       order: [
         ['date', 'ASC'],
         ['startTime', 'ASC'],
@@ -38,7 +38,7 @@ exports.getAllEvents = async (req, res, next) => {
 exports.getEventById = async (req, res, next) => {
   try {
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Category, as: 'category' }],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'color', 'icon'] }],
     });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });

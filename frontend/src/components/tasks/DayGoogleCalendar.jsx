@@ -538,8 +538,12 @@ export function DayGoogleCalendar({
             )}`;
 
             const isDragging = draggingTaskId === item.id;
-            // Google Calendar vibrant solid color palette
-            const baseColor = isCompleted
+            const isShortBlock = blockHeight < 40 || activeDuration <= 30;
+
+            // Google Calendar vibrant solid color palette (respects item.color)
+            const baseColor = item.color
+              ? item.color
+              : isCompleted
               ? '#059669' // rich emerald
               : isOverdue
               ? '#DC2626' // vibrant red
@@ -556,7 +560,7 @@ export function DayGoogleCalendar({
                 onClick={() => (isEvent ? openModal('event', item) : openModal('task', item))}
                 className={`gcal-task-block ${isDragging ? 'is-dragging' : ''} ${
                   isBeingResized ? 'is-resizing' : ''
-                }`}
+                } ${isShortBlock ? 'is-short-block' : ''}`}
                 style={{
                   top: `${topPos}px`,
                   height: `${blockHeight}px`,
@@ -566,14 +570,27 @@ export function DayGoogleCalendar({
                   border: '1px solid rgba(255, 255, 255, 0.18)',
                   borderLeft: '4px solid rgba(0, 0, 0, 0.28)',
                   color: '#FFFFFF',
+                  padding: isShortBlock ? '0 8px' : '5px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: isShortBlock ? 'center' : 'flex-start',
                   boxShadow: isCompleted
                     ? '0 1px 3px rgba(5, 150, 105, 0.3)'
                     : '0 2px 6px rgba(0, 0, 0, 0.15)',
                 }}
-                title={`Drag to reschedule • Drag bottom handle to resize • Click to edit "${item.title}"`}
+                title={`${item.title} • ${timeDisplay} • Drag to reschedule • Click to edit`}
               >
-                {/* Line 1: Checkbox + Full Width Title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, width: '100%' }}>
+                {/* Line 1: Checkbox + Full Width Title - Perfectly Centered */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    minWidth: 0,
+                    width: '100%',
+                    height: isShortBlock ? '100%' : 'auto',
+                  }}
+                >
                   {!isEvent && (
                     <button
                       type="button"
@@ -583,6 +600,11 @@ export function DayGoogleCalendar({
                         toggleTaskComplete(item.id);
                       }}
                       title={isCompleted ? 'Mark incomplete' : 'Mark complete'}
+                      style={{
+                        width: '13px',
+                        height: '13px',
+                        flexShrink: 0,
+                      }}
                     >
                       {isCompleted && <Check size={10} strokeWidth={3.5} color="#FFFFFF" />}
                     </button>
@@ -591,9 +613,9 @@ export function DayGoogleCalendar({
                   <span
                     style={{
                       fontWeight: 700,
-                      fontSize: '0.82rem',
+                      fontSize: isShortBlock ? '0.78rem' : '0.82rem',
                       color: '#FFFFFF',
-                      lineHeight: 1.25,
+                      lineHeight: 1.15,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -607,21 +629,23 @@ export function DayGoogleCalendar({
                   </span>
                 </div>
 
-                {/* Line 2: Time Range Display */}
-                <div
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    color: 'rgba(255, 255, 255, 0.92)',
-                    marginTop: '2px',
-                    lineHeight: 1.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {timeDisplay}
-                </div>
+                {/* Line 2: Time Range Display (Only when height allows) */}
+                {!isShortBlock && blockHeight >= 42 && (
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: 'rgba(255, 255, 255, 0.92)',
+                      marginTop: '2px',
+                      lineHeight: 1.2,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {timeDisplay}
+                  </div>
+                )}
 
                 {/* Line 3: Category & Priority Badges */}
                 {blockHeight >= 56 && (

@@ -13,12 +13,13 @@ const sequelize = new Sequelize(connectionString, {
       rejectUnauthorized: false,
     },
   },
-  logging: process.env.NODE_ENV === 'development' ? (msg) => console.log(`[Sequelize] ${msg}`) : false,
+  logging: process.env.DEBUG_SQL === 'true' ? (msg) => console.log(`[Sequelize] ${msg}`) : false,
+  benchmark: false,
   pool: {
-    max: 10,
-    min: 0,
+    max: 20,
+    min: 2,
     acquire: 30000,
-    idle: 10000,
+    idle: 20000,
   },
 });
 

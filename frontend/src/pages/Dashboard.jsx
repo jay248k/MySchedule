@@ -8,9 +8,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  CartesianGrid,
   Legend,
 } from 'recharts';
 import {
@@ -23,9 +21,9 @@ import {
   ArrowRight,
   TrendingUp,
   Zap,
-  PieChart as PieChartIcon,
   Flame,
   Sparkles,
+  Target,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getTodayDateString, formatDate } from '../utils/dateUtils';
@@ -39,6 +37,7 @@ import {
 import { ProgressRing, ProgressBar } from '../components/common/ProgressRing';
 import { DailyScheduleTimeline } from '../components/tasks/DailyScheduleTimeline';
 import { WorkHoursClock } from '../components/dashboard/WorkHoursClock';
+import { CustomSelect } from '../components/common/CustomSelect';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -101,7 +100,7 @@ function CustomTrendTooltip({ active, payload, label }) {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { tasks, categories, user, selectedDate } = useApp();
+  const { tasks = [], categories = [], goals = [], user, selectedDate } = useApp();
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
@@ -118,7 +117,7 @@ export function Dashboard() {
   );
 
   // Recharts Data
-  const [trendRange, setTrendRange] = useState('week'); // 'week' | 'month' | 'year'
+  const [trendRange, setTrendRange] = useState('month'); // default to 'month' per user request
   const [selectedTrendCategory, setSelectedTrendCategory] = useState('all');
   const trendData = useMemo(
     () => getProductivityTrend(tasks, trendRange, selectedTrendCategory, categories),
@@ -144,6 +143,19 @@ export function Dashboard() {
     const dist = getCategoryDistribution(tasks, categories);
     return dist.filter((c) => c.value > 0);
   }, [tasks, categories]);
+
+  // Goal filter for 365-Day Contribution Graph
+  const [selectedHeatmapGoal, setSelectedHeatmapGoal] = useState('all');
+
+  const filteredHeatmapTasks = useMemo(() => {
+    if (!selectedHeatmapGoal || selectedHeatmapGoal === 'all') return tasks;
+    return tasks.filter((t) => {
+      if (t.goalId === selectedHeatmapGoal) return true;
+      const g = goals.find((item) => item.id === selectedHeatmapGoal);
+      if (g?.relatedTaskIds?.includes(t.id)) return true;
+      return false;
+    });
+  }, [tasks, selectedHeatmapGoal, goals]);
 
   // 365-Day Activity Contribution Graph (Past 52 weeks = 364 days)
   const heatmapDays = useMemo(() => {
@@ -184,16 +196,19 @@ export function Dashboard() {
     return days;
   }, []);
 
-  // Map completed tasks count per date
+  // Map completed tasks count per date (using filteredHeatmapTasks with normalized date)
   const completedTaskCountsByDate = useMemo(() => {
     const counts = {};
-    tasks.forEach((t) => {
+    filteredHeatmapTasks.forEach((t) => {
       if (t.date && (t.status === 'completed' || t.completedAt)) {
-        counts[t.date] = (counts[t.date] || 0) + 1;
+        const dStr = typeof t.date === 'string' ? t.date.split('T')[0] : '';
+        if (dStr) {
+          counts[dStr] = (counts[dStr] || 0) + 1;
+        }
       }
     });
     return counts;
-  }, [tasks]);
+  }, [filteredHeatmapTasks]);
 
   // Overall heatmap streak and totals
   const heatmapStats = useMemo(() => {
@@ -413,70 +428,86 @@ export function Dashboard() {
         </div>
       </motion.section>
 
-      {/* 4. Production Analytics Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '14px' }}>
-        {/* Weekly Productivity Trend Area Chart (8 Columns) */}
+      {/* 4. Production Analytics Charts Row: Productivity Trend (8 cols) + Progress Overview (4 cols) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px', alignItems: 'stretch' }}>
+        {/* Productivity Trend Area Chart (8 Columns) - Production Level Design */}
         <motion.div
           variants={cardVariants}
           className="card"
-          style={{ gridColumn: 'span 8', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}
+          style={{
+            gridColumn: 'span 8',
+            padding: '18px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            borderRadius: '18px',
+          }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h2 className="card-title" style={{ margin: 0, fontSize: '0.92rem' }}>
-                <TrendingUp size={16} color="var(--primary-color)" />
-                {trendRange === 'week' ? 'Weekly' : trendRange === 'month' ? 'Monthly' : 'Yearly'} Productivity Trend
-              </h2>
-              <span className="card-subtitle" style={{ fontSize: '0.72rem' }}>
-                {selectedTrendCategory === 'all'
-                  ? `Completed vs scheduled tasks across all categories over the last ${
-                      trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                    }`
-                  : `Showing tasks for "${currentCategory?.name || 'Category'}" over the last ${
-                      trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                    }`}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '10px',
+                    background: 'rgba(23, 105, 255, 0.14)',
+                    color: 'var(--primary-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(23, 105, 255, 0.28)',
+                  }}
+                >
+                  <TrendingUp size={18} strokeWidth={2.4} />
+                </div>
+                <div>
+                  <h2 className="card-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                    {trendRange === 'week' ? 'Weekly' : trendRange === 'month' ? 'Monthly' : 'Yearly'} Productivity Trend
+                  </h2>
+                  <span className="card-subtitle" style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                    {selectedTrendCategory === 'all'
+                      ? `Completed vs scheduled tasks across all categories over the last ${
+                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                        }`
+                      : `Showing tasks for "${currentCategory?.name || 'Category'}" over the last ${
+                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                        }`}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Filter Controls: Category Selector + Week/Month/Year Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {/* Category Dropdown Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <select
-                  className="form-select"
+            {/* Filter Controls: CustomSelect Category Filter + Week/Month/Year Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ minWidth: '190px' }}>
+                <CustomSelect
                   value={selectedTrendCategory}
-                  onChange={(e) => setSelectedTrendCategory(e.target.value)}
-                  style={{
-                    fontSize: '0.74rem',
-                    padding: '2px 24px 2px 8px',
-                    height: '26px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--page-bg)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                  }}
-                  title="Filter by Category"
-                >
-                  <option value="all">📁 All Categories (All Lines)</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedTrendCategory(val)}
+                  options={[
+                    { value: 'all', label: 'All Categories (Multi-line)', color: '#38BDF8' },
+                    ...categories.map((cat) => ({
+                      value: cat.id,
+                      label: cat.name,
+                      color: cat.color,
+                    })),
+                  ]}
+                  placeholder="Select Category"
+                  searchPlaceholder="Filter category..."
+                  showSearch={categories.length > 4}
+                  style={{ minWidth: '180px' }}
+                />
               </div>
 
-              {/* Week / Month / Year Filter Toggle */}
+              {/* Time Range Filter Pill Buttons */}
               <div
                 style={{
                   display: 'inline-flex',
                   background: 'var(--page-bg)',
-                  padding: '2px',
-                  borderRadius: '6px',
+                  padding: '3px',
+                  borderRadius: '10px',
                   border: '1px solid var(--border-color)',
-                  gap: '2px',
+                  gap: '3px',
                 }}
               >
                 {[
@@ -494,13 +525,12 @@ export function Dashboard() {
                         border: 'none',
                         background: isActive ? 'var(--primary-color)' : 'transparent',
                         color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
-                        padding: '2px 9px',
-                        borderRadius: '5px',
-                        fontSize: '0.72rem',
+                        padding: '4px 12px',
+                        borderRadius: '7px',
+                        fontSize: '0.76rem',
                         fontWeight: isActive ? 700 : 600,
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
+                        transition: 'background 0.15s ease',
                       }}
                     >
                       {item.label}
@@ -511,9 +541,10 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div style={{ width: '100%', height: '130px', marginTop: '2px' }}>
+          {/* Area Chart with Professional High-End Aesthetics */}
+          <div style={{ width: '100%', height: '230px', marginTop: '4px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="completedGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={currentCategory?.color || '#10B981'} stopOpacity={0.4} />
@@ -531,13 +562,14 @@ export function Dashboard() {
                     </linearGradient>
                   ))}
                 </defs>
-                <XAxis dataKey="day" stroke="#94A3B8" fontSize={10} tickLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" vertical={false} />
+                <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} dy={6} />
+                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTrendTooltip />} />
                 {selectedTrendCategory === 'all' && activeCategories.length > 0 && (
                   <Legend
-                    wrapperStyle={{ fontSize: '0.68rem', paddingTop: '2px' }}
-                    height={20}
+                    wrapperStyle={{ fontSize: '0.74rem', paddingTop: '6px' }}
+                    height={24}
                     iconType="circle"
                   />
                 )}
@@ -552,17 +584,18 @@ export function Dashboard() {
                           dataKey={`cat_${cat.id}`}
                           name={cat.name}
                           stroke={cat.color || '#3B82F6'}
-                          strokeWidth={2}
+                          strokeWidth={2.5}
                           fillOpacity={1}
                           fill={`url(#grad_${cat.id})`}
+                          activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
                         />
                       ))}
                       <Area
                         type="monotone"
                         dataKey="total"
-                        name="Total All Tasks"
+                        name="Total Scheduled Tasks"
                         stroke="#94A3B8"
-                        strokeWidth={1.2}
+                        strokeWidth={1.4}
                         strokeDasharray="4 4"
                         fillOpacity={1}
                         fill="url(#totalGrad)"
@@ -575,14 +608,15 @@ export function Dashboard() {
                         dataKey="completed"
                         name="Completed Tasks"
                         stroke="#10B981"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#completedGrad)"
+                        activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
                       />
                       <Area
                         type="monotone"
                         dataKey="total"
-                        name="Total Tasks"
+                        name="Total Scheduled Tasks"
                         stroke="#3B82F6"
                         strokeWidth={1.5}
                         strokeDasharray="4 4"
@@ -598,9 +632,10 @@ export function Dashboard() {
                       dataKey="completed"
                       name={`${currentCategory?.name || 'Category'} Completed`}
                       stroke={currentCategory?.color || '#10B981'}
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#completedGrad)"
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
                     />
                     <Area
                       type="monotone"
@@ -619,142 +654,87 @@ export function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Category Workload Distribution Donut Chart (4 Columns) */}
+        {/* Progress Overview (4 Columns) - Fits perfectly instead of Workload by Category */}
         <motion.div
           variants={cardVariants}
           className="card"
-          style={{ gridColumn: 'span 4', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 className="card-title" style={{ margin: 0, fontSize: '0.92rem' }}>
-                <PieChartIcon size={16} color="var(--primary-color)" />
-                Workload by Category
-              </h2>
-              <span className="card-subtitle" style={{ fontSize: '0.72rem' }}>Distribution across active tasks</span>
-            </div>
-          </div>
-
-          <div style={{ width: '100%', height: '130px', position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={28}
-                  outerRadius={48}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color || '#1769FF'} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value, name) => [`${value} tasks`, name]}
-                  contentStyle={{
-                    background: '#0F172A',
-                    borderRadius: '8px',
-                    border: '1px solid #334155',
-                    color: '#FFFFFF',
-                    fontSize: '0.75rem',
-                  }}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={22}
-                  iconType="circle"
-                  formatter={(value) => (
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      {value}
-                    </span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* 5. Progress Overview (Full-Width Top Summary) */}
-      <motion.div variants={cardVariants} className="card" style={{ padding: '14px 22px', width: '100%' }}>
-        <div
           style={{
+            gridColumn: 'span 4',
+            padding: '18px 20px',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '16px',
+            gap: '14px',
+            borderRadius: '18px',
           }}
         >
-          {/* Left: Icon, Title & Performance Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: 'rgba(var(--primary-rgb, 23, 105, 255), 0.15)',
-                border: '1px solid rgba(var(--primary-rgb, 23, 105, 255), 0.3)',
-                color: 'var(--primary-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <TrendingUp size={19} strokeWidth={2.2} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 className="card-title" style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
+                  background: 'rgba(16, 185, 129, 0.14)',
+                  color: '#10B981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(16, 185, 129, 0.28)',
+                }}
+              >
+                <Zap size={18} strokeWidth={2.4} />
+              </div>
+              <div>
+                <h2 className="card-title" style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800 }}>
                   Progress Overview
                 </h2>
-                <span
-                  style={{
-                    background: todayStats.percentage === 100 ? '#ECFDF5' : '#EFF6FF',
-                    color: todayStats.percentage === 100 ? '#059669' : '#1D4ED8',
-                    border: `1px solid ${todayStats.percentage === 100 ? '#A7F3D0' : '#BFDBFE'}`,
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {todayStats.percentage === 100 ? (
-                    <>
-                      <Sparkles size={11} /> Perfect Day
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={11} /> {todayStats.completed}/{todayStats.total} Done
-                    </>
-                  )}
+                <span className="card-subtitle" style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  Daily & monthly velocity
                 </span>
               </div>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-                Real-time daily & monthly completion velocity
-              </span>
             </div>
+
+            <span
+              style={{
+                background: todayStats.percentage === 100 ? '#ECFDF5' : '#EFF6FF',
+                color: todayStats.percentage === 100 ? '#059669' : '#1D4ED8',
+                border: `1px solid ${todayStats.percentage === 100 ? '#A7F3D0' : '#BFDBFE'}`,
+                padding: '2px 8px',
+                borderRadius: '999px',
+                fontSize: '0.70rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              {todayStats.percentage === 100 ? (
+                <>
+                  <Sparkles size={11} /> Perfect Day
+                </>
+              ) : (
+                <>
+                  <Zap size={11} /> {todayStats.completed}/{todayStats.total} Done
+                </>
+              )}
+            </span>
           </div>
 
-          {/* Center: Dual Animated Circular Rings */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+          {/* Dual Circular Rings */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '6px 0' }}>
             <ProgressRing
-              radius={34}
-              stroke={5.5}
+              radius={36}
+              stroke={6}
               progress={todayStats.percentage}
               color="var(--primary-color)"
               label="Today"
               animateOnMount={true}
             />
             <ProgressRing
-              radius={34}
-              stroke={5.5}
+              radius={36}
+              stroke={6}
               progress={currentMonthStats.percentage}
               color="var(--success)"
               label="This Month"
@@ -762,25 +742,26 @@ export function Dashboard() {
             />
           </div>
 
-          {/* Right: Dual Progress Bars */}
-          <div style={{ minWidth: '240px', flex: '1 1 260px', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Progress Bars */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '3px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Today's Tasks Done</span>
-                <strong>{todayStats.completed} / {todayStats.total}</strong>
+                <strong>{todayStats.completed} / {todayStats.total} ({todayStats.percentage}%)</strong>
               </div>
               <ProgressBar progress={todayStats.percentage} color="var(--primary-color)" animateOnMount={true} />
             </div>
+
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '3px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Monthly Target</span>
-                <strong>{currentMonthStats.completed} / {currentMonthStats.total}</strong>
+                <strong>{currentMonthStats.completed} / {currentMonthStats.total} ({currentMonthStats.percentage}%)</strong>
               </div>
               <ProgressBar progress={currentMonthStats.percentage} color="var(--success)" animateOnMount={true} />
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* 6. Today's Schedule Sequence (Full Screen Width) */}
       <motion.div
@@ -999,71 +980,100 @@ export function Dashboard() {
             </p>
           </div>
 
-          {/* Legend */}
+          {/* Controls: Goal Filter + Legend */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.74rem',
-              color: 'var(--text-muted)',
-              userSelect: 'none',
+              gap: '14px',
+              flexWrap: 'wrap',
             }}
           >
-            <span>Less</span>
-            <span
+            {/* Goal Filter */}
+            <div style={{ width: '210px' }}>
+              <CustomSelect
+                value={selectedHeatmapGoal}
+                onChange={(val) => setSelectedHeatmapGoal(val)}
+                options={[
+                  { value: 'all', label: '🎯 All Goals' },
+                  ...goals.map((g) => ({
+                    value: g.id,
+                    label: g.title,
+                    description: g.category || 'Goal',
+                  })),
+                ]}
+                placeholder="Filter by Goal"
+                searchPlaceholder="Search goals..."
+                showSearch={goals.length > 4}
+              />
+            </div>
+
+            {/* Legend */}
+            <div
               style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '3px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'inline-block',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.74rem',
+                color: 'var(--text-muted)',
+                userSelect: 'none',
               }}
-              title="0 tasks"
-            />
-            <span
-              style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '3px',
-                background: 'rgba(16, 185, 129, 0.35)',
-                display: 'inline-block',
-              }}
-              title="1 task"
-            />
-            <span
-              style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '3px',
-                background: 'rgba(16, 185, 129, 0.65)',
-                display: 'inline-block',
-              }}
-              title="2 tasks"
-            />
-            <span
-              style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '3px',
-                background: '#10B981',
-                display: 'inline-block',
-              }}
-              title="3 tasks"
-            />
-            <span
-              style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '3px',
-                background: '#34D399',
-                boxShadow: '0 0 6px rgba(52, 211, 153, 0.5)',
-                display: 'inline-block',
-              }}
-              title="4+ tasks"
-            />
-            <span>More</span>
+            >
+              <span>Less</span>
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '3px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'inline-block',
+                }}
+                title="0 tasks"
+              />
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '3px',
+                  background: 'rgba(16, 185, 129, 0.35)',
+                  display: 'inline-block',
+                }}
+                title="1 task"
+              />
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '3px',
+                  background: 'rgba(16, 185, 129, 0.65)',
+                  display: 'inline-block',
+                }}
+                title="2 tasks"
+              />
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '3px',
+                  background: '#10B981',
+                  display: 'inline-block',
+                }}
+                title="3 tasks"
+              />
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '3px',
+                  background: '#34D399',
+                  boxShadow: '0 0 6px rgba(52, 211, 153, 0.5)',
+                  display: 'inline-block',
+                }}
+                title="4+ tasks"
+              />
+              <span>More</span>
+            </div>
           </div>
         </div>
 
@@ -1074,7 +1084,7 @@ export function Dashboard() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '36px repeat(52, 1fr)',
+                gridTemplateColumns: '36px repeat(52, minmax(0, 1fr))',
                 gap: '3px',
                 marginBottom: '8px',
                 fontSize: '0.72rem',
@@ -1092,6 +1102,7 @@ export function Dashboard() {
                     onClick={() => setSelectedHeatmapMonth(isSelectedMonth ? null : m.monthIndex)}
                     style={{
                       gridColumnStart: m.col + 2,
+                      gridRowStart: 1,
                       textAlign: 'left',
                       whiteSpace: 'nowrap',
                       color: isSelectedMonth ? '#38BDF8' : m.isYearTransition ? '#93C5FD' : '#94A3B8',
@@ -1112,7 +1123,7 @@ export function Dashboard() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '36px repeat(52, 1fr)',
+                gridTemplateColumns: '36px repeat(52, minmax(0, 1fr))',
                 gap: '3px',
                 alignItems: 'stretch',
               }}

@@ -1,9 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const morgan = require('morgan');
 
 const { sequelize } = require('./config/database');
+const { optimizeDatabase } = require('./config/optimizeDatabase');
 const db = require('./models');
 
 // Import routes
@@ -25,6 +27,9 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Performance Middleware: Gzip/Brotli compression for all JSON responses
+app.use(compression());
 
 // Middleware
 app.use(
@@ -118,6 +123,7 @@ const startServer = async () => {
       await sequelize.query('DROP TABLE IF EXISTS roles CASCADE;');
       await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "roleId";');
       await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "role";');
+      await sequelize.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "color" VARCHAR(255);');
     } catch (cleanupErr) {
       // safe ignore if already cleaned
     }
@@ -125,6 +131,9 @@ const startServer = async () => {
     // Ensure database tables exist (safe sync without dropping data)
     await sequelize.sync();
     console.log('✅ Sequelize models synchronized with database tables.');
+
+    // Apply database indexing & optimization
+    await optimizeDatabase();
 
     // Auto-seed initial data if categories table is empty
     const categoryCount = await db.Category.count();
