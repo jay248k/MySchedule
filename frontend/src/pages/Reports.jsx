@@ -893,11 +893,11 @@ export function Reports() {
             </div>
 
             {/* Right Column: Daily Work Report & Standup Editor (7 Cols) */}
-            <div style={{ gridColumn: 'span 7' }} className="report-chart-col">
+            <div style={{ gridColumn: 'span 7', minWidth: 0 }} className="report-chart-col">
               <div
                 className="card"
                 style={{
-                  padding: '26px 28px',
+                  padding: '24px 22px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '20px',
@@ -906,6 +906,8 @@ export function Reports() {
                   boxShadow: 'var(--shadow-lg)',
                   borderRadius: 'var(--radius-lg)',
                   position: 'relative',
+                  minWidth: 0,
+                  overflow: 'hidden',
                 }}
               >
                 {/* 1. Header with Status & Top Quick Actions */}
@@ -1368,16 +1370,17 @@ export function Reports() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(220px, 1.2fr) minmax(320px, 2fr)',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                     gap: '16px',
-                    padding: '18px',
+                    padding: '16px',
                     background: 'var(--page-bg)',
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-color)',
+                    minWidth: 0,
                   }}
                 >
                   {/* Left: Logged Effort Hours */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <label style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                         Logged Effort Hours
@@ -1489,8 +1492,8 @@ export function Reports() {
                   </div>
 
                   {/* Right: Day Velocity / Mood Selector */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
                       <label style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                         Productivity Velocity / Mood
                       </label>
@@ -1499,7 +1502,7 @@ export function Reports() {
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
                       {[
                         { id: 'fire', label: 'High Velocity', emoji: '🔥', color: '#F97316', bg: 'rgba(249, 115, 22, 0.15)' },
                         { id: 'rocket', label: 'On Track', emoji: '🚀', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },

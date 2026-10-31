@@ -524,36 +524,60 @@ export function DeviationsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {dateDeviations.map((dev) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {dateDeviations.map((dev, idx) => {
               const durM = Number(dev.durationMinutes) || 60;
               const h = Math.floor(durM / 60);
               const m = durM % 60;
               const durationLabel = h > 0 ? `${h}h ${m}m` : `${m}m`;
+              const categoryMatch = REASON_CATEGORIES.find((c) => c.id === dev.reasonCategory) || {
+                label: dev.reasonCategory || 'Deviation Event',
+                color: '#EF4444',
+              };
 
               return (
                 <div
                   key={dev.id}
                   style={{
-                    background: 'var(--card-bg)',
+                    background: 'linear-gradient(180deg, var(--card-bg) 0%, rgba(20, 27, 45, 0.95) 100%)',
                     border: '1px solid var(--border-color)',
+                    borderLeft: `4px solid ${categoryMatch.color || '#EF4444'}`,
                     borderRadius: '16px',
                     padding: '20px 24px',
-                    boxShadow: 'var(--shadow-sm)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '14px',
+                    gap: '16px',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
                 >
                   {/* Top Bar: Time Slot & Category Badges & Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      {/* Incident Badge */}
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          padding: '3px 9px',
+                          borderRadius: '6px',
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          color: '#EF4444',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                        }}
+                      >
+                        INCIDENT #{idx + 1}
+                      </span>
+
                       {/* Timeslot Pill */}
                       <span
                         style={{
-                          background: 'rgba(59, 130, 246, 0.14)',
-                          border: '1px solid rgba(59, 130, 246, 0.35)',
-                          color: '#3B82F6',
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: '#60A5FA',
                           fontSize: '0.82rem',
                           fontWeight: 800,
                           padding: '4px 10px',
@@ -565,24 +589,26 @@ export function DeviationsPage() {
                       >
                         <Clock size={13} />
                         <span>{dev.startTime} — {dev.endTime}</span>
-                        <span style={{ opacity: 0.7 }}>({durationLabel})</span>
+                        <span style={{ opacity: 0.85, fontWeight: 700 }}>• {durationLabel}</span>
                       </span>
 
-                      {/* Type Badge */}
-                      {dev.deviationType === 'productive' && (
-                        <span
-                          style={{
-                            background: 'rgba(16, 185, 129, 0.12)',
-                            color: '#10B981',
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                          }}
-                        >
-                          Productive Divergence
-                        </span>
-                      )}
+                      {/* Category Badge */}
+                      <span
+                        style={{
+                          background: `${categoryMatch.color}18`,
+                          border: `1px solid ${categoryMatch.color}40`,
+                          color: categoryMatch.color,
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          padding: '3px 10px',
+                          borderRadius: '999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        {categoryMatch.label}
+                      </span>
                     </div>
 
                     {/* Actions */}
@@ -592,22 +618,23 @@ export function DeviationsPage() {
                         className="btn-icon"
                         onClick={() => handleOpenEditModal(dev)}
                         title="Edit deviation details"
+                        style={{ width: '32px', height: '32px' }}
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={15} />
                       </button>
                       <button
                         type="button"
                         className="btn-icon"
                         onClick={() => deleteDeviation(dev.id)}
                         title="Delete log"
-                        style={{ color: '#EF4444' }}
+                        style={{ width: '32px', height: '32px', color: '#EF4444' }}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Planned vs Actual Comparison Boxes */}
+                  {/* Realistic Planned vs Actual Divergence Cards */}
                   <div
                     style={{
                       display: 'grid',
@@ -615,42 +642,48 @@ export function DeviationsPage() {
                       gap: '14px',
                     }}
                   >
-                    {/* What I Was Supposed To Do (PLANNED) */}
+                    {/* What I Had To Do (PLANNED) */}
                     <div
                       style={{
-                        background: 'rgba(239, 68, 68, 0.05)',
-                        border: '1.5px solid rgba(239, 68, 68, 0.25)',
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%)',
+                        border: '1.5px solid rgba(59, 130, 246, 0.25)',
                         borderRadius: '12px',
-                        padding: '14px 18px',
+                        padding: '16px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
                       }}
                     >
                       <div
                         style={{
                           fontSize: '0.72rem',
                           fontWeight: 800,
-                          color: '#EF4444',
+                          color: '#60A5FA',
                           textTransform: 'uppercase',
                           letterSpacing: '0.06em',
-                          marginBottom: '6px',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '6px',
                         }}
                       >
-                        <span>❌ What I Had To Do (Planned):</span>
+                        <Target size={14} />
+                        <span>Planned Schedule Commitment</span>
                       </div>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                      <div style={{ fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                         {dev.plannedAction}
                       </div>
                     </div>
 
-                    {/* What I Actually Did Instead (ACTUAL) */}
+                    {/* What I Actually Did (ACTUAL DEVIATION) */}
                     <div
                       style={{
-                        background: 'rgba(245, 158, 11, 0.08)',
+                        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.04) 100%)',
                         border: '1.5px solid rgba(245, 158, 11, 0.35)',
                         borderRadius: '12px',
-                        padding: '14px 18px',
+                        padding: '16px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
                       }}
                     >
                       <div
@@ -660,48 +693,48 @@ export function DeviationsPage() {
                           color: '#F59E0B',
                           textTransform: 'uppercase',
                           letterSpacing: '0.06em',
-                          marginBottom: '6px',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '6px',
                         }}
                       >
-                        <span>⚠️ What I Actually Did (Mistake / Deviation):</span>
+                        <AlertTriangle size={14} />
+                        <span>Actual Deviation / Mistake</span>
                       </div>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                      <div style={{ fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                         {dev.actualAction}
                       </div>
                     </div>
                   </div>
 
-                  {/* Root Cause & Lesson Learned Footer */}
+                  {/* Root Cause & Lesson Learned Footer Callout */}
                   {(dev.rootCause || dev.lessonLearned) && (
                     <div
                       style={{
-                        background: 'var(--page-bg)',
+                        background: 'rgba(0, 0, 0, 0.25)',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '10px',
-                        padding: '12px 16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        fontSize: '0.84rem',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        display: 'grid',
+                        gridTemplateColumns: dev.rootCause && dev.lessonLearned ? 'repeat(auto-fit, minmax(250px, 1fr))' : '1fr',
+                        gap: '12px',
+                        fontSize: '0.86rem',
                       }}
                     >
                       {dev.rootCause && (
                         <div>
-                          <strong style={{ color: 'var(--text-primary)', marginRight: '6px' }}>
-                            🔍 Why this happened (Root cause):
-                          </strong>
-                          <span style={{ color: 'var(--text-secondary)' }}>{dev.rootCause}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '3px', textTransform: 'uppercase' }}>
+                            <HelpCircle size={13} color="var(--primary-color)" /> Root Cause Trigger:
+                          </div>
+                          <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>{dev.rootCause}</span>
                         </div>
                       )}
                       {dev.lessonLearned && (
                         <div>
-                          <strong style={{ color: '#10B981', marginRight: '6px' }}>
-                            💡 Next time fix / Lesson learned:
-                          </strong>
-                          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', fontWeight: 800, color: '#10B981', marginBottom: '3px', textTransform: 'uppercase' }}>
+                            <Lightbulb size={13} color="#10B981" /> Next-Time Prevention Rule:
+                          </div>
+                          <span style={{ color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.4 }}>
                             {dev.lessonLearned}
                           </span>
                         </div>
@@ -851,6 +884,16 @@ export function DeviationsPage() {
                   </div>
                 </div>
 
+                {/* Duration indicator pill */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#EF4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertCircle size={14} /> Total Diverted Timeslot:
+                  </span>
+                  <span style={{ fontSize: '0.82rem', color: '#F87171', fontWeight: 800 }}>
+                    {Math.floor(formDurationMinutes / 60) > 0 ? `${Math.floor(formDurationMinutes / 60)}h ` : ''}{formDurationMinutes % 60}m ({formDurationMinutes} mins)
+                  </span>
+                </div>
+
                 {/* Quick Pick From Scheduled Tasks with Searchable CustomSelect */}
                 {dateTasks.length > 0 && !editingId && (
                   <div>
@@ -899,14 +942,14 @@ export function DeviationsPage() {
                   style={{
                     padding: '14px 16px',
                     borderRadius: '14px',
-                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.25)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
                   }}
                 >
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#EF4444' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#60A5FA' }}>
                     <Target size={15} />
                     <span>What I Was Supposed To Do (Planned):</span>
                   </label>
@@ -917,7 +960,7 @@ export function DeviationsPage() {
                     style={{
                       width: '100%',
                       background: 'var(--card-bg)',
-                      borderColor: 'rgba(239, 68, 68, 0.35)',
+                      borderColor: 'rgba(59, 130, 246, 0.35)',
                       fontSize: '0.88rem',
                       fontWeight: 600,
                     }}
@@ -961,9 +1004,33 @@ export function DeviationsPage() {
                     onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
                     required
                   />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Honest description of deviation or mistake
-                  </span>
+                  {/* Quick distraction chips */}
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '2px' }}>
+                    {[
+                      '📱 Social Media / Instagram',
+                      '📺 YouTube Videos',
+                      '💬 Phone Call',
+                      '🥱 Fatigue / Took Nap',
+                      '☕ Unplanned Break',
+                    ].map((dist) => (
+                      <button
+                        key={dist}
+                        type="button"
+                        onClick={() => setForm({ ...form, actualAction: dist })}
+                        style={{
+                          fontSize: '0.7rem',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {dist}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

@@ -125,9 +125,12 @@ exports.completeRequest = async (req, res, next) => {
 exports.rescheduleRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { rescheduledDate, rescheduledStartTime, rescheduledEndTime, actionRemarks } = req.body;
+    const targetDate = req.body.rescheduledDate || req.body.date;
+    const targetStartTime = req.body.rescheduledStartTime || req.body.startTime;
+    const targetEndTime = req.body.rescheduledEndTime || req.body.endTime;
+    const targetRemarks = req.body.actionRemarks || req.body.remarks || `Rescheduled to ${targetDate}`;
 
-    if (!rescheduledDate) {
+    if (!targetDate) {
       return res.status(400).json({ success: false, message: 'Rescheduled date is required' });
     }
 
@@ -138,19 +141,19 @@ exports.rescheduleRequest = async (req, res, next) => {
 
     await request.update({
       status: 'rescheduled',
-      rescheduledDate,
-      rescheduledStartTime: rescheduledStartTime || null,
-      rescheduledEndTime: rescheduledEndTime || null,
-      actionRemarks: actionRemarks || `Rescheduled to ${rescheduledDate}`,
+      rescheduledDate: targetDate,
+      rescheduledStartTime: targetStartTime || null,
+      rescheduledEndTime: targetEndTime || null,
+      actionRemarks: targetRemarks,
     });
 
     // If linked to a task, update task's date and timeslot
     if (request.taskId && Task) {
       await Task.update(
         {
-          date: rescheduledDate,
-          ...(rescheduledStartTime && { startTime: rescheduledStartTime }),
-          ...(rescheduledEndTime && { endTime: rescheduledEndTime }),
+          date: targetDate,
+          ...(targetStartTime && { startTime: targetStartTime }),
+          ...(targetEndTime && { endTime: targetEndTime }),
           status: 'pending',
         },
         { where: { id: request.taskId } }

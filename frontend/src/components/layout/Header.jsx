@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  RotateCw,
   Check,
   FileText,
   Clock,
@@ -54,6 +55,9 @@ export function Header() {
     cancelWorkRequest,
     updateTask,
     toggleTaskComplete,
+    fetchAllData,
+    isSyncing,
+    lastSyncedAt,
   } = useApp();
 
   const {
@@ -420,6 +424,49 @@ export function Header() {
           )}
         </div>
 
+        {/* Real-time Cloud Sync & Rotation Button */}
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={() => fetchAllData({ showToastNotification: true })}
+          title={isSyncing ? 'Syncing cloud data from mobile...' : 'Live Cloud Sync: Reload all APIs without page reload'}
+          id="btn-header-sync-rotate"
+          style={{
+            position: 'relative',
+            width: '36px',
+            height: '36px',
+            color: isSyncing ? 'var(--primary-color)' : 'var(--text-secondary)',
+            background: isSyncing ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)' : 'var(--card-bg)',
+            border: `1px solid ${isSyncing ? 'var(--primary-color)' : 'var(--border-color)'}`,
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <RotateCw
+            size={16}
+            style={{
+              animation: isSyncing ? 'spin 0.8s linear infinite' : 'none',
+              transformOrigin: 'center',
+            }}
+          />
+          <span
+            style={{
+              position: 'absolute',
+              top: '4px',
+              right: '4px',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: isSyncing ? '#F59E0B' : '#10B981',
+              boxShadow: isSyncing ? '0 0 6px #F59E0B' : '0 0 5px #10B981',
+            }}
+          />
+        </button>
+
         {/* Quick Bulk Import Button */}
         <button
           type="button"
@@ -453,8 +500,8 @@ export function Header() {
               settings?.theme === 'light'
                 ? 'dark'
                 : settings?.theme === 'dark'
-                ? 'oled'
-                : 'light';
+                  ? 'oled'
+                  : 'light';
             setSettings({ ...settings, theme: nextTheme });
             const titleMap = {
               light: 'Light Mode',

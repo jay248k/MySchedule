@@ -177,7 +177,7 @@ export function Dashboard() {
     for (let i = 0; i < 52 * 7; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
-      
+
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const dayNum = String(d.getDate()).padStart(2, '0');
@@ -222,7 +222,7 @@ export function Dashboard() {
     let currentStreak = 0;
     let checkDate = new Date();
     const todayFormatted = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
-    
+
     if (completedTaskCountsByDate[todayFormatted]) {
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);
@@ -467,12 +467,10 @@ export function Dashboard() {
                   </h2>
                   <span className="card-subtitle" style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
                     {selectedTrendCategory === 'all'
-                      ? `Completed vs scheduled tasks across all categories over the last ${
-                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                        }`
-                      : `Showing tasks for "${currentCategory?.name || 'Category'}" over the last ${
-                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                        }`}
+                      ? `Completed vs scheduled tasks across all categories over the last ${trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                      }`
+                      : `Showing tasks for "${currentCategory?.name || 'Category'}" over the last ${trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                      }`}
                   </span>
                 </div>
               </div>
@@ -1192,10 +1190,10 @@ export function Dashboard() {
                       let boxShadow = isSelected
                         ? '0 0 10px rgba(245, 158, 11, 0.7)'
                         : isTodayDate
-                        ? '0 0 8px rgba(56, 189, 248, 0.8)'
-                        : count >= 3
-                        ? '0 0 5px rgba(16, 185, 129, 0.4)'
-                        : 'none';
+                          ? '0 0 8px rgba(56, 189, 248, 0.8)'
+                          : count >= 3
+                            ? '0 0 5px rgba(16, 185, 129, 0.4)'
+                            : 'none';
 
                       if (isTodayDate) {
                         border = '2px solid #38BDF8';

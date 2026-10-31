@@ -27,12 +27,15 @@ export function DayDetailModal({ date, onClose }) {
     deleteTask,
     toggleTaskComplete,
     settings,
+    workChains = {},
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState('timeline'); // 'timeline' or 'list'
+  const [activeTab, setActiveTab] = useState('timeline'); // 'timeline', 'list', or 'chain'
   const is12Hour = settings?.timeFormat !== '24h';
 
   if (!date) return null;
+
+  const dateChain = workChains?.[date] || { chain: [] };
 
   // Filter tasks & events for this date
   const dayTasks = tasks.filter((t) => t.date === date);
@@ -228,6 +231,27 @@ export function DayDetailModal({ date, onClose }) {
               <ListIcon size={13} />
               List
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('chain')}
+              style={{
+                padding: '5px 14px',
+                fontSize: '0.78rem',
+                fontWeight: activeTab === 'chain' ? 700 : 600,
+                borderRadius: '4px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeTab === 'chain' ? '#10B981' : 'transparent',
+                color: activeTab === 'chain' ? '#FFFFFF' : '#475569',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>🔗</span>
+              Work Chain ({dateChain.chain?.length || 0})
+            </button>
           </div>
 
           {/* Quick Add Buttons */}
@@ -297,6 +321,77 @@ export function DayDetailModal({ date, onClose }) {
               }}
               emptyMessage={`No tasks or events scheduled for ${formatDate(date, { month: 'short', day: 'numeric' })}.`}
             />
+          ) : activeTab === 'chain' ? (
+            (dateChain.chain && dateChain.chain.length > 0) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Continuous productivity chain with auto-computed break gaps & remarks:
+                </div>
+                {dateChain.chain.map((node, i) => {
+                  const isWork = node.type === 'work';
+                  const durMinutes = Math.floor((node.durationSeconds || 0) / 60);
+                  const durHours = Math.floor(durMinutes / 60);
+                  const remM = durMinutes % 60;
+                  const durLabel = durHours > 0 ? `${durHours}h ${remM}m` : `${durMinutes}m`;
+                  return (
+                    <div
+                      key={node.id || i}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        background: isWork ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                        border: isWork ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
+                        borderLeft: isWork ? '4px solid #10B981' : '4px solid #F59E0B',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>{isWork ? '💼' : '☕'}</span>
+                        <div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason}`}
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {node.startTime} – {node.endTime}
+                            {!isWork && node.remarks && node.remarks !== node.reason && (
+                              <span style={{ fontStyle: 'italic', color: '#F59E0B' }}> · "{node.remarks}"</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: 800,
+                          color: isWork ? '#10B981' : '#F59E0B',
+                          background: 'var(--card-bg)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isWork ? durLabel : `⚡ Gap: ${node.durationLabel || durLabel}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '48px 16px',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.92rem',
+                }}
+              >
+                No work session chain recorded for {formatDate(date, { month: 'short', day: 'numeric' })}.
+              </div>
+            )
           ) : allItems.length === 0 ? (
             <div
               style={{

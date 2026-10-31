@@ -116,7 +116,7 @@ export function Sidebar() {
         {/* Brand Header */}
         <div className="sidebar-brand">
           <div className="sidebar-logo">
-            <CalendarDays size={18} />
+            <img src="/logo.png" alt="My Schedule" className="sidebar-logo-img" />
           </div>
           {!sidebarCollapsed && (
             <div className="sidebar-brand-text">

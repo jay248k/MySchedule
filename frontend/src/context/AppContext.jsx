@@ -86,6 +86,8 @@ export function AppProvider({ children }) {
   const [isStopModalOpen, setIsStopModalOpen] = useState(false);
   const [deviations, setDeviations] = useState(() => storageService.getDeviations());
   const [requests, setRequests] = useState(() => storageService.getRequests());
+  const [importHistory, setImportHistory] = useState(() => storageService.getImportHistory());
+  const [workChains, setWorkChains] = useState(() => storageService.getWorkChains());
 
   // Keep local user state synchronized with Redux auth user
   useEffect(() => {
@@ -108,8 +110,32 @@ export function AppProvider({ children }) {
     dispatch(syncGoalProgressWithTasks(tasks));
   }, [tasks, dispatch]);
 
+  // Toast System (Defined early so sync and handlers can safely reference it)
+  const showToast = useCallback(
+    ({ type = 'info', title = '', message = '' }) => {
+      const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
+      const newToast = { id, type, title, message };
+      dispatch(addToast(newToast));
+      setTimeout(() => {
+        dispatch(removeToast(id));
+      }, 4000);
+    },
+    [dispatch]
+  );
+
+  const handleRemoveToast = useCallback(
+    (id) => {
+      dispatch(removeToast(id));
+    },
+    [dispatch]
+  );
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState(() => Date.now());
+
   // Real-time backend data synchronization across Web & Mobile
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = useCallback(async (options = {}) => {
+    setIsSyncing(true);
     try {
       const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes] = await Promise.all([
         api.getTasks().catch(() => null),
@@ -164,13 +190,28 @@ export function AppProvider({ children }) {
         setRequests(combined);
         storageService.saveRequests(combined);
       }
+      setLastSyncedAt(Date.now());
+      if (options.showToastNotification) {
+        showToast({
+          type: 'success',
+          title: 'Live Cloud Sync',
+          message: 'All APIs reloaded and synchronized with latest mobile activity.',
+        });
+      }
     } catch (err) {
       console.warn('Backend sync warning:', err);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 500);
     }
-  }, [dispatch]);
+  }, [dispatch, showToast]);
 
   useEffect(() => {
     fetchAllData();
+
+    // Auto-poll every 12 seconds so operations made in Mobile App auto-rotate and reflect on Web!
+    const syncTimer = setInterval(() => {
+      fetchAllData();
+    }, 12000);
 
     // Automatically re-sync whenever user focuses the browser tab or returns to web
     const handleWindowFocus = () => {
@@ -179,29 +220,11 @@ export function AppProvider({ children }) {
 
     window.addEventListener('focus', handleWindowFocus);
     return () => {
+      clearInterval(syncTimer);
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [fetchAllData, authUser]);
 
-  // Toast System
-  const showToast = useCallback(
-    ({ type = 'info', title = '', message = '' }) => {
-      const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
-      const newToast = { id, type, title, message };
-      dispatch(addToast(newToast));
-      setTimeout(() => {
-        dispatch(removeToast(id));
-      }, 4000);
-    },
-    [dispatch]
-  );
-
-  const handleRemoveToast = useCallback(
-    (id) => {
-      dispatch(removeToast(id));
-    },
-    [dispatch]
-  );
 
   // Confirmation Modal
   const requestConfirm = useCallback(
@@ -793,6 +816,68 @@ export function AppProvider({ children }) {
     [dispatch, showToast]
   );
 
+  // Bulk Import History Tracking & One-Click Undo
+  const addImportHistoryEntry = useCallback((entry) => {
+    const newEntry = {
+      id: `batch-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      fileName: entry.fileName || 'Uploaded_Batch',
+      fileType: entry.fileType || 'tasks',
+      count: entry.count || 0,
+      itemIds: entry.itemIds || [],
+      importedAt: new Date().toISOString(),
+    };
+    setImportHistory((prev) => {
+      const updated = [newEntry, ...prev];
+      storageService.saveImportHistory(updated);
+      return updated;
+    });
+    return newEntry;
+  }, []);
+
+  const deleteImportBatch = useCallback(
+    async (batchId) => {
+      const batch = importHistory.find((b) => b.id === batchId);
+      if (!batch) return;
+
+      try {
+        if (batch.fileType === 'tasks') {
+          for (const id of batch.itemIds) {
+            dispatch(deleteTaskAction(id));
+            api.deleteTask(id).catch(() => { });
+          }
+          storageService.saveTasks(storageService.getTasks().filter((t) => !batch.itemIds.includes(t.id)));
+        } else if (batch.fileType === 'goals') {
+          for (const id of batch.itemIds) {
+            dispatch(deleteGoalAction(id));
+            api.deleteGoal(id).catch(() => { });
+          }
+          storageService.saveGoals(storageService.getGoals().filter((g) => !batch.itemIds.includes(g.id)));
+        } else if (batch.fileType === 'categories') {
+          for (const id of batch.itemIds) {
+            dispatch(deleteCategoryAction(id));
+            api.deleteCategory(id).catch(() => { });
+          }
+          storageService.saveCategories(storageService.getCategories().filter((c) => !batch.itemIds.includes(c.id)));
+        }
+
+        setImportHistory((prev) => {
+          const filtered = prev.filter((b) => b.id !== batchId);
+          storageService.saveImportHistory(filtered);
+          return filtered;
+        });
+
+        showToast({
+          type: 'success',
+          title: 'Import Data Deleted',
+          message: `Removed ${batch.count} ${batch.fileType} from "${batch.fileName}".`,
+        });
+      } catch (err) {
+        console.warn('Delete import batch error:', err);
+      }
+    },
+    [importHistory, dispatch, showToast]
+  );
+
   // Daily Work Reporting
   const saveDailyReport = useCallback(
     (reportData) => {
@@ -917,30 +1002,78 @@ export function AppProvider({ children }) {
           : { ...settings, ...newSettingsOrUpdater };
       dispatch(updateSettingsAction(nextSettings));
       // Sync to backend if accessible
-      api.updateSettings(nextSettings).catch(() => {});
+      api.updateSettings(nextSettings).catch(() => { });
     },
     [dispatch, settings]
   );
 
-  // Work Session Handlers (Start, Stop with Reason, Manual Log, Delete)
+  // Work Session Handlers (Start, Stop with Reason & Auto-Gap Chaining)
   const startWorkSession = useCallback((task = null) => {
+    const today = getTodayDateString();
+    const existingChain = workChains[today] || {
+      status: 'idle',
+      accumulatedWorkSeconds: 0,
+      chain: [],
+    };
+
     const now = new Date();
+    const nowTimestamp = Date.now();
+    const nowTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    let updatedChainList = [...(existingChain.chain || [])];
+
+    // If previously paused, auto-compute and record the gap with pause reason!
+    if (existingChain.status === 'paused' && existingChain.lastPausedTimestamp) {
+      const gapSeconds = Math.max(1, Math.round((nowTimestamp - existingChain.lastPausedTimestamp) / 1000));
+      const gapMins = Math.floor(gapSeconds / 60);
+      const gapHours = Math.floor(gapMins / 60);
+      const gapLabel = gapHours > 0 ? `${gapHours}h ${gapMins % 60}m` : `${gapMins}m`;
+
+      const gapNode = {
+        id: `gap-${nowTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+        type: 'gap',
+        startTime: existingChain.lastPausedTimeStr || 'Earlier',
+        endTime: nowTimeStr,
+        durationSeconds: gapSeconds,
+        durationLabel: gapLabel,
+        reason: existingChain.lastPauseReason || 'Pause Break',
+        remarks: existingChain.lastPauseRemarks || '',
+      };
+      updatedChainList.push(gapNode);
+    }
+
+    const newChainState = {
+      ...existingChain,
+      status: 'running',
+      currentSegmentStart: nowTimestamp,
+      lastPausedTimestamp: null,
+      chain: updatedChainList,
+    };
+
+    setWorkChains((prev) => {
+      const updated = { ...prev, [today]: newChainState };
+      storageService.saveWorkChains(updated);
+      return updated;
+    });
+
     const newActive = {
       isRunning: true,
-      startTimestamp: Date.now(),
-      startTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      date: getTodayDateString(),
+      startTimestamp: nowTimestamp,
+      startTime: nowTimeStr,
+      date: today,
       taskId: task?.id || null,
       taskTitle: task?.title || '',
+      baseAccumulatedSeconds: existingChain.accumulatedWorkSeconds || 0,
     };
     setActiveWorkSession(newActive);
     storageService.saveActiveWorkSession(newActive);
+
     showToast({
       type: 'success',
-      title: 'Work Timer Started',
-      message: task?.title ? `Focusing on: "${task.title}"` : 'Live work session is now tracking.',
+      title: existingChain.status === 'paused' ? 'Work Resumed' : 'Work Timer Started',
+      message: task?.title ? `Focusing on: "${task.title}"` : 'Live session timer is tracking.',
     });
-  }, [showToast]);
+  }, [workChains, showToast]);
 
   const requestStopWorkSession = useCallback(() => {
     setIsStopModalOpen(true);
@@ -959,19 +1092,53 @@ export function AppProvider({ children }) {
 
       const now = new Date();
       const endTimestamp = Date.now();
-      const durationSeconds = Math.max(1, Math.round((endTimestamp - activeWorkSession.startTimestamp) / 1000));
+      const segmentSeconds = Math.max(1, Math.round((endTimestamp - activeWorkSession.startTimestamp) / 1000));
       const endTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const sessionDate = activeWorkSession.date || getTodayDateString();
 
       const finalTaskId = taskId || activeWorkSession.taskId || null;
       const finalTaskTitle = taskTitle || activeWorkSession.taskTitle || '';
 
+      const workNode = {
+        id: `work-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+        type: 'work',
+        startTime: activeWorkSession.startTime,
+        endTime,
+        durationSeconds: segmentSeconds,
+        taskId: finalTaskId,
+        taskTitle: finalTaskTitle,
+      };
+
+      const existingChain = workChains[sessionDate] || {
+        status: 'idle',
+        accumulatedWorkSeconds: 0,
+        chain: [],
+      };
+
+      const newAccumulated = (existingChain.accumulatedWorkSeconds || 0) + segmentSeconds;
+      const updatedChainState = {
+        ...existingChain,
+        status: 'paused',
+        accumulatedWorkSeconds: newAccumulated,
+        lastPausedTimestamp: endTimestamp,
+        lastPausedTimeStr: endTime,
+        lastPauseReason: stopReason || 'Break',
+        lastPauseRemarks: notes || '',
+        chain: [...(existingChain.chain || []), workNode],
+      };
+
+      setWorkChains((prev) => {
+        const updated = { ...prev, [sessionDate]: updatedChainState };
+        storageService.saveWorkChains(updated);
+        return updated;
+      });
+
       const sessionPayload = {
-        id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: `session-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
         date: sessionDate,
         startTime: activeWorkSession.startTime,
         endTime,
-        durationSeconds,
+        durationSeconds: segmentSeconds,
         stopReason: stopReason || 'Finished Work',
         notes: notes || '',
         taskId: finalTaskId,
@@ -983,7 +1150,7 @@ export function AppProvider({ children }) {
       storageService.saveActiveWorkSession(null);
       setIsStopModalOpen(false);
 
-      // Save locally
+      // Save locally to historical workSessions
       setWorkSessions((prev) => {
         const updated = [sessionPayload, ...prev];
         storageService.saveWorkSessions(updated);
@@ -1002,18 +1169,39 @@ export function AppProvider({ children }) {
         console.warn('Saved work session locally:', err);
       }
 
-      const durMinutes = Math.floor(durationSeconds / 60);
-      const durSecs = durationSeconds % 60;
-      const durationLabel = durMinutes > 0 ? `${durMinutes}m ${durSecs}s` : `${durSecs}s`;
+      const durMinutes = Math.floor(segmentSeconds / 60);
+      const totalHrs = (newAccumulated / 3600).toFixed(1);
 
       showToast({
         type: 'info',
-        title: 'Work Session Recorded',
-        message: `Duration: ${durationLabel} · Reason: ${stopReason}`,
+        title: 'Work Paused · Reason Recorded',
+        message: `Paused for "${stopReason}". Total logged: ${totalHrs}h. Click Resume when back.`,
       });
     },
-    [activeWorkSession, showToast]
+    [activeWorkSession, workChains, showToast]
   );
+
+  const finishDayWorkSession = useCallback((dateStr = getTodayDateString()) => {
+    setActiveWorkSession(null);
+    storageService.saveActiveWorkSession(null);
+    setWorkChains((prev) => {
+      const current = prev[dateStr] || { accumulatedWorkSeconds: 0, chain: [] };
+      const updated = {
+        ...prev,
+        [dateStr]: {
+          ...current,
+          status: 'finished',
+        },
+      };
+      storageService.saveWorkChains(updated);
+      return updated;
+    });
+    showToast({
+      type: 'success',
+      title: 'Day Finalized',
+      message: 'Work day completed! Timer reset for next session.',
+    });
+  }, [showToast]);
 
   const addManualWorkSession = useCallback(
     async (sessionData) => {
@@ -1277,14 +1465,14 @@ export function AppProvider({ children }) {
         const updated = prev.map((r) =>
           r.id === requestId
             ? {
-                ...r,
-                status: 'rescheduled',
-                rescheduledDate: date || r.date,
-                rescheduledStartTime: startTime || r.startTime,
-                rescheduledEndTime: endTime || r.endTime,
-                actionRemarks: remarks || 'Rescheduled by user',
-                updatedAt: new Date().toISOString(),
-              }
+              ...r,
+              status: 'rescheduled',
+              rescheduledDate: date || r.date,
+              rescheduledStartTime: startTime || r.startTime,
+              rescheduledEndTime: endTime || r.endTime,
+              actionRemarks: remarks || 'Rescheduled by user',
+              updatedAt: new Date().toISOString(),
+            }
             : r
         );
         storageService.saveRequests(updated);
@@ -1321,11 +1509,11 @@ export function AppProvider({ children }) {
         const updated = prev.map((r) =>
           r.id === requestId
             ? {
-                ...r,
-                status: 'cancelled',
-                actionRemarks: remarks.trim(),
-                updatedAt: new Date().toISOString(),
-              }
+              ...r,
+              status: 'cancelled',
+              actionRemarks: remarks.trim(),
+              updatedAt: new Date().toISOString(),
+            }
             : r
         );
         storageService.saveRequests(updated);
@@ -1446,6 +1634,14 @@ export function AppProvider({ children }) {
         rescheduleWorkRequest,
         cancelWorkRequest,
         deleteWorkRequest,
+        fetchAllData,
+        isSyncing,
+        lastSyncedAt,
+        importHistory,
+        addImportHistoryEntry,
+        deleteImportBatch,
+        workChains,
+        finishDayWorkSession,
       }}
     >
       {children}

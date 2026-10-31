@@ -50,12 +50,20 @@ export function WorkTracker() {
     addManualWorkSession,
     deleteWorkSession,
     updateWorkSession,
+    workChains = {},
+    finishDayWorkSession,
     showToast,
   } = useApp();
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
   const isToday = activeDate === todayStr;
+
+  const todayChain = workChains?.[activeDate] || {
+    status: 'idle',
+    accumulatedWorkSeconds: 0,
+    chain: [],
+  };
 
   // Live timer tick for active session
   const [ticker, setTicker] = useState(Date.now());
@@ -65,14 +73,19 @@ export function WorkTracker() {
   }, []);
 
   const isRunning = Boolean(activeWorkSession?.isRunning);
+  const isPaused = isToday && todayChain?.status === 'paused' && !isRunning;
+  const isFinished = isToday && todayChain?.status === 'finished' && !isRunning;
 
-  // Active session duration
+  // Active session or accumulated duration (freezes on pause, resumes forward on restart)
   let activeElapsedSeconds = 0;
   if (isRunning && activeWorkSession?.startTimestamp) {
-    activeElapsedSeconds = Math.max(
+    const liveSegmentSeconds = Math.max(
       0,
       Math.floor((ticker - activeWorkSession.startTimestamp) / 1000)
     );
+    activeElapsedSeconds = (activeWorkSession.baseAccumulatedSeconds || 0) + liveSegmentSeconds;
+  } else if (isPaused) {
+    activeElapsedSeconds = todayChain.accumulatedWorkSeconds || 0;
   }
 
   const activeHrs = Math.floor(activeElapsedSeconds / 3600);
@@ -500,16 +513,128 @@ export function WorkTracker() {
         </div>
       </div>
 
+      {/* Persistent Work Paused Banner */}
+      {isPaused && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
+            border: '1.5px solid rgba(245, 158, 11, 0.45)',
+            borderRadius: '14px',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '14px',
+            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.14)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'rgba(245, 158, 11, 0.25)',
+                border: '1px solid #F59E0B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                flexShrink: 0,
+              }}
+            >
+              ☕
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#FDE68A' }}>
+                  Work Paused: {todayChain.lastPauseReason || 'Break'}
+                </span>
+                <span
+                  style={{
+                    background: '#F59E0B',
+                    color: '#000000',
+                    fontSize: '0.66rem',
+                    fontWeight: 900,
+                    padding: '2px 7px',
+                    borderRadius: '999px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  PAUSED
+                </span>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#CBD5E1', marginTop: '2px' }}>
+                Stopped at: <strong>{todayChain.lastPausedTimeStr}</strong>{' '}
+                {todayChain.lastPauseRemarks && todayChain.lastPauseRemarks !== todayChain.lastPauseReason && (
+                  <span>· "{todayChain.lastPauseRemarks}" </span>
+                )}
+                · Focus accumulated so far: <strong style={{ color: '#34D399' }}>{activeTimerDisplay}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleStartSession}
+              id="btn-tracker-resume-session"
+              style={{
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '10px 22px',
+                borderRadius: '9px',
+                fontSize: '0.92rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+              }}
+            >
+              <Play size={16} fill="#FFFFFF" />
+              <span>Resume Work</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => finishDayWorkSession(activeDate)}
+              id="btn-tracker-finish-day"
+              style={{
+                background: 'rgba(239, 68, 68, 0.16)',
+                border: '1px solid rgba(239, 68, 68, 0.45)',
+                color: '#FCA5A5',
+                padding: '10px 18px',
+                borderRadius: '9px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🛑 Finish Day
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Interactive Work Timer Card */}
       <div
         style={{
           background: 'linear-gradient(135deg, #101B33 0%, #172445 100%)',
           borderRadius: '16px',
-          border: isRunning ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.1)',
+          border: isRunning
+            ? '1.5px solid #10B981'
+            : isPaused
+            ? '1.5px solid rgba(245, 158, 11, 0.5)'
+            : '1px solid rgba(255, 255, 255, 0.1)',
           padding: '24px',
           color: '#FFFFFF',
           boxShadow: isRunning
             ? '0 10px 30px rgba(16, 185, 129, 0.2)'
+            : isPaused
+            ? '0 8px 24px rgba(245, 158, 11, 0.15)'
             : '0 8px 24px rgba(0, 0, 0, 0.25)',
           display: 'flex',
           flexDirection: 'column',
@@ -523,31 +648,115 @@ export function WorkTracker() {
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                background: isRunning ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.18)',
-                border: isRunning ? '1px solid #10B981' : '1px solid rgba(59, 130, 246, 0.4)',
+                background: isRunning
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : isPaused
+                  ? 'rgba(245, 158, 11, 0.2)'
+                  : 'rgba(59, 130, 246, 0.18)',
+                border: isRunning
+                  ? '1px solid #10B981'
+                  : isPaused
+                  ? '1px solid #F59E0B'
+                  : '1px solid rgba(59, 130, 246, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isRunning ? '#10B981' : '#3B82F6',
+                color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : '#3B82F6',
               }}
             >
               <Timer size={24} />
             </div>
             <div>
               <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>
-                {isRunning ? 'Active Work Session in Progress' : 'Start a New Work Session'}
+                {isRunning
+                  ? 'Active Work Session in Progress'
+                  : isPaused
+                  ? `Work Paused · Stopped at ${todayChain.lastPausedTimeStr}`
+                  : isFinished
+                  ? 'Workday Completed'
+                  : 'Start a New Work Session'}
               </div>
               <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
                 {isRunning
-                  ? `Started at ${activeWorkSession.startTime}. When you stop, you'll be prompted for a reason (Break, Meeting, Lunch, etc.)`
-                  : 'Start tracking your time. Every time you stop, we record your progress and the exact reason.'}
+                  ? `Started at ${activeWorkSession.startTime}. When you stop, enter your remarks/reason to pause and chain.`
+                  : isPaused
+                  ? `Paused for "${todayChain.lastPauseReason}". Timer freezes at ${activeTimerDisplay} and resumes when you start.`
+                  : isFinished
+                  ? 'Your daily session chain has been closed. Ready to start fresh anytime!'
+                  : 'Start tracking your time. Every time you pause, reasons create a chained log.'}
               </div>
             </div>
           </div>
 
-          {/* Action Button: Start or Stop */}
-          <div>
-            {!isRunning ? (
+          {/* Action Button: Start, Stop, or Resume */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isRunning ? (
+              <button
+                type="button"
+                onClick={requestStopWorkSession}
+                id="btn-tracker-stop-session"
+                style={{
+                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '12px 26px',
+                  borderRadius: '10px',
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+                }}
+              >
+                <Square size={16} fill="#FFFFFF" />
+                <span>Stop Work & Enter Remarks</span>
+              </button>
+            ) : isPaused ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleStartSession}
+                  id="btn-tracker-start-session"
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '12px 26px',
+                    borderRadius: '10px',
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                  }}
+                >
+                  <Play size={18} fill="#FFFFFF" />
+                  <span>Resume Work ({activeTimerDisplay})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => finishDayWorkSession(activeDate)}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#FCA5A5',
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  🛑 Finish Day
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
                 onClick={handleStartSession}
@@ -569,29 +778,6 @@ export function WorkTracker() {
               >
                 <Play size={18} fill="#FFFFFF" />
                 <span>Start Tracking Work</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={requestStopWorkSession}
-                id="btn-tracker-stop-session"
-                style={{
-                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  padding: '12px 26px',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Square size={16} fill="#FFFFFF" />
-                <span>Stop Work & Enter Remarks</span>
               </button>
             )}
           </div>
@@ -618,19 +804,28 @@ export function WorkTracker() {
                 fontFamily: 'monospace, "Courier New", Courier',
                 fontSize: '2.5rem',
                 fontWeight: 900,
-                color: isRunning ? '#34D399' : '#EF4444',
+                color: isRunning ? '#34D399' : isPaused ? '#F59E0B' : '#EF4444',
                 letterSpacing: '2px',
                 lineHeight: 1,
-                textShadow: isRunning ? '0 0 16px rgba(52, 211, 153, 0.6)' : '0 0 12px rgba(239, 68, 68, 0.4)',
+                textShadow: isRunning
+                  ? '0 0 16px rgba(52, 211, 153, 0.6)'
+                  : isPaused
+                  ? '0 0 16px rgba(245, 158, 11, 0.5)'
+                  : '0 0 12px rgba(239, 68, 68, 0.4)',
               }}
             >
-              {isRunning ? activeTimerDisplay : '00:00:00'}
+              {isRunning || isPaused ? activeTimerDisplay : '00:00:00'}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 600 }}>
               {isRunning ? (
                 <div>
-                  <div style={{ color: '#34D399', fontWeight: 800 }}>LIVE SESSION TIME</div>
-                  <div>Tracking continuously until stopped</div>
+                  <div style={{ color: '#34D399', fontWeight: 800 }}>LIVE SESSION TRACKING</div>
+                  <div>Timer ticking forward continuously</div>
+                </div>
+              ) : isPaused ? (
+                <div>
+                  <div style={{ color: '#F59E0B', fontWeight: 800 }}>WORK PAUSED AT {todayChain.lastPausedTimeStr}</div>
+                  <div>Frozen at {activeTimerDisplay} · Resumes upon click</div>
                 </div>
               ) : (
                 <div>
@@ -687,19 +882,25 @@ export function WorkTracker() {
       </div>
 
       {/* Two Column Layout: Sessions List / Timeline & Stop Reasons Breakdown */}
+      {/* Two Column Layout: Sessions List / Timeline & Stop Reasons Breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '20px' }}>
-        {/* Left Column: Sessions List */}
+        {/* Left Column: Sessions List & Chain */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Work Sessions Timeline ({dateSessions.length})
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🔗</span> Work & Remarks Session Chain
+              {(todayChain?.chain?.length > 0 || dateSessions.length > 0) && (
+                <span style={{ fontSize: '0.72rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+                  {(todayChain?.chain?.length || dateSessions.length)} nodes
+                </span>
+              )}
             </h2>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              Ordered most recent first
+              Auto-computes break gaps upon resuming
             </span>
           </div>
 
-          {dateSessions.length === 0 && !isRunning ? (
+          {(todayChain?.chain?.length === 0 && dateSessions.length === 0 && !isRunning && !isPaused) ? (
             <div
               style={{
                 background: 'var(--card-bg)',
@@ -715,7 +916,7 @@ export function WorkTracker() {
                 No work sessions recorded yet for {isToday ? 'today' : formattedDateTitle}
               </div>
               <p style={{ fontSize: '0.85rem', maxWidth: '420px', margin: '6px auto 16px' }}>
-                Click <strong>"Start Tracking Work"</strong> to begin a timer, or manually log a past work session.
+                Click <strong>"Start Tracking Work"</strong> to begin. When you stop for a break or call, your remarks create a continuous chain.
               </p>
               <button
                 type="button"
@@ -723,12 +924,194 @@ export function WorkTracker() {
                 onClick={handleStartSession}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <Play size={14} fill="currentColor" /> Start First Session
+                <Play size={14} fill="currentColor" /> Start Tracking Work
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* Active Running Session Card if any */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* If Chain nodes exist, render the chronological chain */}
+              {todayChain?.chain?.length > 0 ? (
+                todayChain.chain.map((node, index) => {
+                  const isWork = node.type === 'work';
+                  const durMinutes = Math.floor((node.durationSeconds || 0) / 60);
+                  const durHours = Math.floor(durMinutes / 60);
+                  const remainMinutes = durMinutes % 60;
+                  const durLabel = durHours > 0 ? `${durHours}h ${remainMinutes}m` : `${durMinutes}m`;
+
+                  return (
+                    <div
+                      key={node.id || index}
+                      style={{
+                        background: isWork ? 'rgba(16, 185, 129, 0.06)' : 'rgba(245, 158, 11, 0.08)',
+                        border: isWork ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
+                        borderLeft: isWork ? '5px solid #10B981' : '5px solid #F59E0B',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                        position: 'relative',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                          style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '10px',
+                            background: isWork ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.25rem',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isWork ? '💼' : '☕'}
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason}`}
+                            </span>
+                            <span
+                              style={{
+                                background: isWork ? '#10B981' : '#F59E0B',
+                                color: isWork ? '#FFFFFF' : '#000000',
+                                fontSize: '0.64rem',
+                                fontWeight: 800,
+                                padding: '2px 7px',
+                                borderRadius: '999px',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {isWork ? 'Work Segment' : 'Auto Gap'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                            {node.startTime} – {node.endTime}
+                            {!isWork && node.remarks && node.remarks !== node.reason && (
+                              <span style={{ color: '#FDE68A', fontStyle: 'italic' }}> · "{node.remarks}"</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            color: isWork ? '#10B981' : '#F59E0B',
+                            background: 'var(--card-bg)',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                          }}
+                        >
+                          {isWork ? durLabel : `⚡ Gap: ${node.durationLabel || durLabel}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                /* Fallback to dateSessions if chain not yet stored */
+                dateSessions.map((session) => {
+                  const durMin = Math.floor((session.durationSeconds || 0) / 60);
+                  const durSec = (session.durationSeconds || 0) % 60;
+                  const durHours = Math.floor(durMin / 60);
+                  const remainMin = durMin % 60;
+                  const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
+                  const icon = REASON_ICONS[session.stopReason] || '🛑';
+
+                  return (
+                    <div
+                      key={session.id}
+                      style={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.25rem',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {icon}
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {session.taskTitle || 'General Work Session'}
+                            </span>
+                            <span
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.66rem',
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {session.stopReason || 'Finished Work'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {session.startTime} – {session.endTime}
+                            {session.notes && <span style={{ fontStyle: 'italic' }}> · "{session.notes}"</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#3B82F6' }}>
+                          {durStr}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          onClick={() => setEditingSession(session)}
+                          title="Edit remarks"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          onClick={() => deleteWorkSession(session.id)}
+                          title="Delete session"
+                          style={{ color: '#EF4444' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* Active Running Session Segment in the Chain */}
               {isRunning && activeWorkSession?.date === activeDate && (
                 <div
                   style={{
@@ -762,7 +1145,7 @@ export function WorkTracker() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {activeWorkSession.taskTitle || 'General Work Session'}
+                          {activeWorkSession.taskTitle || 'Live Work Segment'}
                         </span>
                         <span
                           style={{
@@ -808,6 +1191,7 @@ export function WorkTracker() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '5px',
+                        cursor: 'pointer',
                       }}
                     >
                       <Square size={12} fill="#FFFFFF" /> Stop & Enter Remarks
@@ -816,131 +1200,53 @@ export function WorkTracker() {
                 </div>
               )}
 
-              {/* Logged Past Sessions */}
-              {dateSessions.map((session) => {
-                const durMin = Math.floor((session.durationSeconds || 0) / 60);
-                const durSec = (session.durationSeconds || 0) % 60;
-                const durHours = Math.floor(durMin / 60);
-                const remainMin = durMin % 60;
-                const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
-
-                const icon = REASON_ICONS[session.stopReason] || '🛑';
-
-                return (
-                  <div
-                    key={session.id}
-                    style={{
-                      background: 'var(--card-bg)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '12px',
-                      padding: '14px 18px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      transition: 'border-color 0.15s',
-                    }}
-                  >
-                    {/* Left: Time & Task info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '10px',
-                          background: 'rgba(59, 130, 246, 0.1)',
-                          border: '1px solid rgba(59, 130, 246, 0.25)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1.25rem',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {icon}
+              {/* If currently paused, render the active pause node in the chain */}
+              {isPaused && (
+                <div
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1.5px dashed #F59E0B',
+                    borderRadius: '12px',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>⏳</span>
+                    <div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FDE68A' }}>
+                        Current Gap: {todayChain.lastPauseReason || 'Pause'}
                       </div>
-
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                            {session.taskTitle || 'General Focus Session'}
-                          </span>
-
-                          {/* Stop Reason Pill */}
-                          <span
-                            style={{
-                              background: 'rgba(239, 68, 68, 0.12)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              color: '#EF4444',
-                              fontSize: '0.74rem',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <span>Remarks:</span>
-                            <strong>{session.stopReason || 'Finished Work'}</strong>
-                          </span>
-                        </div>
-
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                          <span>{session.startTime}</span>
-                          <span style={{ margin: '0 5px' }}>→</span>
-                          <span>{session.endTime || 'Completed'}</span>
-                          {session.notes && (
-                            <span style={{ marginLeft: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                              "{session.notes}"
-                            </span>
-                          )}
-                        </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Paused since {todayChain.lastPausedTimeStr}. Gap duration will auto-calculate when you resume.
                       </div>
-                    </div>
-
-                    {/* Right: Duration pill & Action buttons */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div
-                        style={{
-                          background: 'var(--page-bg)',
-                          border: '1px solid var(--border-color)',
-                          padding: '4px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.84rem',
-                          fontWeight: 800,
-                          color: 'var(--text-primary)',
-                        }}
-                      >
-                        {durStr}
-                      </div>
-
-                      {/* Edit Button */}
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        onClick={() => setEditingSession(session)}
-                        title="Edit Stop Reason / Notes"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        <Edit2 size={15} />
-                      </button>
-
-                      {/* Delete Button */}
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        onClick={() => deleteWorkSession(session.id)}
-                        title="Delete this work log"
-                        style={{ color: 'var(--danger, #EF4444)' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
                     </div>
                   </div>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={handleStartSession}
+                    style={{
+                      background: '#10B981',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.84rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                  >
+                    <Play size={14} fill="#FFFFFF" /> Resume Work
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

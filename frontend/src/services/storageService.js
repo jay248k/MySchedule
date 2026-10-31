@@ -22,6 +22,8 @@ const KEYS = {
   ACTIVE_WORK_SESSION: 'my_schedule_active_work_session',
   DEVIATIONS: 'my_schedule_deviations',
   REQUESTS: 'my_schedule_work_requests',
+  IMPORT_HISTORY: 'my_schedule_import_history',
+  WORK_CHAIN: 'my_schedule_work_chain',
 };
 
 export const storageService = {
@@ -289,6 +291,40 @@ export const storageService = {
     this.saveDailyReports(dailyReports);
 
     return { tasks, categories, events, goals, settings, notifications, user, dailyReports };
+  },
+
+  getImportHistory() {
+    try {
+      const data = localStorage.getItem(KEYS.IMPORT_HISTORY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveImportHistory(history) {
+    try {
+      localStorage.setItem(KEYS.IMPORT_HISTORY, JSON.stringify(history));
+    } catch (e) {
+      console.error('Failed to save import history to localStorage', e);
+    }
+  },
+
+  getWorkChains() {
+    try {
+      const data = localStorage.getItem(KEYS.WORK_CHAIN);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  saveWorkChains(chains) {
+    try {
+      localStorage.setItem(KEYS.WORK_CHAIN, JSON.stringify(chains));
+    } catch (e) {
+      console.error('Failed to save work chains to localStorage', e);
+    }
   },
 
   clearAllData() {

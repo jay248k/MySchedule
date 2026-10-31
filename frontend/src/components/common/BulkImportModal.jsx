@@ -16,6 +16,9 @@ import {
   XCircle,
   ArrowRight,
   RotateCcw,
+  History,
+  Trash2,
+  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -63,6 +66,9 @@ export function BulkImportModal() {
     bulkImportCategories,
     bulkImportGoals,
     bulkImportTasks,
+    importHistory = [],
+    addImportHistoryEntry,
+    deleteImportBatch,
   } = useApp();
 
   const navigate = useNavigate();
@@ -281,6 +287,7 @@ export function BulkImportModal() {
       }
 
       const successCount = insertedAccumulator.length || totalItems;
+      const createdItems = insertedAccumulator.length ? insertedAccumulator : itemsToImport;
       const failedItems = (parsedData.invalidItems || []).map((inv) => ({
         rowNum: inv.rowNum,
         name: inv.raw?.name || inv.raw?.title || `Row ${inv.rowNum}`,
@@ -288,12 +295,21 @@ export function BulkImportModal() {
         raw: inv.raw,
       }));
 
+      if (addImportHistoryEntry && successCount > 0) {
+        addImportHistoryEntry({
+          fileName: fileName || `Raw_Pasted_${importType.toUpperCase()}_${new Date().toLocaleDateString()}`,
+          fileType: importType,
+          count: successCount,
+          itemIds: createdItems.map((it) => it.id).filter(Boolean),
+        });
+      }
+
       setImportResult({
         type: importType,
         total: parsedData.total,
         successCount,
         failedCount: failedItems.length,
-        insertedItems: insertedAccumulator.length ? insertedAccumulator : itemsToImport,
+        insertedItems: createdItems,
         failedItems,
       });
     } catch (err) {
@@ -743,57 +759,59 @@ export function BulkImportModal() {
               </div>
 
               {/* Column Names Reference Banner */}
-              <div
-                style={{
-                  background: 'rgba(23, 105, 255, 0.04)',
-                  border: '1px solid rgba(23, 105, 255, 0.15)',
-                  borderRadius: '10px',
-                  padding: '12px 14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary-color)' }}>
-                    <Info size={15} />
-                    <span>Supported Column Headers for {importType.toUpperCase()}:</span>
-                  </div>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                    * = Required Column
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {COLUMN_GUIDE[importType].map((col) => (
-                    <div
-                      key={col.name}
-                      title={`${col.desc} (e.g. ${col.example})`}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '3px 8px',
-                        background: col.required ? 'var(--primary-color)' : 'var(--card-bg)',
-                        color: col.required ? '#ffffff' : 'var(--text-primary)',
-                        border: `1px solid ${col.required ? 'var(--primary-color)' : 'var(--border-color)'}`,
-                        borderRadius: '6px',
-                        fontSize: '0.74rem',
-                        fontFamily: 'monospace',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <span>{col.name}</span>
-                      {col.required && <span style={{ color: '#FDE047' }}>*</span>}
-                      <span style={{ fontSize: '0.68rem', opacity: col.required ? 0.9 : 0.65, fontWeight: 400, fontFamily: 'inherit' }}>
-                        ({col.required ? 'required' : 'optional'})
-                      </span>
+              {inputMode !== 'history' && (
+                <div
+                  style={{
+                    background: 'rgba(23, 105, 255, 0.04)',
+                    border: '1px solid rgba(23, 105, 255, 0.15)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                      <Info size={15} />
+                      <span>Supported Column Headers for {importType.toUpperCase()}:</span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                      * = Required Column
+                    </span>
+                  </div>
 
-              {/* 2. Input Mode Toggle: File Upload vs Direct Paste */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {COLUMN_GUIDE[importType].map((col) => (
+                      <div
+                        key={col.name}
+                        title={`${col.desc} (e.g. ${col.example})`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '3px 8px',
+                          background: col.required ? 'var(--primary-color)' : 'var(--card-bg)',
+                          color: col.required ? '#ffffff' : 'var(--text-primary)',
+                          border: `1px solid ${col.required ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                          borderRadius: '6px',
+                          fontSize: '0.74rem',
+                          fontFamily: 'monospace',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span>{col.name}</span>
+                        {col.required && <span style={{ color: '#FDE047' }}>*</span>}
+                        <span style={{ fontSize: '0.68rem', opacity: col.required ? 0.9 : 0.65, fontWeight: 400, fontFamily: 'inherit' }}>
+                          ({col.required ? 'required' : 'optional'})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Input Mode Toggle: File Upload vs Direct Paste vs Upload History */}
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '16px' }}>
                 <button
                   type="button"
@@ -827,10 +845,167 @@ export function BulkImportModal() {
                 >
                   Paste Raw Data
                 </button>
+                <button
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: inputMode === 'history' ? '2px solid var(--primary-color)' : '2px solid transparent',
+                    padding: '8px 4px',
+                    fontSize: '0.88rem',
+                    fontWeight: inputMode === 'history' ? 700 : 500,
+                    color: inputMode === 'history' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                  onClick={() => setInputMode('history')}
+                >
+                  <History size={14} />
+                  <span>Upload History</span>
+                  {importHistory.length > 0 && (
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        padding: '1px 6px',
+                        borderRadius: '999px',
+                        background: inputMode === 'history' ? 'var(--primary-color)' : 'var(--card-bg)',
+                        color: inputMode === 'history' ? '#FFFFFF' : 'var(--text-muted)',
+                        border: '1px solid var(--border-color)',
+                      }}
+                    >
+                      {importHistory.length}
+                    </span>
+                  )}
+                </button>
               </div>
 
-              {/* 3. Input Areas */}
-              {inputMode === 'file' ? (
+              {/* 3. Input Areas or Upload History */}
+              {inputMode === 'history' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '6px 0' }}>
+                  {importHistory.length === 0 ? (
+                    <div
+                      style={{
+                        padding: '48px 24px',
+                        textAlign: 'center',
+                        borderRadius: '12px',
+                        border: '1.5px dashed var(--border-color)',
+                        background: 'var(--page-bg)',
+                        color: 'var(--text-muted)',
+                      }}
+                    >
+                      <History size={36} style={{ margin: '0 auto 12px', opacity: 0.6 }} />
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                        No Uploaded Files in History
+                      </div>
+                      <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
+                        Whenever you import CSV or JSON files for Tasks, Goals, or Categories, they will appear here with a single-click button to delete all imported data.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        Manage previously imported files. Click <strong>Delete File Data</strong> to immediately remove all records uploaded from that file:
+                      </div>
+                      {importHistory.map((batch) => (
+                        <div
+                          key={batch.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 18px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--card-bg)',
+                            gap: '14px',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '10px',
+                                background: 'rgba(23, 105, 255, 0.12)',
+                                color: 'var(--primary-color)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <FileText size={20} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {batch.fileName}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                                <span
+                                  style={{
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: 'var(--primary-color)',
+                                  }}
+                                >
+                                  {batch.fileType}
+                                </span>
+                                <span>•</span>
+                                <span>{batch.count} records imported</span>
+                                <span>•</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Clock size={12} />
+                                  {new Date(batch.importedAt).toLocaleString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '0.8rem',
+                              padding: '7px 14px',
+                              fontWeight: 700,
+                              background: '#EF4444',
+                              borderColor: '#DC2626',
+                              color: '#FFFFFF',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to delete all ${batch.count} ${batch.fileType} imported from "${batch.fileName}"? This will delete all these records immediately.`
+                                )
+                              ) {
+                                deleteImportBatch(batch.id);
+                              }
+                            }}
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete File Data</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : inputMode === 'file' ? (
                 <div>
                   <input
                     type="file"
@@ -1284,32 +1459,34 @@ export function BulkImportModal() {
                   onClick={closeModal}
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {inputMode === 'history' ? 'Close' : 'Cancel'}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={!parsedData || parsedData.validCount === 0 || isSubmitting}
-                  onClick={handleExecuteImport}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw size={15} className="spin" />
-                      <span>
-                        Importing {importProgress.percent > 0 ? `(${importProgress.percent}%)` : '...'}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud size={15} />
-                      <span>
-                        Import {parsedData ? `${parsedData.validCount} ` : ''}
-                        {importType.charAt(0).toUpperCase() + importType.slice(1)}
-                      </span>
-                    </>
-                  )}
-                </button>
+                {inputMode !== 'history' && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={!parsedData || parsedData.validCount === 0 || isSubmitting}
+                    onClick={handleExecuteImport}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw size={15} className="spin" />
+                        <span>
+                          Importing {importProgress.percent > 0 ? `(${importProgress.percent}%)` : '...'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud size={15} />
+                        <span>
+                          Import {parsedData ? `${parsedData.validCount} ` : ''}
+                          {importType.charAt(0).toUpperCase() + importType.slice(1)}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </>
           )}
