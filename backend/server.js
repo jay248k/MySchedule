@@ -105,57 +105,93 @@ app.use('/api/work-sessions', workSessionRoutes);
 app.use('/api/deviations', scheduleDeviationRoutes);
 app.use('/api/requests', workRequestRoutes);
 
+// Root Status Endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'MySchedule Backend API is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // 404 & Error Handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start Server and Connect Database
-const startServer = async () => {
-  try {
-    console.log('🔄 Connecting to Neon PostgreSQL database...');
-    await sequelize.authenticate();
-    console.log('✅ Connected to Neon PostgreSQL successfully!');
-
-    // Clean up removed RBAC tables and columns in database if they exist
-    try {
-      await sequelize.query('DROP TABLE IF EXISTS permissions CASCADE;');
-      await sequelize.query('DROP TABLE IF EXISTS module_masters CASCADE;');
-      await sequelize.query('DROP TABLE IF EXISTS roles CASCADE;');
-      await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "roleId";');
-      await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "role";');
-      await sequelize.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "color" VARCHAR(255);');
-    } catch (cleanupErr) {
-      // safe ignore if already cleaned
-    }
-
-    // Ensure database tables exist (safe sync without dropping data)
-    await sequelize.sync();
-    console.log('✅ Sequelize models synchronized with database tables.');
-
-    // Apply database indexing & optimization
-    await optimizeDatabase();
-
-    // Auto-seed initial data if categories table is empty
-    const categoryCount = await db.Category.count();
-    if (categoryCount === 0) {
-      console.log('📦 Database is empty. Seeding initial categories, tasks, goals & settings...');
-      const runSeed = require('./seeders/seedRunner');
-      await runSeed();
-    }
-
-    app.listen(PORT, () => {
-      console.log(`\n==================================================`);
-      console.log(`🚀 Server running on: http://localhost:${PORT}`);
-      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🐘 Database: Neon Serverless PostgreSQL`);
-      console.log(`==================================================\n`);
-    });
-  } catch (error) {
-    console.error('❌ Failed to initialize database / server:', error);
-    process.exit(1);
+// Database connection helper (idempotent for serverless & local)
+let dbInitPromise = null;
+const initDatabase = async () => {
+  if (!dbInitPromise) {
+    dbInitPromise = (async () => {
+      try {
+        console.log('🔄 Connecting to Neon PostgreSQL database...');
+        await sequelize.authenticate();
+        console.log('✅ Connected to Neon PostgreSQL successfully!');
+        return true;
+      } catch (err) {
+        console.error('❌ Database connection error:', err.message);
+        dbInitPromise = null;
+        return false;
+      }
+    })();
   }
+  return dbInitPromise;
 };
 
-startServer();
+// Ensure DB connection is initiated on requests
+app.use(async (req, res, next) => {
+  try {
+    await initDatabase();
+  } catch (err) {
+    // continue to handler
+  }
+  next();
+});
+
+// Start Server locally if not running on Vercel
+if (!process.env.VERCEL) {
+  const startLocalServer = async () => {
+    try {
+      await initDatabase();
+
+      try {
+        await sequelize.query('DROP TABLE IF EXISTS permissions CASCADE;');
+        await sequelize.query('DROP TABLE IF EXISTS module_masters CASCADE;');
+        await sequelize.query('DROP TABLE IF EXISTS roles CASCADE;');
+        await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "roleId";');
+        await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "role";');
+        await sequelize.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "color" VARCHAR(255);');
+      } catch (cleanupErr) {
+        // safe ignore if already cleaned
+      }
+
+      await sequelize.sync();
+      console.log('✅ Sequelize models synchronized with database tables.');
+
+      await optimizeDatabase();
+
+      const categoryCount = await db.Category.count();
+      if (categoryCount === 0) {
+        console.log('📦 Database is empty. Seeding initial categories, tasks, goals & settings...');
+        const runSeed = require('./seeders/seedRunner');
+        await runSeed();
+      }
+
+      app.listen(PORT, () => {
+        console.log(`\n==================================================`);
+        console.log(`🚀 Server running on: http://localhost:${PORT}`);
+        console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🐘 Database: Neon Serverless PostgreSQL`);
+        console.log(`==================================================\n`);
+      });
+    } catch (error) {
+      console.error('❌ Failed to start local server:', error);
+    }
+  };
+
+  startLocalServer();
+}
 
 module.exports = app;
+

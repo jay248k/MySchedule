@@ -16,10 +16,10 @@ const sequelize = new Sequelize(connectionString, {
   logging: process.env.DEBUG_SQL === 'true' ? (msg) => console.log(`[Sequelize] ${msg}`) : false,
   benchmark: false,
   pool: {
-    max: 20,
-    min: 2,
+    max: 10,
+    min: 0,
     acquire: 30000,
-    idle: 20000,
+    idle: 10000,
   },
 });
 

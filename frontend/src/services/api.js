@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://myschedule-w52y.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://my-schedule-somq.vercel.app/api';
 
 /**
  * Custom Axios client configured for MySchedule API
