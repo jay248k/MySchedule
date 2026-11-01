@@ -850,16 +850,6 @@ export function DailyScheduleTimeline({
                         Event
                       </div>
                     )}
-
-                    <span
-                      style={{
-                        fontSize: '0.72rem',
-                        color: 'rgba(255, 255, 255, 0.45)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {durationStr}
-                    </span>
                   </div>
 
                   {/* Column 6: Actions Menu (...) */}
