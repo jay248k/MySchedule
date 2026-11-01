@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   BarChart3,
   TrendingUp,
@@ -28,6 +28,10 @@ import {
   AlertTriangle,
   Sparkles,
   Archive,
+  Flag,
+  FileSpreadsheet,
+  Download,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -54,13 +58,19 @@ import {
 } from '../utils/statistics';
 import { ProgressBar } from '../components/common/ProgressRing';
 import { TaskItem } from '../components/tasks/TaskItem';
+import { ExcelReportTable } from '../components/reports/ExcelReportTable';
+import { analyzeRedFlags } from '../utils/redFlagEngine';
+import { getEffectiveStatus } from '../utils/taskUtils';
 
 export function Reports() {
   const navigate = useNavigate();
+  const { reportType } = useParams();
   const {
-    tasks,
-    categories,
-    goals,
+    tasks = [],
+    categories = [],
+    goals = [],
+    workSessions = [],
+    activeWorkSession,
     user,
     openModal,
     toggleTaskComplete,
@@ -72,8 +82,24 @@ export function Reports() {
     setSelectedDate,
   } = useApp();
 
-  // Active view: 'today-report' (default) or 'analytics'
-  const [activeTab, setActiveTab] = useState('today-report');
+  // Active view: sync with route param if present ('pending', 'completed', 'missed', 'goals', 'red-flags', 'today-report', 'analytics')
+  const [activeTab, setActiveTab] = useState(() => {
+    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'today-report', 'analytics'].includes(reportType)) {
+      return reportType;
+    }
+    return 'today-report';
+  });
+
+  useEffect(() => {
+    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'today-report', 'analytics'].includes(reportType)) {
+      setActiveTab(reportType);
+    }
+  }, [reportType]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    navigate(`/reports/${tab}`);
+  };
 
   // Selected date for Daily Work Reporting
   const todayStr = getTodayDateString();
@@ -416,6 +442,525 @@ export function Reports() {
   const selectedDayAnalyticsData =
     daysReport.days.find((d) => d.dateStr === selectedAnalyticsDate) || daysReport.days[0];
 
+  // =========================================================================
+  // SUB-REPORTS DATA & CONFIGURATIONS (Excel-Style Reports)
+  // =========================================================================
+
+  // 1. Pending Tasks Report Data
+  const pendingTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      const eff = getEffectiveStatus(t);
+      return eff === 'pending' || (!t.completed && eff !== 'overdue');
+    });
+  }, [tasks]);
+
+  const pendingTableData = useMemo(() => {
+    return pendingTasks.map((t) => {
+      const cat = categories.find((c) => c.id === t.categoryId);
+      const goal = goals.find((g) => g.id === t.goalId);
+      return {
+        id: t.id,
+        title: t.title,
+        category: cat?.name || 'General',
+        date: t.date || '-',
+        timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || 'Flexible'),
+        priority: (t.priority || 'medium').toUpperCase(),
+        goal: goal?.title || 'None',
+        status: 'Pending',
+        estimatedHours: t.estimatedHours || 1,
+      };
+    });
+  }, [pendingTasks, categories, goals]);
+
+  const pendingSummary = useMemo(() => {
+    const highPri = pendingTasks.filter((t) => t.priority === 'high').length;
+    const todayPending = pendingTasks.filter((t) => t.date === todayStr).length;
+    const totalHours = pendingTasks.reduce((acc, t) => acc + (Number(t.estimatedHours) || 1), 0);
+    return [
+      { label: 'Pending Tasks', value: pendingTasks.length, badge: 'In Queue', color: 'var(--warning)' },
+      { label: 'High Priority', value: highPri, badge: 'Urgent', color: 'var(--danger)' },
+      { label: 'Due Today', value: todayPending, badge: 'Scheduled', color: 'var(--primary-color)' },
+      { label: 'Est. Hours Remaining', value: `${totalHours} hrs`, badge: 'Effort', color: '#8B5CF6' },
+    ];
+  }, [pendingTasks, todayStr]);
+
+  const pendingColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Task Title',
+      sortable: true,
+      width: '280px',
+      render: (val, row) => (
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {row.id?.slice?.(0, 8) || row.id}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      width: '140px',
+      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+    },
+    { key: 'date', label: 'Scheduled Date', sortable: true, width: '130px' },
+    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '130px' },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      width: '110px',
+      render: (val) => (
+        <span
+          className={`badge ${
+            val === 'HIGH' ? 'badge-danger' : val === 'MEDIUM' ? 'badge-warning' : 'badge-primary'
+          }`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    { key: 'goal', label: 'Linked Goal', sortable: true, width: '160px' },
+    {
+      key: 'estimatedHours',
+      label: 'Est. Hours',
+      sortable: true,
+      width: '100px',
+      render: (val) => `${val}h`,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '110px',
+      render: () => <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Pending</span>,
+    },
+  ], []);
+
+  // 2. Completed Tasks Report Data
+  const completedTasks = useMemo(() => {
+    return tasks.filter((t) => t.completed || getEffectiveStatus(t) === 'completed');
+  }, [tasks]);
+
+  const completedTableData = useMemo(() => {
+    return completedTasks.map((t) => {
+      const cat = categories.find((c) => c.id === t.categoryId);
+      const goal = goals.find((g) => g.id === t.goalId);
+      return {
+        id: t.id,
+        title: t.title,
+        category: cat?.name || 'General',
+        date: t.date || '-',
+        completedAt: t.completedAt ? formatDate(t.completedAt) : (t.date || '-'),
+        timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || '-'),
+        priority: (t.priority || 'medium').toUpperCase(),
+        goal: goal?.title || 'None',
+        status: 'Completed',
+        hoursLogged: t.actualHours || t.estimatedHours || 1,
+      };
+    });
+  }, [completedTasks, categories, goals]);
+
+  const completedSummary = useMemo(() => {
+    const todayCompleted = completedTasks.filter((t) => t.date === todayStr || (t.completedAt && t.completedAt.startsWith(todayStr))).length;
+    const highPri = completedTasks.filter((t) => t.priority === 'high').length;
+    const totalHours = completedTasks.reduce((acc, t) => acc + (Number(t.actualHours) || Number(t.estimatedHours) || 1), 0);
+    return [
+      { label: 'Completed Tasks', value: completedTasks.length, badge: 'Finished', color: 'var(--success)' },
+      { label: 'Completed Today', value: todayCompleted, badge: 'Today', color: 'var(--primary-color)' },
+      { label: 'High Priority Accomplished', value: highPri, badge: 'High Impact', color: '#10B981' },
+      { label: 'Total Hours Delivered', value: `${totalHours} hrs`, badge: 'Productive', color: '#6366F1' },
+    ];
+  }, [completedTasks, todayStr]);
+
+  const completedColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Task Title',
+      sortable: true,
+      width: '280px',
+      render: (val) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CheckCircle2 size={16} color="var(--success)" />
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      width: '140px',
+      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+    },
+    { key: 'date', label: 'Scheduled Date', sortable: true, width: '130px' },
+    { key: 'completedAt', label: 'Completed Date', sortable: true, width: '130px' },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      width: '110px',
+      render: (val) => (
+        <span
+          className={`badge ${val === 'HIGH' ? 'badge-danger' : 'badge-primary'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    { key: 'goal', label: 'Linked Goal', sortable: true, width: '160px' },
+    {
+      key: 'hoursLogged',
+      label: 'Hours',
+      sortable: true,
+      width: '90px',
+      render: (val) => `${val}h`,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '110px',
+      render: () => <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>Completed</span>,
+    },
+  ], []);
+
+  // 3. Missed / Overdue Tasks Report Data
+  const missedTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      const eff = getEffectiveStatus(t);
+      return eff === 'overdue' || (!t.completed && t.date && t.date < todayStr);
+    });
+  }, [tasks, todayStr]);
+
+  const missedTableData = useMemo(() => {
+    return missedTasks.map((t) => {
+      const cat = categories.find((c) => c.id === t.categoryId);
+      const goal = goals.find((g) => g.id === t.goalId);
+      const daysDelayed = t.date ? Math.max(1, Math.floor((new Date(todayStr) - new Date(t.date)) / (1000 * 60 * 60 * 24))) : 1;
+      return {
+        id: t.id,
+        title: t.title,
+        category: cat?.name || 'General',
+        date: t.date || '-',
+        timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || 'Scheduled'),
+        daysDelayed,
+        priority: (t.priority || 'medium').toUpperCase(),
+        goal: goal?.title || 'None',
+        riskLevel: t.priority === 'high' || daysDelayed > 3 ? 'CRITICAL' : 'MODERATE',
+        status: 'Missed / Overdue',
+      };
+    });
+  }, [missedTasks, categories, goals, todayStr]);
+
+  const missedSummary = useMemo(() => {
+    const critical = missedTasks.filter((t) => t.priority === 'high').length;
+    const maxDelay = missedTasks.reduce((max, t) => {
+      if (!t.date) return max;
+      const d = Math.max(0, Math.floor((new Date(todayStr) - new Date(t.date)) / (1000 * 60 * 60 * 24)));
+      return d > max ? d : max;
+    }, 0);
+    return [
+      { label: 'Missed / Overdue', value: missedTasks.length, badge: 'Action Required', color: 'var(--danger)' },
+      { label: 'Critical / High Priority', value: critical, badge: 'Urgent', color: '#EF4444' },
+      { label: 'Max Days Delayed', value: `+${maxDelay} days`, badge: 'Lag', color: '#F59E0B' },
+      { label: 'Overdue Ratio', value: tasks.length ? `${Math.round((missedTasks.length / tasks.length) * 100)}%` : '0%', badge: 'Overall', color: '#EC4899' },
+    ];
+  }, [missedTasks, tasks.length, todayStr]);
+
+  const missedColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Missed Task',
+      sortable: true,
+      width: '280px',
+      render: (val) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertTriangle size={16} color="var(--danger)" />
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      width: '140px',
+      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+    },
+    { key: 'date', label: 'Due Date', sortable: true, width: '120px' },
+    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '120px' },
+    {
+      key: 'daysDelayed',
+      label: 'Days Delayed',
+      sortable: true,
+      width: '110px',
+      render: (val) => <span style={{ color: 'var(--danger)', fontWeight: 700 }}>+{val} day{val > 1 ? 's' : ''}</span>,
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      width: '100px',
+      render: (val) => (
+        <span
+          className={`badge ${val === 'HIGH' ? 'badge-danger' : 'badge-warning'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'riskLevel',
+      label: 'Risk Level',
+      sortable: true,
+      width: '110px',
+      render: (val) => (
+        <span
+          className={`badge ${val === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '130px',
+      render: () => <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>Overdue</span>,
+    },
+  ], []);
+
+  // 4. Goal Progression Report Data
+  const goalsTableData = useMemo(() => {
+    return goals.map((goal) => {
+      const cat = categories.find((c) => c.id === goal.categoryId);
+      const linkedTasks = tasks.filter((t) => t.goalId === goal.id);
+      const completedLinked = linkedTasks.filter((t) => t.completed || getEffectiveStatus(t) === 'completed');
+      const pendingLinked = linkedTasks.filter((t) => !t.completed && getEffectiveStatus(t) !== 'completed');
+      const progress = Math.min(100, Math.round(goal.progress ?? (linkedTasks.length ? (completedLinked.length / linkedTasks.length) * 100 : 0)));
+      return {
+        id: goal.id,
+        title: goal.title,
+        category: cat?.name || 'General',
+        targetDate: goal.targetDate || goal.deadline || 'Ongoing',
+        progress,
+        totalTasks: linkedTasks.length,
+        completedTasks: completedLinked.length,
+        pendingTasks: pendingLinked.length,
+        status: progress >= 100 ? 'Completed' : progress < 30 ? 'Needs Attention' : 'On Track',
+      };
+    });
+  }, [goals, categories, tasks]);
+
+  const goalsSummary = useMemo(() => {
+    const completedGoals = goalsTableData.filter((g) => g.progress >= 100).length;
+    const attentionGoals = goalsTableData.filter((g) => g.progress < 30).length;
+    const avgProg = goalsTableData.length ? Math.round(goalsTableData.reduce((acc, g) => acc + g.progress, 0) / goalsTableData.length) : 0;
+    return [
+      { label: 'Total Tracked Goals', value: goalsTableData.length, badge: 'Targets', color: 'var(--primary-color)' },
+      { label: 'Average Progression', value: `${avgProg}%`, badge: 'Velocity', color: '#8B5CF6' },
+      { label: 'Completed Milestones', value: completedGoals, badge: 'Achieved', color: 'var(--success)' },
+      { label: 'Needs Attention', value: attentionGoals, badge: 'Behind Target', color: 'var(--danger)' },
+    ];
+  }, [goalsTableData]);
+
+  const goalsColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Goal Title',
+      sortable: true,
+      width: '260px',
+      render: (val) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Target size={16} color="var(--primary-color)" />
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      width: '140px',
+      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+    },
+    { key: 'targetDate', label: 'Target Date', sortable: true, width: '130px' },
+    {
+      key: 'progress',
+      label: 'Progression',
+      sortable: true,
+      width: '190px',
+      render: (val) => (
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '3px' }}>
+            <span>Progress</span>
+            <span>{val}%</span>
+          </div>
+          <div style={{ width: '100%', height: '7px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${val}%`, height: '100%', background: val >= 100 ? 'var(--success)' : 'var(--primary-color)', borderRadius: '4px' }} />
+          </div>
+        </div>
+      ),
+    },
+    { key: 'totalTasks', label: 'Tasks', sortable: true, width: '80px' },
+    {
+      key: 'completedTasks',
+      label: 'Done',
+      sortable: true,
+      width: '80px',
+      render: (val) => <span style={{ color: 'var(--success)', fontWeight: 600 }}>{val}</span>,
+    },
+    {
+      key: 'pendingTasks',
+      label: 'Pending',
+      sortable: true,
+      width: '80px',
+      render: (val) => <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{val}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span
+          className={`badge ${val === 'Completed' ? 'badge-success' : val === 'On Track' ? 'badge-primary' : 'badge-danger'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+  ], []);
+
+  // 5. Red Flag Analysis Report Data
+  const redFlagAnalysis = useMemo(() => {
+    return analyzeRedFlags({
+      tasks,
+      categories,
+      goals,
+      workSessions,
+      activeWorkSession,
+      targetDate: selectedReportDate || todayStr,
+    });
+  }, [tasks, categories, goals, workSessions, activeWorkSession, selectedReportDate, todayStr]);
+
+  const redFlagsTableData = useMemo(() => {
+    return redFlagAnalysis.allFlags.map((flag) => ({
+      id: flag.id,
+      title: flag.title,
+      type: flag.typeLabel,
+      timeSlot: flag.timeSlot || 'N/A',
+      reason: flag.reason,
+      severity: flag.severity.toUpperCase(),
+      recoveryProgress: flag.recoveryProgress ?? 0,
+      status: flag.status === 'resolved' ? 'Recovered (Well Position)' : 'Active Red Flag',
+    }));
+  }, [redFlagAnalysis]);
+
+  const redFlagsSummary = useMemo(() => {
+    return [
+      { label: 'Active Red Flags', value: redFlagAnalysis.activeFlags.length, badge: 'Current Lags', color: 'var(--danger)' },
+      { label: 'Critical Lags', value: redFlagAnalysis.criticalCount, badge: 'Immediate Focus', color: '#DC2626' },
+      { label: 'Recovered (Well Position)', value: redFlagAnalysis.recoveredFlags.length, badge: 'Resolved', color: 'var(--success)' },
+      { label: 'Avg Recovery Velocity', value: `${redFlagAnalysis.activeFlags.length ? Math.round(redFlagAnalysis.activeFlags.reduce((a, f) => a + (f.recoveryProgress || 0), 0) / redFlagAnalysis.activeFlags.length) : 100}%`, badge: 'Catch-up', color: '#3B82F6' },
+    ];
+  }, [redFlagAnalysis]);
+
+  const redFlagsColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Lag Area / Task',
+      sortable: true,
+      width: '250px',
+      render: (val, row) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Flag
+            size={16}
+            color={row.status.includes('Recovered') ? 'var(--success)' : 'var(--danger)'}
+            fill={row.status.includes('Recovered') ? 'var(--success)' : 'var(--danger)'}
+          />
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Lag Type',
+      sortable: true,
+      width: '130px',
+      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>{val}</span>,
+    },
+    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '120px' },
+    {
+      key: 'reason',
+      label: 'Lag Diagnostic Reason',
+      sortable: true,
+      width: '280px',
+      render: (val) => <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{val}</span>,
+    },
+    {
+      key: 'severity',
+      label: 'Severity',
+      sortable: true,
+      width: '100px',
+      render: (val) => (
+        <span
+          className={`badge ${val === 'CRITICAL' ? 'badge-danger' : val === 'HIGH' ? 'badge-danger' : 'badge-warning'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'recoveryProgress',
+      label: 'Recovery Progress',
+      sortable: true,
+      width: '180px',
+      render: (val) => (
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '3px' }}>
+            <span>Catch-up</span>
+            <span style={{ color: val >= 100 ? 'var(--success)' : 'var(--primary-color)' }}>{val}%</span>
+          </div>
+          <div style={{ width: '100%', height: '7px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${val}%`,
+                height: '100%',
+                background: val >= 100 ? 'var(--success)' : 'var(--primary-color)',
+                borderRadius: '4px',
+                transition: 'width 0.4s ease',
+              }}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '160px',
+      render: (val) => (
+        <span
+          className={`badge ${val.includes('Recovered') ? 'badge-success' : 'badge-danger'}`}
+          style={{ fontSize: '0.75rem' }}
+        >
+          {val}
+        </span>
+      ),
+    },
+  ], []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
       {/* 1. Header with Mode Tabs */}
@@ -433,18 +978,18 @@ export function Reports() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="badge badge-primary" style={{ padding: '4px 10px' }}>
-              <FileText size={13} />
-              Reporting Module
+              <FileSpreadsheet size={13} />
+              Reporting & Diagnostics
             </span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Daily Work Logging & Performance Analytics
+              Excel-Style Reports, Document Downloads & Red Flag Diagnostics
             </span>
           </div>
           <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px' }}>
-            Work Reporting & Standup Hub
+            Work Reporting & Export Hub
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Log your daily accomplishments, export standup reports, and inspect day-by-day productivity trends.
+            Generate spreadsheet-style reports with instant Excel (.xlsx), Word (.doc), and PDF downloads.
           </p>
         </div>
 
@@ -458,44 +1003,250 @@ export function Reports() {
             borderRadius: 'var(--radius-lg)',
             padding: '4px',
             gap: '4px',
+            flexWrap: 'wrap',
           }}
         >
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'today-report' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
-            onClick={() => setActiveTab('today-report')}
+            className={`btn btn-sm ${activeTab === 'pending' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('pending')}
           >
-            <FileText size={16} />
-            Today's Work Report
+            <Clock size={15} />
+            Pending
             <span
               className="badge"
               style={{
-                background:
-                  activeTab === 'today-report' ? 'rgba(255, 255, 255, 0.25)' : 'var(--primary-light)',
-                color: activeTab === 'today-report' ? '#ffffff' : 'var(--primary-color)',
+                background: activeTab === 'pending' ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)',
+                color: activeTab === 'pending' ? '#fff' : 'var(--primary-color)',
                 fontSize: '0.7rem',
-                padding: '2px 6px',
+                padding: '1px 5px',
               }}
             >
-              Daily Logger
+              {pendingTasks.length}
             </span>
           </button>
 
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'analytics' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
-            onClick={() => setActiveTab('analytics')}
+            className={`btn btn-sm ${activeTab === 'completed' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('completed')}
           >
-            <BarChart3 size={16} />
-            Days Breakdown & Analytics
+            <CheckCircle2 size={15} />
+            Completed
+            <span
+              className="badge"
+              style={{
+                background: activeTab === 'completed' ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)',
+                color: activeTab === 'completed' ? '#fff' : 'var(--primary-color)',
+                fontSize: '0.7rem',
+                padding: '1px 5px',
+              }}
+            >
+              {completedTasks.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'missed' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('missed')}
+          >
+            <AlertTriangle size={15} />
+            Missed
+            {missedTasks.length > 0 && (
+              <span
+                className="badge badge-danger"
+                style={{ fontSize: '0.7rem', padding: '1px 5px' }}
+              >
+                {missedTasks.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'goals' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('goals')}
+          >
+            <Target size={15} />
+            Goal Progression
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'red-flags' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('red-flags')}
+          >
+            <Flag size={15} color={redFlagAnalysis.activeFlags.length > 0 ? '#EF4444' : undefined} />
+            Red Flags
+            {redFlagAnalysis.activeFlags.length > 0 && (
+              <span
+                className="badge badge-danger"
+                style={{ fontSize: '0.7rem', padding: '1px 5px' }}
+              >
+                {redFlagAnalysis.activeFlags.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'today-report' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('today-report')}
+          >
+            <FileText size={15} />
+            Daily Standup
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'analytics' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            onClick={() => handleTabChange('analytics')}
+          >
+            <BarChart3 size={15} />
+            Analytics
           </button>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* VIEW 1: TODAY'S WORK REPORT (DAILY WORK REPORTING & STANDUP LOG)           */}
+      {/* VIEW: PENDING TASKS EXCEL REPORT                                          */}
+      {/* ========================================================================= */}
+      {activeTab === 'pending' && (
+        <ExcelReportTable
+          title="Pending Tasks Report"
+          subtitle="All queued, scheduled, and in-progress tasks awaiting completion"
+          summaryCards={pendingSummary}
+          columns={pendingColumns}
+          data={pendingTableData}
+          defaultSortKey="date"
+          exportFileName="MySchedule_Pending_Tasks"
+          sheetName="PendingTasks"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: COMPLETED TASKS EXCEL REPORT                                        */}
+      {/* ========================================================================= */}
+      {activeTab === 'completed' && (
+        <ExcelReportTable
+          title="Completed Tasks Report"
+          subtitle="All accomplished tasks, milestones, and productive work output"
+          summaryCards={completedSummary}
+          columns={completedColumns}
+          data={completedTableData}
+          defaultSortKey="completedAt"
+          exportFileName="MySchedule_Completed_Tasks"
+          sheetName="CompletedTasks"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: MISSED / OVERDUE TASKS EXCEL REPORT                                  */}
+      {/* ========================================================================= */}
+      {activeTab === 'missed' && (
+        <ExcelReportTable
+          title="Missed & Overdue Tasks Report"
+          subtitle="Tasks that missed their scheduled deadlines or time slots requiring catch-up"
+          summaryCards={missedSummary}
+          columns={missedColumns}
+          data={missedTableData}
+          defaultSortKey="daysDelayed"
+          exportFileName="MySchedule_Missed_Tasks"
+          sheetName="MissedTasks"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: GOAL PROGRESSION EXCEL REPORT                                       */}
+      {/* ========================================================================= */}
+      {activeTab === 'goals' && (
+        <ExcelReportTable
+          title="Goal Progression & Milestones Report"
+          subtitle="Comprehensive tracking of strategic goals, completion velocity, and deliverables"
+          summaryCards={goalsSummary}
+          columns={goalsColumns}
+          data={goalsTableData}
+          defaultSortKey="progress"
+          exportFileName="MySchedule_Goal_Progression"
+          sheetName="GoalProgression"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: RED FLAG LAG & RECOVERY EXCEL REPORT                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'red-flags' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: 'var(--radius-lg)',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%)',
+              border: '1.5px solid rgba(239, 68, 68, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--danger)',
+                }}
+              >
+                <Flag size={20} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Intelligent Red Flag & Lag Assessment
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Identifies missed time slots, inactive categories, and lagging goals with real-time recovery tracking.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => navigate('/red-flags')}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              Open Dedicated Red Flag Hub <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <ExcelReportTable
+            title="Red Flag Diagnostic & Recovery Report"
+            subtitle="Detailed analysis of lag areas with real-time recovery progression and auto-clearing"
+            summaryCards={redFlagsSummary}
+            columns={redFlagsColumns}
+            data={redFlagsTableData}
+            defaultSortKey="recoveryProgress"
+            exportFileName="MySchedule_Red_Flags_Report"
+            sheetName="RedFlagReport"
+          />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: TODAY'S WORK REPORT (DAILY WORK REPORTING & STANDUP LOG)             */}
       {/* ========================================================================= */}
       {activeTab === 'today-report' && (
         <>

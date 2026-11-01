@@ -5,8 +5,12 @@ import {
   Plus,
   Search,
   CheckCircle2,
+  CircleCheckBig,
+  Timer,
   Clock,
+  CircleAlert,
   AlertCircle,
+  CalendarCheck2,
   ListTodo,
   Sun,
   Sunset,
@@ -274,15 +278,17 @@ export function TodaysTasks() {
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: 'var(--radius-md)',
-              background: '#EFF6FF',
-              color: '#2563EB',
+              borderRadius: '12px',
+              background: 'rgba(37, 99, 235, 0.12)',
+              color: '#3B82F6',
+              border: '1px solid rgba(59, 130, 246, 0.28)',
+              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <ListTodo size={22} />
+            <CalendarCheck2 size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Tasks</div>
@@ -295,15 +301,17 @@ export function TodaysTasks() {
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: 'var(--radius-md)',
-              background: '#ECFDF5',
-              color: '#059669',
+              borderRadius: '12px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              color: '#10B981',
+              border: '1px solid rgba(16, 185, 129, 0.28)',
+              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <CheckCircle2 size={22} />
+            <CircleCheckBig size={22} strokeWidth={2.3} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Completed</div>
@@ -316,15 +324,17 @@ export function TodaysTasks() {
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: 'var(--radius-md)',
-              background: '#FFFBEB',
-              color: '#D97706',
+              borderRadius: '12px',
+              background: 'rgba(245, 158, 11, 0.12)',
+              color: '#F59E0B',
+              border: '1px solid rgba(245, 158, 11, 0.28)',
+              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Clock size={22} />
+            <Timer size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending</div>
@@ -337,15 +347,17 @@ export function TodaysTasks() {
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: 'var(--radius-md)',
-              background: '#FEF2F2',
-              color: '#DC2626',
+              borderRadius: '12px',
+              background: 'rgba(239, 68, 68, 0.12)',
+              color: '#EF4444',
+              border: '1px solid rgba(239, 68, 68, 0.28)',
+              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <AlertCircle size={22} />
+            <CircleAlert size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Overdue</div>

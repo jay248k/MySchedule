@@ -52,8 +52,20 @@ exports.createGoal = async (req, res, next) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Goal title is required' });
     }
+    if (title.trim().length > 255) {
+      return res.status(400).json({ success: false, message: 'Goal title cannot exceed 255 characters' });
+    }
     if (!targetDate) {
       return res.status(400).json({ success: false, message: 'Target date is required' });
+    }
+
+    let validProgress = 0;
+    if (progress !== undefined) {
+      const p = Number(progress);
+      if (isNaN(p) || p < 0 || p > 100) {
+        return res.status(400).json({ success: false, message: 'Goal progress must be a number between 0 and 100' });
+      }
+      validProgress = p;
     }
 
     const goal = await Goal.create({
@@ -61,8 +73,8 @@ exports.createGoal = async (req, res, next) => {
       title: title.trim(),
       description: description ? description.trim() : null,
       targetDate,
-      progress: progress !== undefined ? Number(progress) : 0,
-      status: status || 'in-progress',
+      progress: validProgress,
+      status: status || (validProgress >= 100 ? 'completed' : 'in-progress'),
       category: category || null,
       relatedTaskIds: relatedTaskIds || [],
       userId: req.userId || req.body.userId || null,
@@ -144,12 +156,33 @@ exports.updateGoal = async (req, res, next) => {
 
     const { title, description, targetDate, progress, status, category, relatedTaskIds } = req.body;
 
+    let finalTitle = goal.title;
+    if (title !== undefined) {
+      const trimmed = title.trim();
+      if (!trimmed) {
+        return res.status(400).json({ success: false, message: 'Goal title cannot be empty' });
+      }
+      if (trimmed.length > 255) {
+        return res.status(400).json({ success: false, message: 'Goal title cannot exceed 255 characters' });
+      }
+      finalTitle = trimmed;
+    }
+
+    let finalProgress = goal.progress;
+    if (progress !== undefined) {
+      const p = Number(progress);
+      if (isNaN(p) || p < 0 || p > 100) {
+        return res.status(400).json({ success: false, message: 'Goal progress must be a number between 0 and 100' });
+      }
+      finalProgress = p;
+    }
+
     await goal.update({
-      title: title !== undefined ? title.trim() : goal.title,
+      title: finalTitle,
       description: description !== undefined ? (description ? description.trim() : null) : goal.description,
       targetDate: targetDate !== undefined ? targetDate : goal.targetDate,
-      progress: progress !== undefined ? Number(progress) : goal.progress,
-      status: status !== undefined ? status : goal.status,
+      progress: finalProgress,
+      status: status !== undefined ? status : (finalProgress >= 100 ? 'completed' : goal.status),
       category: category !== undefined ? category : goal.category,
       relatedTaskIds: relatedTaskIds !== undefined ? relatedTaskIds : goal.relatedTaskIds,
     });

@@ -39,6 +39,18 @@ export function EventModal() {
       setError('Please provide an event title.');
       return;
     }
+    if (title.trim().length > 255) {
+      setError('Event title cannot exceed 255 characters.');
+      return;
+    }
+    if (!date) {
+      setError('Please select an event date.');
+      return;
+    }
+    if (startTime && endTime && endTime <= startTime) {
+      setError('Event end time must be after start time.');
+      return;
+    }
 
     const payload = {
       title: title.trim(),

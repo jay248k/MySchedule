@@ -34,13 +34,29 @@ exports.updateUserProfile = async (req, res, next) => {
   try {
     const { name, title, email, avatarBg, avatarInitials } = req.body;
 
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ success: false, message: 'Name cannot be empty' });
+      }
+      if (name.trim().length > 100) {
+        return res.status(400).json({ success: false, message: 'Name cannot exceed 100 characters' });
+      }
+    }
+
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+      }
+    }
+
     // If authenticated via JWT, update the User account directly
     if (req.userId) {
       const user = await User.findByPk(req.userId);
       if (user) {
-        if (name !== undefined) user.name = name;
+        if (name !== undefined) user.name = name.trim();
         if (title !== undefined) user.title = title;
-        if (email !== undefined) user.email = email;
+        if (email !== undefined) user.email = email.toLowerCase().trim();
         if (avatarBg !== undefined) user.avatarBg = avatarBg;
         if (avatarInitials !== undefined) user.avatarInitials = avatarInitials;
 

@@ -61,6 +61,21 @@ exports.saveReport = async (req, res, next) => {
     if (!date) {
       return res.status(400).json({ success: false, message: 'Report date is required' });
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: 'Report date must be in YYYY-MM-DD format' });
+    }
+    if (hoursLogged !== undefined) {
+      const h = Number(hoursLogged);
+      if (isNaN(h) || h < 0 || h > 24) {
+        return res.status(400).json({ success: false, message: 'Hours logged must be between 0 and 24 hours' });
+      }
+    }
+    if (rating !== undefined) {
+      const r = Number(rating);
+      if (isNaN(r) || r < 1 || r > 5) {
+        return res.status(400).json({ success: false, message: 'Rating must be a score between 1 and 5' });
+      }
+    }
 
     const reportTitle = title || `Daily Work Report - ${date}`;
     const userId = req.userId || req.body.userId || null;

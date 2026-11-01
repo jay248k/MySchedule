@@ -1,13 +1,17 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../services/api';
+import { cookieUtils, purgeLegacyLocalStorage } from '../../utils/cookieUtils';
 
-const TOKEN_KEY = 'my_schedule_auth_token';
-const USER_KEY = 'my_schedule_auth_user';
+const COOKIE_TOKEN_KEY = 'myschedule_auth_token';
+const COOKIE_USER_KEY = 'myschedule_auth_user';
 
-// Helpers to load initial state safely
+// On boot, purge all legacy unusual static data dumped into localStorage
+purgeLegacyLocalStorage();
+
+// Helpers to load initial state safely from Cookie
 const getStoredToken = () => {
   try {
-    return localStorage.getItem(TOKEN_KEY) || null;
+    return cookieUtils.get(COOKIE_TOKEN_KEY) || cookieUtils.get('my_schedule_auth_token') || null;
   } catch {
     return null;
   }
@@ -15,8 +19,7 @@ const getStoredToken = () => {
 
 const getStoredUser = () => {
   try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return cookieUtils.getJSON(COOKIE_USER_KEY) || cookieUtils.getJSON('my_schedule_auth_user') || null;
   } catch {
     return null;
   }
@@ -34,13 +37,14 @@ export const loginUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem('myschedule_auth_token', token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      // Store in Cookie only - never in localStorage
+      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
+      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
+      purgeLegacyLocalStorage();
 
       return { token, user, message: res.message };
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Login failed';
+      const msg = err.data?.message || err.response?.data?.message || err.message || 'Login failed';
       return rejectWithValue(msg);
     }
   }
@@ -57,13 +61,14 @@ export const signupUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem('myschedule_auth_token', token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      // Store in Cookie only - never in localStorage
+      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
+      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
+      purgeLegacyLocalStorage();
 
       return { token, user, message: res.message };
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Signup failed';
+      const msg = err.data?.message || err.response?.data?.message || err.message || 'Signup failed';
       return rejectWithValue(msg);
     }
   }
@@ -80,9 +85,10 @@ export const demoLoginUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem('myschedule_auth_token', token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      // Store in Cookie only - never in localStorage
+      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
+      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
+      purgeLegacyLocalStorage();
 
       return { token, user, message: res.message };
     } catch (err) {
@@ -98,21 +104,12 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   } catch (err) {
     console.warn('Backend logout failed:', err);
   } finally {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('myschedule_auth_token');
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem('my_schedule_tasks');
-    localStorage.removeItem('my_schedule_categories');
-    localStorage.removeItem('my_schedule_goals');
-    localStorage.removeItem('my_schedule_events');
-    localStorage.removeItem('my_schedule_daily_reports');
-    localStorage.removeItem('my_schedule_work_sessions');
-    localStorage.removeItem('my_schedule_deviations');
-    localStorage.removeItem('my_schedule_work_requests');
-    localStorage.removeItem('my_schedule_active_work_session');
-    try {
-      localStorage.removeItem('my_schedule_auth_permissions');
-    } catch {}
+    // Clear cookies & purge any lingering localStorage items
+    cookieUtils.remove(COOKIE_TOKEN_KEY);
+    cookieUtils.remove('my_schedule_auth_token');
+    cookieUtils.remove(COOKIE_USER_KEY);
+    cookieUtils.remove('my_schedule_auth_user');
+    purgeLegacyLocalStorage();
   }
   return true;
 });
@@ -157,7 +154,7 @@ const authSlice = createSlice({
     updateUserProfile: (state, action) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
-        localStorage.setItem(USER_KEY, JSON.stringify(state.user));
+        cookieUtils.setJSON(COOKIE_USER_KEY, state.user, 30);
       }
     },
   },

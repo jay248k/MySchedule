@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -13,6 +13,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   X,
   LogIn,
@@ -21,15 +23,24 @@ import {
   Timer,
   AlertCircle,
   FileText,
+  Flag,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { getTodayDateString } from '../../utils/dateUtils';
 import { getEffectiveStatus } from '../../utils/taskUtils';
+import { analyzeRedFlags } from '../../utils/redFlagEngine';
 
 export function Sidebar() {
+  const location = useLocation();
   const {
-    tasks,
+    tasks = [],
+    categories = [],
+    goals = [],
+    workSessions = [],
     selectedDate,
     sidebarCollapsed,
     setSidebarCollapsed,
@@ -37,7 +48,7 @@ export function Sidebar() {
     setMobileSidebarOpen,
     user: appUser,
     activeWorkSession,
-    requests,
+    requests = [],
   } = useApp();
 
   const {
@@ -60,6 +71,21 @@ export function Sidebar() {
   const isTrackingLive = Boolean(activeWorkSession?.isRunning);
   const pendingRequestsCount = (requests || []).filter((r) => r.status === 'pending').length;
 
+  // Real-time Red Flag Analysis
+  const redFlagAnalysis = analyzeRedFlags({
+    tasks,
+    categories,
+    goals,
+    workSessions,
+    activeWorkSession,
+    targetDate: activeDate,
+  });
+  const activeRedFlagsCount = redFlagAnalysis.activeCount;
+
+  // Submenu toggle state (defaults open if current URL is under /reports)
+  const isReportsActive = location.pathname.startsWith('/reports');
+  const [reportsSubmenuOpen, setReportsSubmenuOpen] = useState(isReportsActive);
+
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     {
@@ -74,6 +100,13 @@ export function Sidebar() {
       icon: Timer,
       badge: isTrackingLive ? 'LIVE' : null,
       badgeColor: isTrackingLive ? '#10B981' : undefined,
+    },
+    {
+      name: 'Red Flags',
+      path: '/red-flags',
+      icon: Flag,
+      badge: activeRedFlagsCount > 0 ? activeRedFlagsCount : null,
+      badgeColor: '#EF4444',
     },
     {
       name: 'Mistakes & Deviations',
@@ -91,7 +124,20 @@ export function Sidebar() {
     { name: 'Calendar', path: '/calendar', icon: Calendar },
     { name: 'Categories', path: '/categories', icon: Tags },
     { name: 'Goals', path: '/goals', icon: Target },
-    { name: 'Reports', path: '/reports', icon: BarChart3 },
+    {
+      name: 'Reports',
+      path: '/reports',
+      icon: BarChart3,
+      hasSubmenu: true,
+      subItems: [
+        { name: 'Pending Tasks', path: '/reports/pending', icon: Clock },
+        { name: 'Completed Tasks', path: '/reports/completed', icon: CheckCircle2 },
+        { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle },
+        { name: 'Goal Progression', path: '/reports/goals', icon: Target },
+        { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag },
+        { name: 'Daily Standup', path: '/reports', icon: FileText },
+      ],
+    },
     { name: 'Reports Archive', path: '/archive', icon: Archive },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -140,6 +186,60 @@ export function Sidebar() {
         <nav className="sidebar-menu">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
+
+            if (item.hasSubmenu) {
+              const isItemActive = location.pathname.startsWith(item.path);
+              const isOpen = reportsSubmenuOpen || isItemActive;
+
+              return (
+                <div key={item.path} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `sidebar-nav-item ${isActive || isItemActive ? 'active' : ''}`
+                    }
+                    onClick={() => {
+                      if (!sidebarCollapsed) {
+                        setReportsSubmenuOpen(!isOpen);
+                      }
+                    }}
+                    title={sidebarCollapsed ? item.name : undefined}
+                  >
+                    <Icon size={16} style={{ flexShrink: 0 }} />
+                    {!sidebarCollapsed && <span>{item.name}</span>}
+                    {!sidebarCollapsed && (
+                      <span style={{ marginLeft: 'auto', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                        {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </span>
+                    )}
+                  </NavLink>
+
+                  {/* Expandable Submenu */}
+                  {!sidebarCollapsed && isOpen && item.subItems && (
+                    <div className="sidebar-submenu">
+                      {item.subItems.map((sub) => {
+                        const SubIcon = sub.icon;
+                        return (
+                          <NavLink
+                            key={sub.path}
+                            to={sub.path}
+                            end={sub.path === '/reports'}
+                            className={({ isActive }) =>
+                              `sidebar-sub-item ${isActive ? 'active' : ''}`
+                            }
+                            onClick={() => setMobileSidebarOpen(false)}
+                          >
+                            <SubIcon size={13} style={{ flexShrink: 0 }} />
+                            <span>{sub.name}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <NavLink
                 key={item.path}

@@ -1,7 +1,8 @@
 import { isTaskOverdue, getDayPeriod } from './dateUtils';
 
 export function getEffectiveStatus(task) {
-  if (task.status === 'completed') return 'completed';
+  if (!task) return 'pending';
+  if (task.status === 'completed' || task.completed === true || Boolean(task.completedAt)) return 'completed';
   if (task.status === 'overdue' || isTaskOverdue(task)) return 'overdue';
   return 'pending';
 }

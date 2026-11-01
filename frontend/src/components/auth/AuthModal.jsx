@@ -41,6 +41,16 @@ export function AuthModal() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const lowerErr = (errorMsg || '').toLowerCase();
+  const isEmailError =
+    lowerErr.includes('email') ||
+    lowerErr.includes('register') ||
+    lowerErr.includes('account');
+  const isPasswordError =
+    lowerErr.includes('password') ||
+    lowerErr.includes('mismatch') ||
+    lowerErr.includes('incorrect');
+
   // Reset form when modal opens or tab changes
   useEffect(() => {
     setErrorMsg('');
@@ -405,17 +415,25 @@ export function AuthModal() {
                 type="email"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
                 style={{
                   width: '100%',
                   padding: '11px 14px 11px 40px',
                   borderRadius: '10px',
-                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
-                  background: 'var(--input-bg, rgba(0, 0, 0, 0.2))',
+                  border: isEmailError
+                    ? '1px solid #ef4444'
+                    : '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
+                  background: isEmailError
+                    ? 'rgba(239, 68, 68, 0.08)'
+                    : 'var(--input-bg, rgba(0, 0, 0, 0.2))',
                   color: 'var(--text-primary, #ffffff)',
                   fontSize: '0.9rem',
                   outline: 'none',
                   transition: 'border-color 0.2s',
+                  boxShadow: isEmailError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                 }}
                 required
               />
@@ -492,24 +510,32 @@ export function AuthModal() {
                   left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: 'var(--text-muted, #64748b)',
+                  color: isPasswordError ? '#ef4444' : 'var(--text-muted, #64748b)',
                 }}
               />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
                 style={{
                   width: '100%',
                   padding: '11px 40px 11px 40px',
                   borderRadius: '10px',
-                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
-                  background: 'var(--input-bg, rgba(0, 0, 0, 0.2))',
+                  border: isPasswordError
+                    ? '1px solid #ef4444'
+                    : '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
+                  background: isPasswordError
+                    ? 'rgba(239, 68, 68, 0.08)'
+                    : 'var(--input-bg, rgba(0, 0, 0, 0.2))',
                   color: 'var(--text-primary, #ffffff)',
                   fontSize: '0.9rem',
                   outline: 'none',
                   transition: 'border-color 0.2s',
+                  boxShadow: isPasswordError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                 }}
                 required
               />

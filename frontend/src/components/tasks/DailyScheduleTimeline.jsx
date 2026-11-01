@@ -243,85 +243,57 @@ export function DailyScheduleTimeline({
               name: isEvent ? 'Event' : 'General',
             };
 
-            const effectiveStatus = isEvent ? 'scheduled' : getEffectiveStatus(item);
-            const isCompleted = !isEvent && effectiveStatus === 'completed';
+            const isCompleted = !isEvent && getEffectiveStatus(item) === 'completed';
 
-            // Determine itemState: 'completed', 'in_progress', 'upcoming', 'overdue', 'event'
-            let itemState = 'upcoming';
-            if (isEvent) {
-              itemState = 'event';
-            } else if (isCompleted) {
-              itemState = 'completed';
-            } else if (item.startTime) {
-              const [sH, sM] = item.startTime.split(':').map(Number);
-              const startM = sH * 60 + (sM || 0);
-              let endM = startM + 60;
-              if (item.endTime) {
-                const [eH, eM] = item.endTime.split(':').map(Number);
-                endM = eH * (eM !== undefined ? 60 : 0) + (eM || 0);
-                if (endM < startM) endM += 24 * 60;
-              }
-
-              if (isToday) {
-                if (nowMinutes >= startM && nowMinutes < endM) {
-                  itemState = 'in_progress';
-                } else if (nowMinutes >= endM) {
-                  itemState = 'overdue';
-                } else {
-                  itemState = 'upcoming';
+            // Helper to accurately resolve the state of any item
+            const resolveItemState = (itm) => {
+              if (!itm) return null;
+              if (itm.isEvent) return 'event';
+              const eff = getEffectiveStatus(itm);
+              if (eff === 'completed') return 'completed';
+              if (itm.startTime) {
+                const [sH, sM] = itm.startTime.split(':').map(Number);
+                const startM = sH * 60 + (sM || 0);
+                let endM = startM + 60;
+                if (itm.endTime) {
+                  const [eH, eM] = itm.endTime.split(':').map(Number);
+                  endM = eH * (eM !== undefined ? 60 : 0) + (eM || 0);
+                  if (endM < startM) endM += 24 * 60;
                 }
-              } else if (effectiveStatus === 'overdue') {
-                itemState = 'overdue';
+                if (isToday) {
+                  if (nowMinutes >= startM && nowMinutes < endM) return 'in_progress';
+                  if (nowMinutes >= endM) return 'overdue';
+                  return 'upcoming';
+                }
               }
-            }
+              return eff === 'overdue' ? 'overdue' : 'upcoming';
+            };
+
+            const itemState = resolveItemState(item);
 
             const isFirst = idx === 0;
             const isLast = idx === arr.length - 1;
 
             const prevItem = !isFirst ? arr[idx - 1] : null;
-            const prevEffectiveStatus = prevItem ? (!prevItem.isEvent ? getEffectiveStatus(prevItem) : 'scheduled') : null;
-            const prevIsCompleted = prevEffectiveStatus === 'completed';
-            const prevIsOverdue = prevEffectiveStatus === 'overdue';
+            const prevItemState = resolveItemState(prevItem);
 
-            const nextItem = !isLast ? arr[idx + 1] : null;
-            const nextEffectiveStatus = nextItem ? (!nextItem.isEvent ? getEffectiveStatus(nextItem) : 'scheduled') : null;
-            const nextIsCompleted = nextEffectiveStatus === 'completed';
-            const nextIsOverdue = nextEffectiveStatus === 'overdue';
+            // Unified Connector Color Resolver:
+            // - If node is completed -> line is 100% solid green (#10B981)
+            // - If node is overdue/missed -> line is 100% solid red (#EF4444)
+            // - If node is in progress -> line is 100% solid blue (#0284C7)
+            // - Otherwise -> subtle theme-adaptive track (no white glare/discoloration)
+            const getConnectorClass = (state) => {
+              if (state === 'completed') return 'segment-done';
+              if (state === 'overdue') return 'segment-overdue';
+              if (state === 'in_progress') return 'segment-in-progress';
+              return 'segment-pending';
+            };
 
-            // Segment styles
-            let topSegmentClass = 'segment-pending';
-            if (prevIsCompleted && isCompleted) {
-              topSegmentClass = 'segment-done';
-            } else if (itemState === 'overdue') {
-              topSegmentClass = 'segment-overdue';
-            } else if (isCompleted) {
-              topSegmentClass = 'segment-done';
-            } else if (prevIsOverdue) {
-              topSegmentClass = 'segment-overdue';
-            } else if (prevIsCompleted) {
-              topSegmentClass = 'segment-done';
-            }
+            // Top segment arrives from prevItem down to current item:
+            const topSegmentClass = getConnectorClass(prevItemState);
 
-            let bottomSegmentClass = 'segment-pending';
-            if (isCompleted) {
-              if (nextIsCompleted) {
-                bottomSegmentClass = 'segment-done';
-              } else if (nextIsOverdue) {
-                bottomSegmentClass = 'segment-transition-done-to-overdue';
-              } else {
-                bottomSegmentClass = 'segment-transition';
-              }
-            } else if (itemState === 'overdue') {
-              if (nextIsOverdue) {
-                bottomSegmentClass = 'segment-overdue';
-              } else if (nextIsCompleted) {
-                bottomSegmentClass = 'segment-transition-overdue-to-done';
-              } else {
-                bottomSegmentClass = 'segment-transition-overdue-to-pending';
-              }
-            } else {
-              bottomSegmentClass = 'segment-pending';
-            }
+            // Bottom segment leaves current item down towards nextItem:
+            const bottomSegmentClass = getConnectorClass(itemState);
 
             const linkedGoal = goals.find(
               (g) => g.id === item.goalId || g.relatedTaskIds?.includes(item.id)

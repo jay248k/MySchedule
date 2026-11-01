@@ -60,11 +60,17 @@ exports.createRequest = async (req, res, next) => {
       taskId,
     } = req.body;
 
-    if (!title || !date || !reason) {
-      return res.status(400).json({
-        success: false,
-        message: 'Title, date, and reason are required to submit a request',
-      });
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Request title is required' });
+    }
+    if (!date) {
+      return res.status(400).json({ success: false, message: 'Request date is required' });
+    }
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide a reason for the request' });
+    }
+    if (startTime && endTime && endTime <= startTime) {
+      return res.status(400).json({ success: false, message: 'End time must be after start time' });
     }
 
     const requestId = id || `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;

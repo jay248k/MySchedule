@@ -66,6 +66,20 @@ exports.createWorkSession = async (req, res, next) => {
       });
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format. Expected YYYY-MM-DD.',
+      });
+    }
+
+    if (durationSeconds !== undefined && (isNaN(durationSeconds) || Number(durationSeconds) < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'durationSeconds must be a non-negative number',
+      });
+    }
+
     const sessionId = id || `session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const userId = req.userId || req.body.userId || null;
 

@@ -16,7 +16,7 @@ const PRESET_COLORS = [
 ];
 
 export function CategoryModal() {
-  const { activeModal, closeModal, addCategory, updateCategory } = useApp();
+  const { activeModal, closeModal, addCategory, updateCategory, categories } = useApp();
 
   const isEditing = activeModal?.type === 'category' && activeModal?.data?.id;
   const initialData = activeModal?.data || {};
@@ -41,6 +41,18 @@ export function CategoryModal() {
     e.preventDefault();
     if (!name.trim()) {
       setError('Please provide a category name.');
+      return;
+    }
+    if (name.trim().length > 50) {
+      setError('Category name cannot exceed 50 characters.');
+      return;
+    }
+
+    const isDuplicate = (categories || []).some(
+      (c) => c.name.toLowerCase().trim() === name.toLowerCase().trim() && c.id !== initialData.id
+    );
+    if (isDuplicate) {
+      setError(`A category named "${name.trim()}" already exists.`);
       return;
     }
 

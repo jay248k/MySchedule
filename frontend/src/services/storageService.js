@@ -8,326 +8,184 @@ import {
   initialUserProfile,
   getInitialDailyReports,
 } from '../data/demoData';
+import { cookieUtils, purgeLegacyLocalStorage } from '../utils/cookieUtils';
 
-const KEYS = {
-  TASKS: 'my_schedule_tasks',
-  CATEGORIES: 'my_schedule_categories',
-  EVENTS: 'my_schedule_events',
-  GOALS: 'my_schedule_goals',
-  SETTINGS: 'my_schedule_settings',
-  NOTIFICATIONS: 'my_schedule_notifications',
-  USER: 'my_schedule_user',
-  DAILY_REPORTS: 'my_schedule_daily_reports',
-  WORK_SESSIONS: 'my_schedule_work_sessions',
-  ACTIVE_WORK_SESSION: 'my_schedule_active_work_session',
-  DEVIATIONS: 'my_schedule_deviations',
-  REQUESTS: 'my_schedule_work_requests',
-  IMPORT_HISTORY: 'my_schedule_import_history',
-  WORK_CHAIN: 'my_schedule_work_chain',
+// Immediately purge any legacy static data from browser localStorage on load
+purgeLegacyLocalStorage();
+
+/**
+ * In-memory fallback store
+ * Application data (tasks, categories, reports, goals) is stored in Neon PostgreSQL
+ * and held in active Redux/Context state during runtime - NOT dumped into browser localStorage.
+ */
+const inMemoryStore = {
+  tasks: [],
+  categories: [],
+  events: [],
+  goals: [],
+  settings: initialSettings,
+  notifications: [],
+  dailyReports: [],
+  workSessions: [],
+  activeWorkSession: null,
+  deviations: [],
+  requests: [],
+  importHistory: [],
+  workChains: {},
 };
 
 export const storageService = {
   getTasks() {
-    try {
-      const data = localStorage.getItem(KEYS.TASKS);
-      if (!data) {
-        const initial = getInitialTasks();
-        this.saveTasks(initial);
-        return initial;
-      }
-      return JSON.parse(data);
-    } catch {
-      return getInitialTasks();
-    }
+    return inMemoryStore.tasks || [];
   },
 
   saveTasks(tasks) {
-    try {
-      localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
-    } catch (e) {
-      console.error('Failed to save tasks to localStorage', e);
-    }
+    inMemoryStore.tasks = tasks || [];
   },
 
   getCategories() {
-    try {
-      const data = localStorage.getItem(KEYS.CATEGORIES);
-      if (!data) {
-        this.saveCategories(initialCategories);
-        return initialCategories;
-      }
-      return JSON.parse(data);
-    } catch {
-      return initialCategories;
-    }
+    return inMemoryStore.categories || [];
   },
 
   saveCategories(categories) {
-    try {
-      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories));
-    } catch (e) {
-      console.error('Failed to save categories', e);
-    }
+    inMemoryStore.categories = categories || [];
   },
 
   getEvents() {
-    try {
-      const data = localStorage.getItem(KEYS.EVENTS);
-      if (!data) {
-        const initial = getInitialEvents();
-        this.saveEvents(initial);
-        return initial;
-      }
-      return JSON.parse(data);
-    } catch {
-      return getInitialEvents();
-    }
+    return inMemoryStore.events || [];
   },
 
   saveEvents(events) {
-    try {
-      localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
-    } catch (e) {
-      console.error('Failed to save events', e);
-    }
+    inMemoryStore.events = events || [];
   },
 
   getGoals() {
-    try {
-      const data = localStorage.getItem(KEYS.GOALS);
-      if (!data) {
-        const initial = getInitialGoals();
-        this.saveGoals(initial);
-        return initial;
-      }
-      return JSON.parse(data);
-    } catch {
-      return getInitialGoals();
-    }
+    return inMemoryStore.goals || [];
   },
 
   saveGoals(goals) {
-    try {
-      localStorage.setItem(KEYS.GOALS, JSON.stringify(goals));
-    } catch (e) {
-      console.error('Failed to save goals', e);
-    }
+    inMemoryStore.goals = goals || [];
   },
 
   getSettings() {
-    try {
-      const data = localStorage.getItem(KEYS.SETTINGS);
-      if (!data) {
-        this.saveSettings(initialSettings);
-        return initialSettings;
-      }
-      return { ...initialSettings, ...JSON.parse(data) };
-    } catch {
-      return initialSettings;
-    }
+    return inMemoryStore.settings || initialSettings;
   },
 
   saveSettings(settings) {
-    try {
-      localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
-    } catch (e) {
-      console.error('Failed to save settings', e);
-    }
+    inMemoryStore.settings = settings || initialSettings;
   },
 
   getNotifications() {
-    try {
-      const data = localStorage.getItem(KEYS.NOTIFICATIONS);
-      if (!data) {
-        this.saveNotifications(initialNotifications);
-        return initialNotifications;
-      }
-      return JSON.parse(data);
-    } catch {
-      return initialNotifications;
-    }
+    return inMemoryStore.notifications || [];
   },
 
   saveNotifications(notifications) {
-    try {
-      localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-    } catch (e) {
-      console.error('Failed to save notifications', e);
-    }
+    inMemoryStore.notifications = notifications || [];
   },
 
   getUser() {
-    try {
-      const data = localStorage.getItem(KEYS.USER);
-      if (!data) {
-        this.saveUser(initialUserProfile);
-        return initialUserProfile;
-      }
-      return JSON.parse(data);
-    } catch {
-      return initialUserProfile;
-    }
+    // User profile is stored in Cookies
+    return cookieUtils.getJSON('myschedule_auth_user') || null;
   },
 
   saveUser(user) {
-    try {
-      localStorage.setItem(KEYS.USER, JSON.stringify(user));
-    } catch (e) {
-      console.error('Failed to save user profile', e);
+    if (user) {
+      cookieUtils.setJSON('myschedule_auth_user', user, 30);
+    } else {
+      cookieUtils.remove('myschedule_auth_user');
     }
   },
 
   getDailyReports() {
-    try {
-      const data = localStorage.getItem(KEYS.DAILY_REPORTS);
-      if (!data) {
-        const initial = getInitialDailyReports();
-        this.saveDailyReports(initial);
-        return initial;
-      }
-      return JSON.parse(data);
-    } catch {
-      return getInitialDailyReports();
-    }
+    return inMemoryStore.dailyReports || [];
   },
 
   saveDailyReports(reports) {
-    try {
-      localStorage.setItem(KEYS.DAILY_REPORTS, JSON.stringify(reports));
-    } catch (e) {
-      console.error('Failed to save daily reports to localStorage', e);
-    }
+    inMemoryStore.dailyReports = reports || [];
   },
 
   getWorkSessions() {
-    try {
-      const data = localStorage.getItem(KEYS.WORK_SESSIONS);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return inMemoryStore.workSessions || [];
   },
 
   saveWorkSessions(sessions) {
-    try {
-      localStorage.setItem(KEYS.WORK_SESSIONS, JSON.stringify(sessions));
-    } catch (e) {
-      console.error('Failed to save work sessions', e);
-    }
+    inMemoryStore.workSessions = sessions || [];
   },
 
   getActiveWorkSession() {
-    try {
-      const data = localStorage.getItem(KEYS.ACTIVE_WORK_SESSION);
-      return data ? JSON.parse(data) : null;
-    } catch {
-      return null;
-    }
+    return inMemoryStore.activeWorkSession || null;
   },
 
   saveActiveWorkSession(active) {
-    try {
-      if (active) {
-        localStorage.setItem(KEYS.ACTIVE_WORK_SESSION, JSON.stringify(active));
-      } else {
-        localStorage.removeItem(KEYS.ACTIVE_WORK_SESSION);
-      }
-    } catch (e) {
-      console.error('Failed to save active work session', e);
-    }
+    inMemoryStore.activeWorkSession = active || null;
   },
 
   getDeviations() {
-    try {
-      const data = localStorage.getItem(KEYS.DEVIATIONS);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return inMemoryStore.deviations || [];
   },
 
   saveDeviations(deviations) {
-    try {
-      localStorage.setItem(KEYS.DEVIATIONS, JSON.stringify(deviations));
-    } catch (e) {
-      console.error('Failed to save deviations to localStorage', e);
-    }
+    inMemoryStore.deviations = deviations || [];
   },
 
   getRequests() {
-    try {
-      const data = localStorage.getItem(KEYS.REQUESTS);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return inMemoryStore.requests || [];
   },
 
   saveRequests(requests) {
-    try {
-      localStorage.setItem(KEYS.REQUESTS, JSON.stringify(requests));
-    } catch (e) {
-      console.error('Failed to save requests to localStorage', e);
-    }
-  },
-
-  resetAllToSampleData() {
-    const tasks = getInitialTasks();
-    const categories = initialCategories;
-    const events = getInitialEvents();
-    const goals = getInitialGoals();
-    const settings = initialSettings;
-    const notifications = initialNotifications;
-    const user = initialUserProfile;
-    const dailyReports = getInitialDailyReports();
-
-    this.saveTasks(tasks);
-    this.saveCategories(categories);
-    this.saveEvents(events);
-    this.saveGoals(goals);
-    this.saveSettings(settings);
-    this.saveNotifications(notifications);
-    this.saveUser(user);
-    this.saveDailyReports(dailyReports);
-
-    return { tasks, categories, events, goals, settings, notifications, user, dailyReports };
+    inMemoryStore.requests = requests || [];
   },
 
   getImportHistory() {
-    try {
-      const data = localStorage.getItem(KEYS.IMPORT_HISTORY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return inMemoryStore.importHistory || [];
   },
 
   saveImportHistory(history) {
-    try {
-      localStorage.setItem(KEYS.IMPORT_HISTORY, JSON.stringify(history));
-    } catch (e) {
-      console.error('Failed to save import history to localStorage', e);
-    }
+    inMemoryStore.importHistory = history || [];
   },
 
   getWorkChains() {
-    try {
-      const data = localStorage.getItem(KEYS.WORK_CHAIN);
-      return data ? JSON.parse(data) : {};
-    } catch {
-      return {};
-    }
+    return inMemoryStore.workChains || {};
   },
 
   saveWorkChains(chains) {
-    try {
-      localStorage.setItem(KEYS.WORK_CHAIN, JSON.stringify(chains));
-    } catch (e) {
-      console.error('Failed to save work chains to localStorage', e);
-    }
+    inMemoryStore.workChains = chains || {};
+  },
+
+  resetAllToSampleData() {
+    inMemoryStore.tasks = getInitialTasks();
+    inMemoryStore.categories = initialCategories;
+    inMemoryStore.events = getInitialEvents();
+    inMemoryStore.goals = getInitialGoals();
+    inMemoryStore.settings = initialSettings;
+    inMemoryStore.notifications = initialNotifications;
+    inMemoryStore.dailyReports = getInitialDailyReports();
+
+    return {
+      tasks: inMemoryStore.tasks,
+      categories: inMemoryStore.categories,
+      events: inMemoryStore.events,
+      goals: inMemoryStore.goals,
+      settings: inMemoryStore.settings,
+      notifications: inMemoryStore.notifications,
+      user: this.getUser(),
+      dailyReports: inMemoryStore.dailyReports,
+    };
   },
 
   clearAllData() {
-    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+    inMemoryStore.tasks = [];
+    inMemoryStore.categories = [];
+    inMemoryStore.events = [];
+    inMemoryStore.goals = [];
+    inMemoryStore.notifications = [];
+    inMemoryStore.dailyReports = [];
+    inMemoryStore.workSessions = [];
+    inMemoryStore.activeWorkSession = null;
+    inMemoryStore.deviations = [];
+    inMemoryStore.requests = [];
+    inMemoryStore.importHistory = [];
+    inMemoryStore.workChains = {};
+    purgeLegacyLocalStorage();
   },
 };

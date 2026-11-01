@@ -43,12 +43,25 @@ export function GoalModal() {
       setError('Please provide a goal title.');
       return;
     }
+    if (title.trim().length > 255) {
+      setError('Goal title cannot exceed 255 characters.');
+      return;
+    }
+    if (!targetDate) {
+      setError('Please select a target completion date.');
+      return;
+    }
+    const p = Number(progress);
+    if (isNaN(p) || p < 0 || p > 100) {
+      setError('Progress percentage must be between 0 and 100.');
+      return;
+    }
 
     const payload = {
       title: title.trim(),
       description: description.trim(),
       targetDate,
-      progress: Number(progress),
+      progress: p,
       category,
       relatedTaskIds: selectedTaskIds,
     };

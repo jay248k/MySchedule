@@ -1130,7 +1130,7 @@ export function Settings() {
                   </div>
                   <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--page-bg)', border: '1px solid var(--border-color)' }}>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>DATABASE ENGINE</div>
-                    <div style={{ fontWeight: 800, marginTop: '2px' }}>Indexed LocalStorage + REST Sync</div>
+                    <div style={{ fontWeight: 800, marginTop: '2px' }}>Neon PostgreSQL Cloud + Secure Cookies</div>
                   </div>
                   <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--page-bg)', border: '1px solid var(--border-color)' }}>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>CLIENT NETWORK</div>

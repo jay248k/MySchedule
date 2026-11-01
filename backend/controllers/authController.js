@@ -36,24 +36,42 @@ exports.signup = async (req, res, next) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Please provide your full name' });
     }
+    if (name.trim().length > 100) {
+      return res.status(400).json({ success: false, message: 'Full name cannot exceed 100 characters' });
+    }
     if (!email || !email.trim()) {
       return res.status(400).json({ success: false, message: 'Please provide your email address' });
     }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address (e.g. name@company.com)',
+      });
+    }
+
     if (!password || password.length < 6) {
       return res.status(400).json({
         success: false,
         message: 'Password must be at least 6 characters long',
       });
     }
-
-    const normalizedEmail = email.toLowerCase().trim();
+    if (password.length > 128) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password cannot exceed 128 characters',
+      });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: 'An account with this email address already exists. Please sign in instead.',
+        errorType: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email is already registered. Please sign in or use another email.',
       });
     }
 
@@ -110,6 +128,12 @@ exports.signup = async (req, res, next) => {
 
     const safeUser = newUser.toSafeJSON();
 
+    res.cookie('myschedule_auth_token', token, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      sameSite: 'lax',
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Account created successfully! Welcome to MySchedule.',
@@ -148,15 +172,17 @@ exports.login = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        message: 'Invalid email or password. Please try again.',
+        errorType: 'EMAIL_NOT_REGISTERED',
+        message: 'This email is not registered. Please check your email or create a new account.',
       });
     }
 
     if (user.status === 'Inactive') {
       return res.status(401).json({
         success: false,
+        errorType: 'ACCOUNT_INACTIVE',
         message: 'Your account is currently inactive. Please contact an administrator.',
       });
     }
@@ -165,7 +191,8 @@ exports.login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password. Please try again.',
+        errorType: 'PASSWORD_MISMATCH',
+        message: 'Incorrect password. The password does not match this account.',
       });
     }
 
@@ -190,6 +217,12 @@ exports.login = async (req, res, next) => {
     );
 
     const safeUser = user.toSafeJSON();
+
+    res.cookie('myschedule_auth_token', token, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      sameSite: 'lax',
+    });
 
     return res.json({
       success: true,
@@ -253,6 +286,12 @@ exports.demoLogin = async (req, res, next) => {
 
     const safeUser = demoUser.toSafeJSON();
 
+    res.cookie('myschedule_auth_token', token, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      sameSite: 'lax',
+    });
+
     return res.json({
       success: true,
       message: 'Signed in as Demo User: Alex Morgan',
@@ -280,6 +319,7 @@ exports.logout = async (req, res, next) => {
       req.session.deletedAt = new Date();
       await req.session.save();
     }
+    res.clearCookie('myschedule_auth_token');
     return res.json({
       success: true,
       message: 'Logged out successfully.',
@@ -325,10 +365,20 @@ exports.updateProfile = async (req, res, next) => {
     }
 
     const { name, title, avatarBg, avatarInitials } = req.body;
-    if (name) user.name = name.trim();
-    if (title) user.title = title.trim();
-    if (avatarBg) user.avatarBg = avatarBg;
-    if (avatarInitials) user.avatarInitials = avatarInitials.toUpperCase();
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        return res.status(400).json({ success: false, message: 'Name cannot be empty' });
+      }
+      if (name.trim().length > 100) {
+        return res.status(400).json({ success: false, message: 'Name cannot exceed 100 characters' });
+      }
+      user.name = name.trim();
+    }
+    if (title !== undefined) {
+      user.title = title ? title.trim().slice(0, 100) : null;
+    }
+    if (avatarBg !== undefined) user.avatarBg = avatarBg;
+    if (avatarInitials !== undefined) user.avatarInitials = avatarInitials.trim().toUpperCase().slice(0, 4);
 
     await user.save();
 

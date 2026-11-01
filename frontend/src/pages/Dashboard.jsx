@@ -16,6 +16,10 @@ import {
   Clock,
   AlertTriangle,
   ListTodo,
+  CalendarCheck2,
+  CircleCheckBig,
+  Timer,
+  CircleAlert,
   CalendarDays,
   Calendar,
   ArrowRight,
@@ -405,9 +409,14 @@ export function Dashboard() {
         <div className="dash-stat-card total" onClick={() => navigate('/today')}>
           <div
             className="dash-stat-icon-wrapper"
-            style={{ background: '#EFF6FF', color: '#2563EB', borderColor: '#BFDBFE' }}
+            style={{
+              background: 'rgba(37, 99, 235, 0.12)',
+              color: '#3B82F6',
+              border: '1px solid rgba(59, 130, 246, 0.28)',
+              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.15)',
+            }}
           >
-            <ListTodo size={20} strokeWidth={2.2} />
+            <CalendarCheck2 size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -426,18 +435,23 @@ export function Dashboard() {
         <div className="dash-stat-card completed" onClick={() => navigate('/today')}>
           <div
             className="dash-stat-icon-wrapper"
-            style={{ background: '#ECFDF5', color: '#059669', borderColor: '#A7F3D0' }}
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              color: '#10B981',
+              border: '1px solid rgba(16, 185, 129, 0.28)',
+              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.15)',
+            }}
           >
-            <CheckCheck size={22} strokeWidth={2.4} />
+            <CircleCheckBig size={22} strokeWidth={2.3} />
           </div>
           <div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Completed
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#059669', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#10B981', lineHeight: 1.15 }}>
               {todayStats.completed}
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600, marginTop: '1px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#10B981', fontWeight: 600, marginTop: '1px' }}>
               {todayStats.percentage}% completion rate
             </div>
           </div>
@@ -447,15 +461,20 @@ export function Dashboard() {
         <div className="dash-stat-card pending" onClick={() => navigate('/today')}>
           <div
             className="dash-stat-icon-wrapper"
-            style={{ background: '#FFFBEB', color: '#D97706', borderColor: '#FDE68A' }}
+            style={{
+              background: 'rgba(245, 158, 11, 0.12)',
+              color: '#F59E0B',
+              border: '1px solid rgba(245, 158, 11, 0.28)',
+              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
+            }}
           >
-            <Clock size={20} strokeWidth={2.2} />
+            <Timer size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Pending
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#D97706', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#F59E0B', lineHeight: 1.15 }}>
               {todayStats.pending}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
@@ -468,21 +487,26 @@ export function Dashboard() {
         <div className="dash-stat-card overdue" onClick={() => navigate('/today')}>
           <div
             className="dash-stat-icon-wrapper"
-            style={{ background: '#FEF2F2', color: '#DC2626', borderColor: '#FECACA' }}
+            style={{
+              background: 'rgba(239, 68, 68, 0.12)',
+              color: '#EF4444',
+              border: '1px solid rgba(239, 68, 68, 0.28)',
+              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
+            }}
           >
-            <AlertTriangle size={20} strokeWidth={2.2} />
+            <CircleAlert size={22} strokeWidth={2.2} />
           </div>
           <div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Overdue
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#DC2626', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#EF4444', lineHeight: 1.15 }}>
               {todayStats.overdue}
             </div>
             <div
               style={{
                 fontSize: '0.72rem',
-                color: todayStats.overdue > 0 ? '#DC2626' : 'var(--text-muted)',
+                color: todayStats.overdue > 0 ? '#EF4444' : 'var(--text-muted)',
                 fontWeight: todayStats.overdue > 0 ? 700 : 400,
                 marginTop: '1px',
               }}

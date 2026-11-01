@@ -49,6 +49,7 @@ import {
 import { applyThemeToDocument } from '../utils/themeUtils';
 import { storageService } from '../services/storageService';
 import { api } from '../services/api';
+import { purgeLegacyLocalStorage } from '../utils/cookieUtils';
 
 const AppContext = createContext(null);
 
@@ -89,12 +90,18 @@ export function AppProvider({ children }) {
   const [importHistory, setImportHistory] = useState(() => storageService.getImportHistory());
   const [workChains, setWorkChains] = useState(() => storageService.getWorkChains());
 
+  // Purge any legacy static data stored in Chrome localStorage on mount
+  useEffect(() => {
+    purgeLegacyLocalStorage();
+  }, []);
+
   // Keep local user state synchronized with Redux auth user and completely clear on logout
   useEffect(() => {
     if (authUser) {
       setUser(authUser);
     } else {
       setUser(null);
+      purgeLegacyLocalStorage();
       dispatch(setTasks([]));
       dispatch(setCategories([]));
       dispatch(setGoals([]));
@@ -146,10 +153,11 @@ export function AppProvider({ children }) {
 
   // Real-time backend data synchronization across Web & Mobile
   const fetchAllData = useCallback(async (options = {}) => {
-    if (!authUser) return;
+    const currentUser = authUser || storageService.getUser();
+    if (!currentUser) return;
     setIsSyncing(true);
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes] = await Promise.all([
+      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes] = await Promise.all([
         api.getTasks().catch(() => null),
         api.getCategories().catch(() => null),
         api.getGoals().catch(() => null),
@@ -157,6 +165,7 @@ export function AppProvider({ children }) {
         api.getWorkSessions().catch(() => null),
         api.getDeviations().catch(() => null),
         api.getRequests().catch(() => null),
+        api.getReports().catch(() => null),
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
@@ -202,6 +211,13 @@ export function AppProvider({ children }) {
         setRequests(combined);
         storageService.saveRequests(combined);
       }
+      if (reportsRes?.data && Array.isArray(reportsRes.data)) {
+        const serverDates = new Set(reportsRes.data.map((r) => r.date || r.id));
+        const localReports = storageService.getDailyReports().filter((r) => !serverDates.has(r.date || r.id));
+        const combined = [...reportsRes.data, ...localReports];
+        setDailyReports(combined);
+        storageService.saveDailyReports(combined);
+      }
       setLastSyncedAt(Date.now());
       if (options.showToastNotification) {
         showToast({
@@ -215,10 +231,11 @@ export function AppProvider({ children }) {
     } finally {
       setTimeout(() => setIsSyncing(false), 500);
     }
-  }, [dispatch, showToast]);
+  }, [dispatch, showToast, authUser]);
 
   useEffect(() => {
-    if (!authUser) return;
+    const currentUser = authUser || storageService.getUser();
+    if (!currentUser) return;
     fetchAllData();
 
     // Auto-poll every 12 seconds so operations made in Mobile App auto-rotate and reflect on Web!
@@ -893,7 +910,7 @@ export function AppProvider({ children }) {
 
   // Daily Work Reporting
   const saveDailyReport = useCallback(
-    (reportData) => {
+    async (reportData) => {
       const existingIndex = dailyReports.findIndex((r) => r.date === reportData.date);
       let updated;
       if (existingIndex >= 0) {
@@ -913,10 +930,18 @@ export function AppProvider({ children }) {
       }
       setDailyReports(updated);
       storageService.saveDailyReports(updated);
+
+      // Persist to Database API
+      try {
+        await api.saveReport(reportData);
+      } catch (err) {
+        console.warn('Backend DB persist warning for report:', err);
+      }
+
       showToast({
         type: 'success',
         title: 'Daily Report Saved',
-        message: `Work report for ${reportData.date} recorded successfully.`,
+        message: `Work report for ${reportData.date} recorded successfully in database.`,
       });
       return updated;
     },
@@ -930,10 +955,21 @@ export function AppProvider({ children }) {
         message: 'Are you sure you want to delete this daily work report from your history?',
         confirmText: 'Delete Report',
         isDanger: true,
-        onConfirm: () => {
+        onConfirm: async () => {
+          const target = dailyReports.find((r) => r.id === reportId);
           const filtered = dailyReports.filter((r) => r.id !== reportId);
           setDailyReports(filtered);
           storageService.saveDailyReports(filtered);
+
+          // Persist deletion to Database API
+          if (target?.date) {
+            try {
+              await api.deleteReport(target.date);
+            } catch (err) {
+              console.warn('Backend DB delete warning for report:', err);
+            }
+          }
+
           showToast({
             type: 'info',
             title: 'Report Removed',

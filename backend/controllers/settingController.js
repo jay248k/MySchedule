@@ -34,6 +34,20 @@ exports.getSettings = async (req, res, next) => {
 
 exports.updateSettings = async (req, res, next) => {
   try {
+    const { theme, timeFormat, layoutComfort } = req.body;
+
+    if (theme && !['light', 'dark', 'system'].includes(theme)) {
+      return res.status(400).json({ success: false, message: 'Invalid theme. Allowed values: light, dark, system' });
+    }
+
+    if (timeFormat && !['12h', '24h'].includes(timeFormat)) {
+      return res.status(400).json({ success: false, message: 'Invalid timeFormat. Allowed values: 12h, 24h' });
+    }
+
+    if (layoutComfort && !['comfortable', 'compact', 'spacious'].includes(layoutComfort)) {
+      return res.status(400).json({ success: false, message: 'Invalid layoutComfort. Allowed values: comfortable, compact, spacious' });
+    }
+
     const where = req.userId ? { userId: req.userId } : { id: 1 };
     let [setting] = await Setting.findOrCreate({
       where,

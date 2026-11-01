@@ -50,9 +50,25 @@ exports.createCategory = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Category name is required' });
     }
 
+    const trimmedName = name.trim();
+    if (trimmedName.length > 50) {
+      return res.status(400).json({ success: false, message: 'Category name cannot exceed 50 characters' });
+    }
+
+    // Check for duplicate category name for this user
+    const duplicate = await Category.findOne({
+      where: {
+        name: trimmedName,
+        ...(req.userId ? { userId: req.userId } : {}),
+      },
+    });
+    if (duplicate) {
+      return res.status(409).json({ success: false, message: `Category "${trimmedName}" already exists` });
+    }
+
     const category = await Category.create({
       id: id || undefined,
-      name: name.trim(),
+      name: trimmedName,
       color: color || '#1769FF',
       icon: icon || 'Tag',
       description: description ? description.trim() : null,
@@ -124,8 +140,33 @@ exports.updateCategory = async (req, res, next) => {
     }
 
     const { name, color, icon, description } = req.body;
+    let finalName = category.name;
+
+    if (name !== undefined) {
+      const trimmed = name.trim();
+      if (!trimmed) {
+        return res.status(400).json({ success: false, message: 'Category name cannot be empty' });
+      }
+      if (trimmed.length > 50) {
+        return res.status(400).json({ success: false, message: 'Category name cannot exceed 50 characters' });
+      }
+
+      // Check for duplicate category name
+      const duplicate = await Category.findOne({
+        where: {
+          name: trimmed,
+          id: { [Op.ne]: category.id },
+          ...(req.userId ? { userId: req.userId } : {}),
+        },
+      });
+      if (duplicate) {
+        return res.status(409).json({ success: false, message: `Category "${trimmed}" already exists` });
+      }
+      finalName = trimmed;
+    }
+
     await category.update({
-      name: name !== undefined ? name.trim() : category.name,
+      name: finalName,
       color: color !== undefined ? color : category.color,
       icon: icon !== undefined ? icon : category.icon,
       description: description !== undefined ? description : category.description,

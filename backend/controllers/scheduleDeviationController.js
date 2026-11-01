@@ -69,6 +69,13 @@ exports.createDeviation = async (req, res, next) => {
       });
     }
 
+    if (startTime >= endTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Deviation end time must be after start time',
+      });
+    }
+
     // Auto-calculate duration in minutes if not provided
     let calculatedDuration = Number(durationMinutes) || 0;
     if (!calculatedDuration && startTime && endTime) {

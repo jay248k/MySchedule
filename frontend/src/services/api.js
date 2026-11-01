@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { cookieUtils, purgeLegacyLocalStorage } from '../utils/cookieUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://myschedule-w52y.onrender.com/api';
 
@@ -14,13 +15,27 @@ export const apiClient = axios.create({
 });
 
 /**
- * Request Interceptor: Attach JWT bearer token from localStorage
+ * Request Interceptor: Attach JWT bearer token from Cookies (not localStorage)
  */
 apiClient.interceptors.request.use(
   (config) => {
-    const token =
-      localStorage.getItem('my_schedule_auth_token') ||
-      localStorage.getItem('myschedule_auth_token');
+    // 1. Primary: Retrieve token from Cookie
+    let token =
+      cookieUtils.get('myschedule_auth_token') ||
+      cookieUtils.get('my_schedule_auth_token');
+
+    // 2. Migration fallback: If found in legacy localStorage, migrate to Cookie and purge
+    if (!token && typeof window !== 'undefined' && window.localStorage) {
+      const legacyToken =
+        localStorage.getItem('my_schedule_auth_token') ||
+        localStorage.getItem('myschedule_auth_token');
+      if (legacyToken) {
+        token = legacyToken;
+        cookieUtils.set('myschedule_auth_token', token, 30);
+        purgeLegacyLocalStorage();
+      }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

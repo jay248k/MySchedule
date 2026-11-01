@@ -59,6 +59,9 @@ exports.createEvent = async (req, res, next) => {
     if (!date) {
       return res.status(400).json({ success: false, message: 'Event date is required' });
     }
+    if (startTime && endTime && endTime <= startTime) {
+      return res.status(400).json({ success: false, message: 'Event end time must be after start time' });
+    }
 
     const event = await Event.create({
       id: id || undefined,
@@ -92,6 +95,16 @@ exports.updateEvent = async (req, res, next) => {
     }
 
     const { title, description, date, startTime, endTime, categoryId, location } = req.body;
+
+    if (title !== undefined && !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Event title cannot be empty' });
+    }
+
+    const targetStart = startTime !== undefined ? startTime : event.startTime;
+    const targetEnd = endTime !== undefined ? endTime : event.endTime;
+    if (targetStart && targetEnd && targetEnd <= targetStart) {
+      return res.status(400).json({ success: false, message: 'Event end time must be after start time' });
+    }
 
     await event.update({
       title: title !== undefined ? title.trim() : event.title,

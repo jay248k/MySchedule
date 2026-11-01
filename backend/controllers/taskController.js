@@ -125,8 +125,14 @@ exports.createTask = async (req, res, next) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Task title is required' });
     }
+    if (title.trim().length > 255) {
+      return res.status(400).json({ success: false, message: 'Task title cannot exceed 255 characters' });
+    }
     if (!date) {
       return res.status(400).json({ success: false, message: 'Task date is required' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: 'Task date must be in YYYY-MM-DD format' });
     }
 
     if (startTime && endTime) {
@@ -313,6 +319,18 @@ exports.updateTask = async (req, res, next) => {
 
     const { title, description, date, startTime, endTime, categoryId, category, priority, goalId, status, color } =
       req.body;
+
+    if (title !== undefined) {
+      if (!title || !title.trim()) {
+        return res.status(400).json({ success: false, message: 'Task title cannot be empty' });
+      }
+      if (title.trim().length > 255) {
+        return res.status(400).json({ success: false, message: 'Task title cannot exceed 255 characters' });
+      }
+    }
+    if (date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: 'Task date must be in YYYY-MM-DD format' });
+    }
 
     let resolvedCategoryId = categoryId !== undefined ? categoryId : task.categoryId;
     if (categoryId === undefined && category) {

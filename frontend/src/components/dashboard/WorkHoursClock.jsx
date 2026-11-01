@@ -49,42 +49,18 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
     );
   }
 
-  // Display mode: If running, show live active session counter. If stopped, show today's accumulated work
+  // Display mode: Strictly show actual tracked working time in 00:00:00 format
+  // When active: shows live tracked session duration
+  // When stopped: shows total recorded work time for today (or 00:00:00 if no work tracked yet)
   const displayTotalSeconds = isRunning
     ? liveSessionElapsedSeconds
     : totalRecordedSeconds > 0
     ? totalRecordedSeconds
     : 0;
 
-  // If no recorded sessions and idle, calculate scheduled task duration as helpful fallback baseline
-  let displayHours = 0;
-  let displayMins = 0;
-  let displaySecs = 0;
-
-  if (isRunning) {
-    displayHours = Math.floor(displayTotalSeconds / 3600);
-    displayMins = Math.floor((displayTotalSeconds % 3600) / 60);
-    displaySecs = displayTotalSeconds % 60;
-  } else if (totalRecordedSeconds > 0) {
-    displayHours = Math.floor(totalRecordedSeconds / 3600);
-    displayMins = Math.floor((totalRecordedSeconds % 3600) / 60);
-    displaySecs = totalRecordedSeconds % 60;
-  } else {
-    // Scheduled tasks estimate
-    const todayTasks = tasks.filter((t) => t.date === targetDate);
-    let schedMinutes = 0;
-    todayTasks.forEach((t) => {
-      if (t.startTime && t.endTime) {
-        const [sh, sm] = t.startTime.split(':').map(Number);
-        const [eh, em] = t.endTime.split(':').map(Number);
-        const diff = (eh * 60 + em) - (sh * 60 + sm);
-        if (diff > 0) schedMinutes += diff;
-      }
-    });
-    displayHours = Math.floor(schedMinutes / 60);
-    displayMins = schedMinutes % 60;
-    displaySecs = seconds;
-  }
+  const displayHours = Math.floor(displayTotalSeconds / 3600);
+  const displayMins = Math.floor((displayTotalSeconds % 3600) / 60);
+  const displaySecs = displayTotalSeconds % 60;
 
   const hrsStr = String(displayHours).padStart(2, '0');
   const minsStr = String(displayMins).padStart(2, '0');
@@ -425,6 +401,7 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
             position: 'relative',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             flexShrink: 0,
+            overflow: 'hidden',
           }}
           title={`Current Clock Time: ${digitalTimeStr}`}
         >
@@ -437,12 +414,12 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
                 key={i}
                 style={{
                   position: 'absolute',
-                  top: '2px',
+                  top: '3px',
                   left: '20px',
                   width: isMain ? '1.5px' : '1px',
                   height: isMain ? '3px' : '2px',
                   background: isMain ? '#94A3B8' : '#475569',
-                  transformOrigin: '1px 19px',
+                  transformOrigin: '1px 18px',
                   transform: `rotate(${rot}deg)`,
                 }}
               />
@@ -453,10 +430,10 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '9px',
+              top: '12px',
               left: '19.75px',
               width: '2.5px',
-              height: '12px',
+              height: '9px',
               background: '#3B82F6',
               borderRadius: '2px',
               transformOrigin: 'bottom center',
@@ -468,10 +445,10 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '5px',
+              top: '9px',
               left: '20.1px',
               width: '1.8px',
-              height: '16px',
+              height: '12px',
               background: '#60A5FA',
               borderRadius: '2px',
               transformOrigin: 'bottom center',
@@ -479,14 +456,14 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
             }}
           />
 
-          {/* Second Hand */}
+          {/* Second Hand (Accurately sized to stay within the inner circle) */}
           <div
             style={{
               position: 'absolute',
-              top: '3px',
+              top: '7px',
               left: '20.4px',
               width: '1.2px',
-              height: '18px',
+              height: '14px',
               background: '#EF4444',
               borderRadius: '1px',
               transformOrigin: 'bottom center',

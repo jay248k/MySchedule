@@ -11,6 +11,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { Categories } from './pages/Categories';
 import { Goals } from './pages/Goals';
 import { Reports } from './pages/Reports';
+import { RedFlagPage } from './pages/RedFlagPage';
 import { ReportsArchive } from './pages/ReportsArchive';
 import { WorkTracker } from './pages/WorkTracker';
 import { DeviationsPage } from './pages/DeviationsPage';
@@ -70,7 +71,9 @@ function AppRoutes() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="categories" element={<Categories />} />
         <Route path="goals" element={<Goals />} />
+        <Route path="red-flags" element={<RedFlagPage />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="reports/:reportType" element={<Reports />} />
         <Route path="archive" element={<ReportsArchive />} />
         <Route path="reports/archive" element={<ReportsArchive />} />
         <Route path="settings" element={<Settings />} />

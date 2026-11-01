@@ -32,6 +32,16 @@ export function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const lowerErr = (errorMsg || '').toLowerCase();
+  const isEmailError =
+    lowerErr.includes('email') ||
+    lowerErr.includes('register') ||
+    lowerErr.includes('account');
+  const isPasswordError =
+    lowerErr.includes('password') ||
+    lowerErr.includes('mismatch') ||
+    lowerErr.includes('incorrect');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -385,20 +395,24 @@ export function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
                 placeholder="Enter email"
                 required
                 autoComplete="email"
                 style={{
                   width: '100%',
                   padding: '9px 12px 9px 34px',
-                  backgroundColor: '#070D18',
-                  border: '1px solid #334155',
+                  backgroundColor: isEmailError ? 'rgba(239, 68, 68, 0.06)' : '#070D18',
+                  border: isEmailError ? '1px solid #EF4444' : '1px solid #334155',
                   borderRadius: '8px',
                   color: '#F8FAFC',
                   fontSize: '0.84rem',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  boxShadow: isEmailError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                 }}
               />
             </div>
@@ -419,26 +433,30 @@ export function LoginPage() {
             <div style={{ position: 'relative' }}>
               <Lock
                 size={15}
-                color="#64748B"
+                color={isPasswordError ? '#EF4444' : '#64748B'}
                 style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)' }}
               />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
                 placeholder="Enter password"
                 required
                 autoComplete={activeTab === 'login' ? 'current-password' : 'new-password'}
                 style={{
                   width: '100%',
                   padding: '9px 36px 9px 34px',
-                  backgroundColor: '#070D18',
-                  border: '1px solid #334155',
+                  backgroundColor: isPasswordError ? 'rgba(239, 68, 68, 0.06)' : '#070D18',
+                  border: isPasswordError ? '1px solid #EF4444' : '1px solid #334155',
                   borderRadius: '8px',
                   color: '#F8FAFC',
                   fontSize: '0.84rem',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  boxShadow: isPasswordError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                 }}
               />
               <button
