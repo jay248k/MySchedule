@@ -2369,3 +2369,21 @@ body.calendar-fullpage-active .page-container,
     padding: 10px 14px;
   }
 }
+
+/* Recharts Tooltip Layer Fix - Ensure Tooltip is 100% solid, fully opaque, and positioned above all legends and SVGs */
+.recharts-tooltip-wrapper {
+  z-index: 999999 !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+}
+
+.recharts-default-tooltip {
+  background-color: #0F172A !important;
+  border: 1.5px solid #334155 !important;
+  opacity: 1 !important;
+}
+
+.recharts-legend-wrapper {
+  z-index: 1 !important;
+  position: relative !important;
+}

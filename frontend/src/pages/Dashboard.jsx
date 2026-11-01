@@ -62,33 +62,68 @@ const cardVariants = {
   },
 };
 
-// Custom High-Contrast Tooltip for Area Chart
+// Custom High-Contrast Tooltip for Area Chart (100% Solid Opaque, No Transparency, Stacking Fix)
 function CustomTrendTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
     const item = payload[0]?.payload;
     const title = item?.fullDate || label;
+
+    // Deduplicate payload entries by name to prevent repeated categories
+    const seenNames = new Set();
+    const uniquePayload = [];
+    payload.forEach((entry) => {
+      if (entry && entry.name && !seenNames.has(entry.name)) {
+        seenNames.add(entry.name);
+        uniquePayload.push(entry);
+      }
+    });
+
+    // Sort descending by value so active items are cleanly displayed at top
+    uniquePayload.sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
+
     return (
       <div
         style={{
+          backgroundColor: '#0F172A',
           background: '#0F172A',
-          border: '1px solid #334155',
-          borderRadius: '8px',
-          padding: '10px 14px',
+          border: '1.5px solid #334155',
+          borderRadius: '10px',
+          padding: '12px 16px',
           color: '#FFFFFF',
           fontSize: '0.82rem',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
-          minWidth: '160px',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15)',
+          minWidth: '185px',
+          maxWidth: '280px',
+          zIndex: 999999,
+          pointerEvents: 'none',
+          position: 'relative',
+          opacity: 1,
         }}
       >
-        <div style={{ fontWeight: 800, marginBottom: '6px', color: '#94A3B8' }}>{title}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          {payload.map((entry, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: entry.color }} />
-                <span style={{ color: '#E2E8F0', fontSize: '0.78rem' }}>{entry.name}:</span>
+        <div
+          style={{
+            fontWeight: 800,
+            marginBottom: '8px',
+            color: '#CBD5E1',
+            fontSize: '0.84rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+            paddingBottom: '5px',
+          }}
+        >
+          {title}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {uniquePayload.map((entry, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
+                <span style={{ color: '#E2E8F0', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {entry.name}:
+                </span>
               </div>
-              <strong style={{ color: entry.color, fontSize: '0.84rem' }}>{entry.value || 0}</strong>
+              <strong style={{ color: entry.color || '#38BDF8', fontSize: '0.84rem', flexShrink: 0 }}>
+                {entry.value || 0}
+              </strong>
             </div>
           ))}
         </div>
@@ -119,20 +154,50 @@ export function Dashboard() {
   // Recharts Data
   const [trendRange, setTrendRange] = useState('month'); // default to 'month' per user request
   const [selectedTrendCategory, setSelectedTrendCategory] = useState('all');
-  const trendData = useMemo(
-    () => getProductivityTrend(tasks, trendRange, selectedTrendCategory, categories),
-    [tasks, trendRange, selectedTrendCategory, categories]
-  );
 
+  // Clean, unique categories deduplicated by name
   const activeCategories = useMemo(() => {
-    return categories.filter((c) =>
-      tasks.some(
+    const seenNames = new Set();
+    const unique = [];
+    categories.forEach((c) => {
+      if (!c || !c.name) return;
+      const normalized = c.name.trim().toLowerCase();
+      if (seenNames.has(normalized)) return;
+
+      const hasTasks = tasks.some(
         (t) =>
           t.categoryId === c.id ||
-          (typeof t.category === 'string' && t.category.toLowerCase().trim() === c.name.toLowerCase().trim())
-      )
-    );
+          (typeof t.category === 'string' && t.category.toLowerCase().trim() === normalized) ||
+          (t.category && typeof t.category === 'object' && t.category.name && t.category.name.toLowerCase().trim() === normalized)
+      );
+
+      if (hasTasks) {
+        seenNames.add(normalized);
+        unique.push(c);
+      }
+    });
+    return unique;
   }, [categories, tasks]);
+
+  // All distinct categories for the dropdown filter
+  const allUniqueCategories = useMemo(() => {
+    const seenNames = new Set();
+    const unique = [];
+    categories.forEach((c) => {
+      if (!c || !c.name) return;
+      const normalized = c.name.trim().toLowerCase();
+      if (!seenNames.has(normalized)) {
+        seenNames.add(normalized);
+        unique.push(c);
+      }
+    });
+    return unique;
+  }, [categories]);
+
+  const trendData = useMemo(
+    () => getProductivityTrend(tasks, trendRange, selectedTrendCategory, activeCategories),
+    [tasks, trendRange, selectedTrendCategory, activeCategories]
+  );
 
   const currentCategory = useMemo(() => {
     if (selectedTrendCategory === 'all') return null;
@@ -484,7 +549,7 @@ export function Dashboard() {
                   onChange={(val) => setSelectedTrendCategory(val)}
                   options={[
                     { value: 'all', label: 'All Categories (Multi-line)', color: '#38BDF8' },
-                    ...categories.map((cat) => ({
+                    ...allUniqueCategories.map((cat) => ({
                       value: cat.id,
                       label: cat.name,
                       color: cat.color,
@@ -492,7 +557,7 @@ export function Dashboard() {
                   ]}
                   placeholder="Select Category"
                   searchPlaceholder="Filter category..."
-                  showSearch={categories.length > 4}
+                  showSearch={allUniqueCategories.length > 4}
                   style={{ minWidth: '180px' }}
                 />
               </div>
@@ -540,7 +605,7 @@ export function Dashboard() {
           </div>
 
           {/* Area Chart with Professional High-End Aesthetics */}
-          <div style={{ width: '100%', height: '230px', marginTop: '4px' }}>
+          <div style={{ width: '100%', height: '260px', marginTop: '4px', position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -563,11 +628,13 @@ export function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" vertical={false} />
                 <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} dy={6} />
                 <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<CustomTrendTooltip />} />
+                <Tooltip
+                  wrapperStyle={{ zIndex: 999999, pointerEvents: 'none' }}
+                  content={<CustomTrendTooltip />}
+                />
                 {selectedTrendCategory === 'all' && activeCategories.length > 0 && (
                   <Legend
-                    wrapperStyle={{ fontSize: '0.74rem', paddingTop: '6px' }}
-                    height={24}
+                    wrapperStyle={{ fontSize: '0.74rem', paddingTop: '8px', zIndex: 1, position: 'relative' }}
                     iconType="circle"
                   />
                 )}
