@@ -89,12 +89,23 @@ export function AppProvider({ children }) {
   const [importHistory, setImportHistory] = useState(() => storageService.getImportHistory());
   const [workChains, setWorkChains] = useState(() => storageService.getWorkChains());
 
-  // Keep local user state synchronized with Redux auth user
+  // Keep local user state synchronized with Redux auth user and completely clear on logout
   useEffect(() => {
     if (authUser) {
       setUser(authUser);
+    } else {
+      setUser(null);
+      dispatch(setTasks([]));
+      dispatch(setCategories([]));
+      dispatch(setGoals([]));
+      dispatch(setEvents([]));
+      setDailyReports([]);
+      setWorkSessions([]);
+      setActiveWorkSession(null);
+      setDeviations([]);
+      setRequests([]);
     }
-  }, [authUser]);
+  }, [authUser, dispatch]);
 
   // Apply dynamic theme mode and brand accents to document
   useEffect(() => {

@@ -32,10 +32,10 @@ export function AuthModal() {
 
   const { showToast } = useApp();
 
-  // Form fields - Pre-filled default user
+  // Form fields - Clean empty initial states
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('jay@gmail.com');
-  const [password, setPassword] = useState('Jay123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [title, setTitle] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -44,15 +44,10 @@ export function AuthModal() {
   // Reset form when modal opens or tab changes
   useEffect(() => {
     setErrorMsg('');
-    if (authModalTab === 'login') {
-      setEmail('jay@gmail.com');
-      setPassword('Jay123');
-    } else {
-      setName('');
-      setEmail('');
-      setPassword('');
-      setTitle('');
-    }
+    setName('');
+    setEmail('');
+    setPassword('');
+    setTitle('');
   }, [authModalTab, authModalOpen]);
 
   // Handle ESC key to close modal (only if authenticated)
@@ -332,71 +327,6 @@ export function AuthModal() {
           </div>
         )}
 
-        {/* Default Account Quick Fill Banner */}
-        {authModalTab === 'login' && (
-          <div
-            onClick={() => {
-              setEmail('jay@gmail.com');
-              setPassword('Jay123');
-            }}
-            style={{
-              margin: '16px 28px 0',
-              padding: '12px 14px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(139, 92, 246, 0.16) 100%)',
-              border: '1px solid rgba(99, 102, 241, 0.4)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-              transition: 'all 0.2s',
-            }}
-            title="Click to fill default account credentials"
-            id="btn-quick-fill-demo"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#6366F1',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#E0E7FF' }}>
-                  Default Account (Click to fill)
-                </div>
-                <div style={{ fontSize: '0.74rem', color: '#94A3B8' }}>
-                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>jay@gmail.com</span> &nbsp;•&nbsp;{' '}
-                  <span style={{ color: '#A5B4FC', fontWeight: 600 }}>Jay123</span>
-                </div>
-              </div>
-            </div>
-            <span
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: '#4F46E5',
-                background: '#ffffff',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                flexShrink: 0,
-              }}
-            >
-              Fill Credentials
-            </span>
-          </div>
-        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ padding: '20px 28px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

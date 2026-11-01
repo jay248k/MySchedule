@@ -101,6 +101,15 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('myschedule_auth_token');
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('my_schedule_tasks');
+    localStorage.removeItem('my_schedule_categories');
+    localStorage.removeItem('my_schedule_goals');
+    localStorage.removeItem('my_schedule_events');
+    localStorage.removeItem('my_schedule_daily_reports');
+    localStorage.removeItem('my_schedule_work_sessions');
+    localStorage.removeItem('my_schedule_deviations');
+    localStorage.removeItem('my_schedule_work_requests');
+    localStorage.removeItem('my_schedule_active_work_session');
     try {
       localStorage.removeItem('my_schedule_auth_permissions');
     } catch {}
