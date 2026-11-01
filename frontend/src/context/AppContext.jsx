@@ -146,6 +146,7 @@ export function AppProvider({ children }) {
 
   // Real-time backend data synchronization across Web & Mobile
   const fetchAllData = useCallback(async (options = {}) => {
+    if (!authUser) return;
     setIsSyncing(true);
     try {
       const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes] = await Promise.all([
@@ -217,6 +218,7 @@ export function AppProvider({ children }) {
   }, [dispatch, showToast]);
 
   useEffect(() => {
+    if (!authUser) return;
     fetchAllData();
 
     // Auto-poll every 12 seconds so operations made in Mobile App auto-rotate and reflect on Web!
