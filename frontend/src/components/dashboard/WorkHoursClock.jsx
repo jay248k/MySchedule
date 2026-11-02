@@ -73,36 +73,39 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
 
   return (
     <div
+      className="card"
       style={{
-        background: '#131E35',
-        borderRadius: 'var(--radius-lg)',
+        background: isRunning
+          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--card-bg) 100%)'
+          : 'var(--card-bg)',
+        borderRadius: 'var(--radius-lg, 12px)',
         border: isRunning
-          ? '1px solid rgba(16, 185, 129, 0.4)'
-          : '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '12px 20px',
-        color: '#FFFFFF',
+          ? '1px solid rgba(16, 185, 129, 0.5)'
+          : '1px solid var(--border-color)',
+        padding: '10px 16px',
+        color: 'var(--text-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '16px',
+        gap: '12px',
         boxShadow: isRunning
-          ? '0 6px 20px rgba(16, 185, 129, 0.15)'
-          : '0 4px 16px rgba(0, 0, 0, 0.2)',
-        transition: 'border-color 0.25s, box-shadow 0.25s',
+          ? '0 4px 16px rgba(16, 185, 129, 0.15)'
+          : 'var(--shadow-sm)',
+        transition: 'border-color 0.25s, box-shadow 0.25s, background-color 0.25s',
       }}
     >
       {/* Left: Title, Status & Navigation Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div
           style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: isRunning ? 'rgba(16, 185, 129, 0.18)' : 'rgba(59, 130, 246, 0.16)',
+            width: '34px',
+            height: '34px',
+            borderRadius: '8px',
+            background: isRunning ? 'rgba(16, 185, 129, 0.14)' : 'rgba(23, 105, 255, 0.1)',
             border: isRunning
-              ? '1px solid rgba(16, 185, 129, 0.5)'
-              : '1px solid rgba(59, 130, 246, 0.45)',
+              ? '1px solid rgba(16, 185, 129, 0.45)'
+              : '1px solid rgba(23, 105, 255, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -113,22 +116,22 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           {isRunning ? (
             <Timer size={18} color="#10B981" className="animate-spin-slow" />
           ) : (
-            <Clock size={18} color="#3B82F6" />
+            <Clock size={18} color="var(--primary-color, #1769FF)" />
           )}
         </div>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.96rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
               Today's Work Tracker
             </span>
             {/* Live Indicator Pill */}
             {isRunning ? (
               <span
                 style={{
-                  background: 'rgba(16, 185, 129, 0.2)',
+                  background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid #10B981',
-                  color: '#34D399',
-                  fontSize: '0.66rem',
+                  color: '#10B981',
+                  fontSize: '0.64rem',
                   fontWeight: 800,
                   padding: '2px 8px',
                   borderRadius: '999px',
@@ -152,19 +155,20 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
             ) : (
               <span
                 style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: '#94A3B8',
-                  fontSize: '0.66rem',
+                  background: 'var(--border-subtle, rgba(0, 0, 0, 0.04))',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.64rem',
                   fontWeight: 700,
                   padding: '2px 7px',
                   borderRadius: '999px',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 {todaySessions.length > 0 ? `${todaySessions.length} SESSIONS LOGGED` : 'STANDBY'}
               </span>
             )}
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 500, marginTop: '2px' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '2px' }}>
             {isRunning
               ? activeWorkSession?.taskTitle
                 ? `Focus: ${activeWorkSession.taskTitle}`
@@ -176,40 +180,40 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         </div>
       </div>
 
-      {/* Center: Digital LED Timer (Red/Neon Digit Style from User Screenshot) */}
+      {/* Center: Digital LED Timer (Adapts to Light, Dark & OLED themes) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {/* Hours */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
           <div
             style={{
-              background: '#1A2744',
+              background: 'var(--bg-primary, #0A1124)',
               border: isRunning
                 ? '1px solid rgba(16, 185, 129, 0.45)'
-                : '1px solid rgba(239, 68, 68, 0.28)',
+                : '1px solid var(--border-color)',
               borderRadius: '7px',
-              padding: '5px 11px',
-              minWidth: '50px',
+              padding: '4px 10px',
+              minWidth: '46px',
               textAlign: 'center',
-              boxShadow: 'inset 0 1px 4px rgba(0, 0, 0, 0.4)',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.15)',
             }}
           >
             <span
               style={{
                 fontFamily: 'monospace, "Courier New", Courier',
-                fontSize: '1.45rem',
+                fontSize: '1.35rem',
                 fontWeight: 900,
-                color: isRunning ? '#34D399' : '#EF4444',
+                color: isRunning ? '#10B981' : '#EF4444',
                 letterSpacing: '1px',
                 lineHeight: 1,
                 textShadow: isRunning
-                  ? '0 0 10px rgba(52, 211, 153, 0.5)'
-                  : '0 0 8px rgba(239, 68, 68, 0.45)',
+                  ? '0 0 8px rgba(16, 185, 129, 0.35)'
+                  : '0 0 6px rgba(239, 68, 68, 0.35)',
               }}
             >
               {hrsStr}
             </span>
           </div>
-          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
             HRS
           </span>
         </div>
@@ -217,11 +221,11 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         {/* Colon */}
         <div
           style={{
-            fontSize: '1.35rem',
+            fontSize: '1.25rem',
             fontWeight: 900,
-            color: isRunning ? '#34D399' : '#EF4444',
+            color: isRunning ? '#10B981' : '#EF4444',
             marginBottom: '10px',
-            textShadow: isRunning ? '0 0 6px #34D399' : '0 0 6px #EF4444',
+            textShadow: isRunning ? '0 0 6px #10B981' : '0 0 6px #EF4444',
           }}
         >
           :
@@ -231,34 +235,34 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
           <div
             style={{
-              background: '#1A2744',
+              background: 'var(--bg-primary, #0A1124)',
               border: isRunning
                 ? '1px solid rgba(16, 185, 129, 0.45)'
-                : '1px solid rgba(239, 68, 68, 0.28)',
+                : '1px solid var(--border-color)',
               borderRadius: '7px',
-              padding: '5px 11px',
-              minWidth: '50px',
+              padding: '4px 10px',
+              minWidth: '46px',
               textAlign: 'center',
-              boxShadow: 'inset 0 1px 4px rgba(0, 0, 0, 0.4)',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.15)',
             }}
           >
             <span
               style={{
                 fontFamily: 'monospace, "Courier New", Courier',
-                fontSize: '1.45rem',
+                fontSize: '1.35rem',
                 fontWeight: 900,
-                color: isRunning ? '#34D399' : '#EF4444',
+                color: isRunning ? '#10B981' : '#EF4444',
                 letterSpacing: '1px',
                 lineHeight: 1,
                 textShadow: isRunning
-                  ? '0 0 10px rgba(52, 211, 153, 0.5)'
-                  : '0 0 8px rgba(239, 68, 68, 0.45)',
+                  ? '0 0 8px rgba(16, 185, 129, 0.35)'
+                  : '0 0 6px rgba(239, 68, 68, 0.35)',
               }}
             >
               {minsStr}
             </span>
           </div>
-          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
             MINS
           </span>
         </div>
@@ -266,11 +270,11 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         {/* Colon */}
         <div
           style={{
-            fontSize: '1.35rem',
+            fontSize: '1.25rem',
             fontWeight: 900,
-            color: isRunning ? '#34D399' : '#EF4444',
+            color: isRunning ? '#10B981' : '#EF4444',
             marginBottom: '10px',
-            textShadow: isRunning ? '0 0 6px #34D399' : '0 0 6px #EF4444',
+            textShadow: isRunning ? '0 0 6px #10B981' : '0 0 6px #EF4444',
           }}
         >
           :
@@ -280,41 +284,41 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
           <div
             style={{
-              background: '#1A2744',
+              background: 'var(--bg-primary, #0A1124)',
               border: isRunning
                 ? '1px solid rgba(16, 185, 129, 0.45)'
-                : '1px solid rgba(239, 68, 68, 0.28)',
+                : '1px solid var(--border-color)',
               borderRadius: '7px',
-              padding: '5px 11px',
-              minWidth: '50px',
+              padding: '4px 10px',
+              minWidth: '46px',
               textAlign: 'center',
-              boxShadow: 'inset 0 1px 4px rgba(0, 0, 0, 0.4)',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.15)',
             }}
           >
             <span
               style={{
                 fontFamily: 'monospace, "Courier New", Courier',
-                fontSize: '1.45rem',
+                fontSize: '1.35rem',
                 fontWeight: 900,
-                color: isRunning ? '#34D399' : '#EF4444',
+                color: isRunning ? '#10B981' : '#EF4444',
                 letterSpacing: '1px',
                 lineHeight: 1,
                 textShadow: isRunning
-                  ? '0 0 10px rgba(52, 211, 153, 0.5)'
-                  : '0 0 8px rgba(239, 68, 68, 0.45)',
+                  ? '0 0 8px rgba(16, 185, 129, 0.35)'
+                  : '0 0 6px rgba(239, 68, 68, 0.35)',
               }}
             >
               {secsStr}
             </span>
           </div>
-          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748B', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
             SECS
           </span>
         </div>
       </div>
 
       {/* Right Controls: Start/Stop Buttons + Module Link + Analog Dial */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {/* START or STOP BUTTON */}
         {!isRunning ? (
           <button
@@ -325,14 +329,15 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
               background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               color: '#FFFFFF',
               border: 'none',
-              padding: '7px 15px',
-              borderRadius: '8px',
-              fontSize: '0.84rem',
+              padding: '6px 14px',
+              borderRadius: '7px',
+              fontSize: '0.82rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
               transition: 'transform 0.15s',
             }}
             title="Start tracking active work time"
@@ -349,14 +354,15 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
               background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
               color: '#FFFFFF',
               border: 'none',
-              padding: '7px 15px',
-              borderRadius: '8px',
-              fontSize: '0.84rem',
+              padding: '6px 14px',
+              borderRadius: '7px',
+              fontSize: '0.82rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
               transition: 'transform 0.15s',
             }}
             title="Stop timer and record remarks"
@@ -371,12 +377,12 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           type="button"
           onClick={() => navigate('/work-tracker')}
           style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.14)',
-            color: '#E2E8F0',
-            padding: '7px 12px',
-            borderRadius: '8px',
-            fontSize: '0.82rem',
+            background: 'var(--card-hover, rgba(0, 0, 0, 0.04))',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-primary)',
+            padding: '6px 11px',
+            borderRadius: '7px',
+            fontSize: '0.8rem',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
@@ -393,13 +399,13 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
         {/* Compact Analog Clock Dial */}
         <div
           style={{
-            width: '42px',
-            height: '42px',
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
-            background: '#1E293B',
-            border: '2px solid rgba(255, 255, 255, 0.16)',
+            background: 'var(--card-bg)',
+            border: '2px solid var(--border-color)',
             position: 'relative',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            boxShadow: 'var(--shadow-sm)',
             flexShrink: 0,
             overflow: 'hidden',
           }}
@@ -414,12 +420,12 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
                 key={i}
                 style={{
                   position: 'absolute',
-                  top: '3px',
-                  left: '20px',
+                  top: '2px',
+                  left: '18px',
                   width: isMain ? '1.5px' : '1px',
                   height: isMain ? '3px' : '2px',
-                  background: isMain ? '#94A3B8' : '#475569',
-                  transformOrigin: '1px 18px',
+                  background: isMain ? 'var(--text-secondary)' : 'var(--border-color)',
+                  transformOrigin: '1px 17px',
                   transform: `rotate(${rot}deg)`,
                 }}
               />
@@ -430,11 +436,11 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '12px',
-              left: '19.75px',
+              top: '10px',
+              left: '17.75px',
               width: '2.5px',
               height: '9px',
-              background: '#3B82F6',
+              background: 'var(--primary-color, #3B82F6)',
               borderRadius: '2px',
               transformOrigin: 'bottom center',
               transform: `rotate(${hourDeg}deg)`,
@@ -445,10 +451,10 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '9px',
-              left: '20.1px',
+              top: '8px',
+              left: '18.1px',
               width: '1.8px',
-              height: '12px',
+              height: '11px',
               background: '#60A5FA',
               borderRadius: '2px',
               transformOrigin: 'bottom center',
@@ -460,10 +466,10 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '7px',
-              left: '20.4px',
+              top: '6px',
+              left: '18.4px',
               width: '1.2px',
-              height: '14px',
+              height: '13px',
               background: '#EF4444',
               borderRadius: '1px',
               transformOrigin: 'bottom center',
@@ -475,13 +481,13 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <div
             style={{
               position: 'absolute',
-              top: '18.5px',
-              left: '18.5px',
+              top: '16.5px',
+              left: '16.5px',
               width: '5px',
               height: '5px',
               borderRadius: '50%',
-              background: '#FFFFFF',
-              boxShadow: '0 0 3px rgba(0, 0, 0, 0.6)',
+              background: 'var(--text-primary)',
+              boxShadow: '0 0 2px rgba(0, 0, 0, 0.4)',
             }}
           />
         </div>

@@ -192,7 +192,7 @@ export function WorkTracker() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '24px' }}>
       {/* Top Header Bar */}
       <div
         style={{
@@ -200,14 +200,14 @@ export function WorkTracker() {
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '14px',
+          gap: '10px',
           paddingBottom: '8px',
           borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Today's Work Tracker & Session Logs
             </h1>
             {isRunning && (
@@ -216,35 +216,35 @@ export function WorkTracker() {
                   background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid #10B981',
                   color: '#10B981',
-                  padding: '3px 10px',
+                  padding: '2px 8px',
                   borderRadius: '999px',
-                  fontSize: '0.74rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '4px',
                 }}
               >
                 <span
                   style={{
-                    width: '7px',
-                    height: '7px',
+                    width: '6px',
+                    height: '6px',
                     borderRadius: '50%',
                     backgroundColor: '#10B981',
-                    boxShadow: '0 0 8px #10B981',
+                    boxShadow: '0 0 6px #10B981',
                   }}
                 />
-                RECORDING IN PROGRESS
+                RECORDING
               </span>
             )}
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
             Track your focused work sessions in real time, record stop/pause reasons, and review productivity breakdown.
           </p>
         </div>
 
         {/* Date Selector & Manual Session Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Day Stepper */}
           <div
             style={{
@@ -253,13 +253,13 @@ export function WorkTracker() {
               background: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-md)',
-              padding: '3px 6px',
+              padding: '2px 5px',
             }}
           >
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
+              style={{ width: '26px', height: '26px' }}
               onClick={() => {
                 const d = new Date(activeDate + 'T00:00:00');
                 d.setDate(d.getDate() - 1);
@@ -270,15 +270,15 @@ export function WorkTracker() {
               }}
               title="Previous Day"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} />
             </button>
-            <span style={{ fontSize: '0.84rem', fontWeight: 700, padding: '0 8px', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0 6px', color: 'var(--text-primary)' }}>
               {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
             </span>
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
+              style={{ width: '26px', height: '26px' }}
               onClick={() => {
                 const d = new Date(activeDate + 'T00:00:00');
                 d.setDate(d.getDate() + 1);
@@ -289,14 +289,14 @@ export function WorkTracker() {
               }}
               title="Next Day"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} />
             </button>
             {!isToday && (
               <button
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => setSelectedDate(todayStr)}
-                style={{ marginLeft: '4px', fontSize: '0.74rem', padding: '2px 6px', color: 'var(--primary-color)' }}
+                style={{ marginLeft: '4px', fontSize: '0.7rem', padding: '2px 5px', color: 'var(--primary-color)' }}
               >
                 Today
               </button>
@@ -307,9 +307,9 @@ export function WorkTracker() {
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleOpenManualModal}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', fontSize: '0.78rem', padding: '0 10px' }}
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>Log Past Session</span>
           </button>
         </div>
@@ -319,8 +319,8 @@ export function WorkTracker() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '10px',
         }}
       >
         {/* Total Time */}
@@ -328,24 +328,24 @@ export function WorkTracker() {
           style={{
             background: 'var(--card-bg, #1a2234)',
             border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '4px solid #10B981',
-            borderRadius: '16px',
-            padding: '18px 22px',
+            borderLeft: '3px solid #10B981',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Total Tracked Work
             </span>
             <div
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
                 background: 'rgba(16, 185, 129, 0.14)',
                 display: 'flex',
                 alignItems: 'center',
@@ -353,17 +353,17 @@ export function WorkTracker() {
                 color: '#10B981',
               }}
             >
-              <Clock size={18} />
+              <Clock size={15} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {totalHours}h {totalMinutes}m {totalSecs}s
               </span>
             </div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-              Across {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'} on this date
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Across {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'}
             </div>
           </div>
         </div>
@@ -373,24 +373,24 @@ export function WorkTracker() {
           style={{
             background: 'var(--card-bg, #1a2234)',
             border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '4px solid #3B82F6',
-            borderRadius: '16px',
-            padding: '18px 22px',
+            borderLeft: '3px solid #3B82F6',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Completed Sessions
             </span>
             <div
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
                 background: 'rgba(59, 130, 246, 0.14)',
                 display: 'flex',
                 alignItems: 'center',
@@ -398,20 +398,20 @@ export function WorkTracker() {
                 color: '#3B82F6',
               }}
             >
-              <Timer size={18} />
+              <Timer size={15} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {sessionCount}
               </span>
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 {sessionCount === 1 ? 'Session' : 'Sessions'}
               </span>
             </div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-              {isRunning ? '1 active currently running' : 'All sessions logged'}
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {isRunning ? '1 active running' : 'All sessions logged'}
             </div>
           </div>
         </div>
@@ -421,24 +421,24 @@ export function WorkTracker() {
           style={{
             background: 'var(--card-bg, #1a2234)',
             border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '4px solid #8B5CF6',
-            borderRadius: '16px',
-            padding: '18px 22px',
+            borderLeft: '3px solid #8B5CF6',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Average Session
             </span>
             <div
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
                 background: 'rgba(139, 92, 246, 0.14)',
                 display: 'flex',
                 alignItems: 'center',
@@ -446,19 +446,19 @@ export function WorkTracker() {
                 color: '#8B5CF6',
               }}
             >
-              <TrendingUp size={18} />
+              <TrendingUp size={15} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {avgSessionMinutes}
               </span>
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 min
               </span>
             </div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               Average focused duration per block
             </div>
           </div>
@@ -469,24 +469,24 @@ export function WorkTracker() {
           style={{
             background: 'var(--card-bg, #1a2234)',
             border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '4px solid #F59E0B',
-            borderRadius: '16px',
-            padding: '18px 22px',
+            borderLeft: '3px solid #F59E0B',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Stop Reasons Logged
             </span>
             <div
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
                 background: 'rgba(245, 158, 11, 0.14)',
                 display: 'flex',
                 alignItems: 'center',
@@ -494,19 +494,19 @@ export function WorkTracker() {
                 color: '#F59E0B',
               }}
             >
-              <Coffee size={18} />
+              <Coffee size={15} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {Object.keys(reasonBreakdown).length}
               </span>
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 Types
               </span>
             </div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               Breaks, meals, meetings & interruptions
             </div>
           </div>
@@ -519,45 +519,45 @@ export function WorkTracker() {
           style={{
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
             border: '1.5px solid rgba(245, 158, 11, 0.45)',
-            borderRadius: '14px',
-            padding: '16px 20px',
+            borderRadius: '10px',
+            padding: '10px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '14px',
-            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.14)',
+            gap: '10px',
+            boxShadow: '0 4px 14px rgba(245, 158, 11, 0.12)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 background: 'rgba(245, 158, 11, 0.25)',
                 border: '1px solid #F59E0B',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.3rem',
+                fontSize: '1.1rem',
                 flexShrink: 0,
               }}
             >
               ☕
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#FDE68A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#FDE68A' }}>
                   Work Paused: {todayChain.lastPauseReason || 'Break'}
                 </span>
                 <span
                   style={{
                     background: '#F59E0B',
                     color: '#000000',
-                    fontSize: '0.66rem',
+                    fontSize: '0.62rem',
                     fontWeight: 900,
-                    padding: '2px 7px',
+                    padding: '1px 6px',
                     borderRadius: '999px',
                     textTransform: 'uppercase',
                   }}
@@ -565,17 +565,17 @@ export function WorkTracker() {
                   PAUSED
                 </span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#CBD5E1', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#CBD5E1', marginTop: '1px' }}>
                 Stopped at: <strong>{todayChain.lastPausedTimeStr}</strong>{' '}
                 {todayChain.lastPauseRemarks && todayChain.lastPauseRemarks !== todayChain.lastPauseReason && (
                   <span>· "{todayChain.lastPauseRemarks}" </span>
                 )}
-                · Focus accumulated so far: <strong style={{ color: '#34D399' }}>{activeTimerDisplay}</strong>
+                · Focus so far: <strong style={{ color: '#34D399' }}>{activeTimerDisplay}</strong>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
               onClick={handleStartSession}
@@ -584,18 +584,18 @@ export function WorkTracker() {
                 background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                 color: '#FFFFFF',
                 border: 'none',
-                padding: '10px 22px',
-                borderRadius: '9px',
-                fontSize: '0.92rem',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                gap: '5px',
+                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)',
               }}
             >
-              <Play size={16} fill="#FFFFFF" />
+              <Play size={14} fill="#FFFFFF" />
               <span>Resume Work</span>
             </button>
             <button
@@ -606,9 +606,9 @@ export function WorkTracker() {
                 background: 'rgba(239, 68, 68, 0.16)',
                 border: '1px solid rgba(239, 68, 68, 0.45)',
                 color: '#FCA5A5',
-                padding: '10px 18px',
-                borderRadius: '9px',
-                fontSize: '0.85rem',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '0.76rem',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
@@ -621,53 +621,59 @@ export function WorkTracker() {
 
       {/* Main Interactive Work Timer Card */}
       <div
+        className="card"
         style={{
-          background: 'linear-gradient(135deg, #101B33 0%, #172445 100%)',
-          borderRadius: '16px',
+          background: isRunning
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--card-bg) 100%)'
+            : isPaused
+            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--card-bg) 100%)'
+            : 'var(--card-bg)',
+          borderRadius: '10px',
           border: isRunning
             ? '1.5px solid #10B981'
             : isPaused
-            ? '1.5px solid rgba(245, 158, 11, 0.5)'
-            : '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '24px',
-          color: '#FFFFFF',
+            ? '1.5px solid #F59E0B'
+            : '1px solid var(--border-color)',
+          padding: '10px 14px',
+          color: 'var(--text-primary)',
           boxShadow: isRunning
-            ? '0 10px 30px rgba(16, 185, 129, 0.2)'
+            ? '0 4px 14px rgba(16, 185, 129, 0.12)'
             : isPaused
-            ? '0 8px 24px rgba(245, 158, 11, 0.15)'
-            : '0 8px 24px rgba(0, 0, 0, 0.25)',
+            ? '0 4px 14px rgba(245, 158, 11, 0.12)'
+            : 'var(--shadow-sm)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px',
+          gap: '10px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
+                width: '30px',
+                height: '30px',
+                borderRadius: '7px',
                 background: isRunning
-                  ? 'rgba(16, 185, 129, 0.2)'
+                  ? 'rgba(16, 185, 129, 0.18)'
                   : isPaused
-                  ? 'rgba(245, 158, 11, 0.2)'
-                  : 'rgba(59, 130, 246, 0.18)',
+                  ? 'rgba(245, 158, 11, 0.18)'
+                  : 'rgba(23, 105, 255, 0.14)',
                 border: isRunning
                   ? '1px solid #10B981'
                   : isPaused
                   ? '1px solid #F59E0B'
-                  : '1px solid rgba(59, 130, 246, 0.4)',
+                  : '1px solid rgba(23, 105, 255, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : '#3B82F6',
+                color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : '#1769FF',
+                flexShrink: 0,
               }}
             >
-              <Timer size={24} />
+              <Timer size={16} />
             </div>
             <div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 {isRunning
                   ? 'Active Work Session in Progress'
                   : isPaused
@@ -676,20 +682,20 @@ export function WorkTracker() {
                   ? 'Workday Completed'
                   : 'Start a New Work Session'}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                 {isRunning
-                  ? `Started at ${activeWorkSession.startTime}. When you stop, enter your remarks/reason to pause and chain.`
+                  ? `Started at ${activeWorkSession.startTime}. Stop whenever you need a pause or break.`
                   : isPaused
-                  ? `Paused for "${todayChain.lastPauseReason}". Timer freezes at ${activeTimerDisplay} and resumes when you start.`
+                  ? `Paused for "${todayChain.lastPauseReason}". Timer freezes and resumes on click.`
                   : isFinished
-                  ? 'Your daily session chain has been closed. Ready to start fresh anytime!'
-                  : 'Start tracking your time. Every time you pause, reasons create a chained log.'}
+                  ? 'Daily session chain closed. Start fresh anytime!'
+                  : 'Start tracking focused time. Every pause creates a chained timeline.'}
               </div>
             </div>
           </div>
 
           {/* Action Button: Start, Stop, or Resume */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {isRunning ? (
               <button
                 type="button"
@@ -699,19 +705,19 @@ export function WorkTracker() {
                   background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                   color: '#FFFFFF',
                   border: 'none',
-                  padding: '12px 26px',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '5px',
                   transition: 'all 0.15s ease',
-                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
+                  boxShadow: '0 2px 10px rgba(239, 68, 68, 0.3)',
                 }}
               >
-                <Square size={16} fill="#FFFFFF" />
+                <Square size={13} fill="#FFFFFF" />
                 <span>Stop Work & Enter Remarks</span>
               </button>
             ) : isPaused ? (
@@ -724,19 +730,19 @@ export function WorkTracker() {
                     background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                     color: '#FFFFFF',
                     border: 'none',
-                    padding: '12px 26px',
-                    borderRadius: '10px',
-                    fontSize: '1rem',
+                    padding: '6px 16px',
+                    borderRadius: '7px',
+                    fontSize: '0.82rem',
                     fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '6px',
                     transition: 'all 0.15s ease',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)',
                   }}
                 >
-                  <Play size={18} fill="#FFFFFF" />
+                  <Play size={15} fill="#FFFFFF" />
                   <span>Resume Work ({activeTimerDisplay})</span>
                 </button>
                 <button
@@ -745,10 +751,10 @@ export function WorkTracker() {
                   style={{
                     background: 'rgba(239, 68, 68, 0.15)',
                     border: '1px solid rgba(239, 68, 68, 0.4)',
-                    color: '#FCA5A5',
-                    padding: '12px 18px',
-                    borderRadius: '10px',
-                    fontSize: '0.88rem',
+                    color: '#EF4444',
+                    padding: '6px 12px',
+                    borderRadius: '7px',
+                    fontSize: '0.78rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -765,18 +771,18 @@ export function WorkTracker() {
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   color: '#FFFFFF',
                   border: 'none',
-                  padding: '12px 26px',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
+                  padding: '6px 16px',
+                  borderRadius: '7px',
+                  fontSize: '0.82rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Play size={18} fill="#FFFFFF" />
+                <Play size={15} fill="#FFFFFF" />
                 <span>Start Tracking Work</span>
               </button>
             )}
@@ -790,66 +796,61 @@ export function WorkTracker() {
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '16px',
-            background: 'rgba(0, 0, 0, 0.25)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            padding: '16px 22px',
+            gap: '12px',
+            background: 'var(--page-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '10px 14px',
           }}
         >
           {/* LED Readout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
                 fontFamily: 'monospace, "Courier New", Courier',
-                fontSize: '2.5rem',
+                fontSize: '1.75rem',
                 fontWeight: 900,
-                color: isRunning ? '#34D399' : isPaused ? '#F59E0B' : '#EF4444',
-                letterSpacing: '2px',
+                color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : 'var(--text-primary)',
+                letterSpacing: '1.5px',
                 lineHeight: 1,
-                textShadow: isRunning
-                  ? '0 0 16px rgba(52, 211, 153, 0.6)'
-                  : isPaused
-                  ? '0 0 16px rgba(245, 158, 11, 0.5)'
-                  : '0 0 12px rgba(239, 68, 68, 0.4)',
               }}
             >
               {isRunning || isPaused ? activeTimerDisplay : '00:00:00'}
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               {isRunning ? (
                 <div>
-                  <div style={{ color: '#34D399', fontWeight: 800 }}>LIVE SESSION TRACKING</div>
-                  <div>Timer ticking forward continuously</div>
+                  <div style={{ color: '#34D399', fontWeight: 800, fontSize: '0.72rem' }}>LIVE SESSION TRACKING</div>
+                  <div style={{ fontSize: '0.7rem' }}>Timer ticking forward continuously</div>
                 </div>
               ) : isPaused ? (
                 <div>
-                  <div style={{ color: '#F59E0B', fontWeight: 800 }}>WORK PAUSED AT {todayChain.lastPausedTimeStr}</div>
-                  <div>Frozen at {activeTimerDisplay} · Resumes upon click</div>
+                  <div style={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.72rem' }}>WORK PAUSED AT {todayChain.lastPausedTimeStr}</div>
+                  <div style={{ fontSize: '0.7rem' }}>Frozen at {activeTimerDisplay} · Resumes upon click</div>
                 </div>
               ) : (
                 <div>
-                  <div style={{ color: '#E2E8F0', fontWeight: 700 }}>TIMER IDLE</div>
-                  <div>Press "Start Tracking Work" above</div>
+                  <div style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.72rem' }}>TIMER IDLE</div>
+                  <div style={{ fontSize: '0.7rem' }}>Press "Start Tracking Work" to begin</div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Associate Task Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#94A3B8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
               Focus Task:
             </span>
             {isRunning ? (
               <span
                 style={{
-                  background: 'rgba(59, 130, 246, 0.2)',
+                  background: 'rgba(59, 130, 246, 0.15)',
                   border: '1px solid #3B82F6',
                   color: '#93C5FD',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '0.86rem',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
                   fontWeight: 700,
                 }}
               >
@@ -860,13 +861,14 @@ export function WorkTracker() {
                 value={selectedTaskId}
                 onChange={(e) => setSelectedTaskId(e.target.value)}
                 style={{
-                  background: '#1A2744',
-                  border: '1px solid rgba(255, 255, 255, 0.16)',
-                  color: '#FFFFFF',
-                  padding: '7px 12px',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  minWidth: '220px',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  minWidth: '200px',
+                  height: '30px',
                 }}
               >
                 <option value="">General Work (No specific task)</option>
@@ -881,21 +883,18 @@ export function WorkTracker() {
         </div>
       </div>
 
-      {/* Two Column Layout: Sessions List / Timeline & Stop Reasons Breakdown */}
-      {/* Two Column Layout: Sessions List / Timeline & Stop Reasons Breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '20px' }}>
-        {/* Left Column: Sessions List & Chain */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Sessions List / Timeline & Chain */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>🔗</span> Work & Remarks Session Chain
               {(todayChain?.chain?.length > 0 || dateSessions.length > 0) && (
-                <span style={{ fontSize: '0.72rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+                <span style={{ fontSize: '0.68rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', padding: '1px 6px', borderRadius: '999px', fontWeight: 700 }}>
                   {(todayChain?.chain?.length || dateSessions.length)} nodes
                 </span>
               )}
             </h2>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
               Auto-computes break gaps upon resuming
             </span>
           </div>
@@ -905,30 +904,30 @@ export function WorkTracker() {
               style={{
                 background: 'var(--card-bg)',
                 border: '1px dashed var(--border-color)',
-                borderRadius: '14px',
-                padding: '48px 24px',
+                borderRadius: '10px',
+                padding: '28px 16px',
                 textAlign: 'center',
                 color: 'var(--text-muted)',
               }}
             >
-              <Timer size={44} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <Timer size={32} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 No work sessions recorded yet for {isToday ? 'today' : formattedDateTitle}
               </div>
-              <p style={{ fontSize: '0.85rem', maxWidth: '420px', margin: '6px auto 16px' }}>
+              <p style={{ fontSize: '0.78rem', maxWidth: '380px', margin: '4px auto 12px' }}>
                 Click <strong>"Start Tracking Work"</strong> to begin. When you stop for a break or call, your remarks create a continuous chain.
               </p>
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
                 onClick={handleStartSession}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', height: '28px', fontSize: '0.78rem', padding: '0 12px' }}
               >
-                <Play size={14} fill="currentColor" /> Start Tracking Work
+                <Play size={12} fill="currentColor" /> Start Tracking Work
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {/* If Chain nodes exist, render the chronological chain */}
               {todayChain?.chain?.length > 0 ? (
                 todayChain.chain.map((node, index) => {
@@ -944,53 +943,53 @@ export function WorkTracker() {
                       style={{
                         background: isWork ? 'rgba(16, 185, 129, 0.06)' : 'rgba(245, 158, 11, 0.08)',
                         border: isWork ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
-                        borderLeft: isWork ? '5px solid #10B981' : '5px solid #F59E0B',
-                        borderRadius: '12px',
-                        padding: '14px 18px',
+                        borderLeft: isWork ? '4px solid #10B981' : '4px solid #F59E0B',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
-                        gap: '12px',
+                        gap: '8px',
                         position: 'relative',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div
                           style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '10px',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
                             background: isWork ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.25rem',
+                            fontSize: '1rem',
                             flexShrink: 0,
                           }}
                         >
                           {isWork ? '💼' : '☕'}
                         </div>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                               {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason}`}
                             </span>
                             <span
                               style={{
                                 background: isWork ? '#10B981' : '#F59E0B',
                                 color: isWork ? '#FFFFFF' : '#000000',
-                                fontSize: '0.64rem',
+                                fontSize: '0.6rem',
                                 fontWeight: 800,
-                                padding: '2px 7px',
+                                padding: '1px 5px',
                                 borderRadius: '999px',
                                 textTransform: 'uppercase',
                               }}
                             >
-                              {isWork ? 'Work Segment' : 'Auto Gap'}
+                              {isWork ? 'Work' : 'Gap'}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
                             {node.startTime} – {node.endTime}
                             {!isWork && node.remarks && node.remarks !== node.reason && (
                               <span style={{ color: '#FDE68A', fontStyle: 'italic' }}> · "{node.remarks}"</span>
@@ -999,19 +998,19 @@ export function WorkTracker() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span
                           style={{
-                            fontSize: '0.85rem',
+                            fontSize: '0.78rem',
                             fontWeight: 800,
                             color: isWork ? '#10B981' : '#F59E0B',
                             background: 'var(--card-bg)',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
                             border: '1px solid var(--border-color)',
                           }}
                         >
-                          {isWork ? durLabel : `⚡ Gap: ${node.durationLabel || durLabel}`}
+                          {isWork ? durLabel : `⚡ ${node.durationLabel || durLabel}`}
                         </span>
                       </div>
                     </div>
@@ -1033,59 +1032,59 @@ export function WorkTracker() {
                       style={{
                         background: 'var(--card-bg)',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '14px 18px',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
-                        gap: '12px',
+                        gap: '8px',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div
                           style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
                             background: 'rgba(59, 130, 246, 0.1)',
                             border: '1px solid rgba(59, 130, 246, 0.25)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.25rem',
+                            fontSize: '1rem',
                             flexShrink: 0,
                           }}
                         >
                           {icon}
                         </div>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                               {session.taskTitle || 'General Work Session'}
                             </span>
                             <span
                               style={{
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 color: 'var(--text-secondary)',
-                                fontSize: '0.66rem',
+                                fontSize: '0.62rem',
                                 fontWeight: 700,
-                                padding: '2px 6px',
+                                padding: '1px 5px',
                                 borderRadius: '4px',
                               }}
                             >
                               {session.stopReason || 'Finished Work'}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
                             {session.startTime} – {session.endTime}
                             {session.notes && <span style={{ fontStyle: 'italic' }}> · "{session.notes}"</span>}
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#3B82F6' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3B82F6' }}>
                           {durStr}
                         </span>
                         <button
@@ -1093,17 +1092,18 @@ export function WorkTracker() {
                           className="btn-icon"
                           onClick={() => setEditingSession(session)}
                           title="Edit remarks"
+                          style={{ width: '24px', height: '24px' }}
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={12} />
                         </button>
                         <button
                           type="button"
                           className="btn-icon"
                           onClick={() => deleteWorkSession(session.id)}
                           title="Delete session"
-                          style={{ color: '#EF4444' }}
+                          style={{ color: '#EF4444', width: '24px', height: '24px' }}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </div>
@@ -1117,22 +1117,22 @@ export function WorkTracker() {
                   style={{
                     background: 'rgba(16, 185, 129, 0.08)',
                     border: '1.5px solid #10B981',
-                    borderRadius: '12px',
-                    padding: '16px 20px',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
-                    gap: '12px',
+                    gap: '8px',
                     animation: 'pulse 2s infinite',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div
                       style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
                         background: '#10B981',
                         color: '#FFFFFF',
                         display: 'flex',
@@ -1140,37 +1140,37 @@ export function WorkTracker() {
                         justifyContent: 'center',
                       }}
                     >
-                      <Timer size={20} />
+                      <Timer size={15} />
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                           {activeWorkSession.taskTitle || 'Live Work Segment'}
                         </span>
                         <span
                           style={{
                             background: '#10B981',
                             color: '#FFFFFF',
-                            fontSize: '0.68rem',
+                            fontSize: '0.62rem',
                             fontWeight: 800,
-                            padding: '2px 7px',
+                            padding: '1px 6px',
                             borderRadius: '999px',
                           }}
                         >
                           RECORDING
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
                         Started at: {activeWorkSession.startTime} · Currently tracking
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
                       style={{
                         fontFamily: 'monospace',
-                        fontSize: '1.35rem',
+                        fontSize: '1.1rem',
                         fontWeight: 900,
                         color: '#10B981',
                       }}
@@ -1185,16 +1185,17 @@ export function WorkTracker() {
                         background: '#EF4444',
                         color: '#FFFFFF',
                         border: 'none',
-                        fontSize: '0.8rem',
+                        fontSize: '0.76rem',
                         fontWeight: 700,
-                        padding: '6px 14px',
+                        padding: '4px 10px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '5px',
+                        gap: '4px',
                         cursor: 'pointer',
+                        borderRadius: '6px',
                       }}
                     >
-                      <Square size={12} fill="#FFFFFF" /> Stop & Enter Remarks
+                      <Square size={11} fill="#FFFFFF" /> Stop & Remarks
                     </button>
                   </div>
                 </div>
@@ -1206,23 +1207,23 @@ export function WorkTracker() {
                   style={{
                     background: 'rgba(245, 158, 11, 0.1)',
                     border: '1.5px dashed #F59E0B',
-                    borderRadius: '12px',
-                    padding: '14px 18px',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
-                    gap: '12px',
+                    gap: '8px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>⏳</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>⏳</span>
                     <div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FDE68A' }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#FDE68A' }}>
                         Current Gap: {todayChain.lastPauseReason || 'Pause'}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        Paused since {todayChain.lastPausedTimeStr}. Gap duration will auto-calculate when you resume.
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                        Paused since {todayChain.lastPausedTimeStr}. Gap calculates upon resuming.
                       </div>
                     </div>
                   </div>
@@ -1233,109 +1234,22 @@ export function WorkTracker() {
                       background: '#10B981',
                       color: '#FFFFFF',
                       border: 'none',
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.84rem',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
                       fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px',
+                      gap: '4px',
                     }}
                   >
-                    <Play size={14} fill="#FFFFFF" /> Resume Work
+                    <Play size={12} fill="#FFFFFF" /> Resume Work
                   </button>
                 </div>
               )}
             </div>
           )}
-        </div>
-
-        {/* Right Column: Stop Reasons Summary & Productivity Insights */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div
-            style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '18px 20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Coffee size={18} color="#F59E0B" />
-              <h3 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                Stop Reasons Breakdown
-              </h3>
-            </div>
-
-            {Object.keys(reasonBreakdown).length === 0 ? (
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
-                No stop reasons recorded yet for this date.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {Object.entries(reasonBreakdown).map(([reason, secs]) => {
-                  const m = Math.floor(secs / 60);
-                  const h = Math.floor(m / 60);
-                  const remM = m % 60;
-                  const timeLabel = h > 0 ? `${h}h ${remM}m` : `${m}m`;
-                  const pct = totalSecondsLogged > 0 ? Math.round((secs / totalSecondsLogged) * 100) : 0;
-                  const icon = REASON_ICONS[reason] || '🛑';
-
-                  return (
-                    <div key={reason} style={{ fontSize: '0.82rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <span>{icon}</span> {reason}
-                        </span>
-                        <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>
-                          {timeLabel} ({pct}%)
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          height: '6px',
-                          background: 'var(--page-bg)',
-                          borderRadius: '999px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${pct}%`,
-                            background: '#F59E0B',
-                            borderRadius: '999px',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Productivity Tip Box */}
-          <div
-            style={{
-              background: 'rgba(59, 130, 246, 0.08)',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <Award size={18} color="#3B82F6" />
-              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Session Habit Tip
-              </div>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Logging why you pause or stop (lunch, tea, meetings, interruptions) helps you discover where your workday time actually goes and build deeper daily focus streaks!
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Manual Past Session Modal */}
@@ -1359,36 +1273,37 @@ export function WorkTracker() {
           <div
             style={{
               width: '100%',
-              maxWidth: '500px',
+              maxWidth: '460px',
               background: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+              borderRadius: '12px',
               boxShadow: 'var(--shadow-xl)',
               overflow: 'hidden',
             }}
           >
             <div
               style={{
-                padding: '18px 22px',
+                padding: '12px 18px',
                 borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
             >
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                 Log Past Work Session
               </h3>
               <button
                 type="button"
                 className="btn-icon"
                 onClick={() => setIsManualModalOpen(false)}
+                style={{ width: '26px', height: '26px' }}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveManualSession} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveManualSession} style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '5px' }}>
                   Date:
@@ -1535,36 +1450,37 @@ export function WorkTracker() {
           <div
             style={{
               width: '100%',
-              maxWidth: '480px',
+              maxWidth: '440px',
               background: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+              borderRadius: '12px',
               boxShadow: 'var(--shadow-xl)',
               overflow: 'hidden',
             }}
           >
             <div
               style={{
-                padding: '18px 22px',
+                padding: '12px 18px',
                 borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
             >
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                 Edit Work Session Details
               </h3>
               <button
                 type="button"
                 className="btn-icon"
                 onClick={() => setEditingSession(null)}
+                style={{ width: '26px', height: '26px' }}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditSession} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveEditSession} style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '5px' }}>
                   Stop Reason:

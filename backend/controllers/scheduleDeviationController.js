@@ -1,4 +1,4 @@
-const { ScheduleDeviation, Task } = require('../models');
+const { ScheduleDeviation, Task, Category } = require('../models');
 
 exports.getAllDeviations = async (req, res, next) => {
   try {
@@ -15,7 +15,12 @@ exports.getAllDeviations = async (req, res, next) => {
     const deviations = await ScheduleDeviation.findAll({
       where,
       order: [['startTime', 'ASC']],
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category', 'priority'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     res.json({
@@ -32,7 +37,12 @@ exports.getDeviationById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const deviation = await ScheduleDeviation.findByPk(id, {
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     if (!deviation) {

@@ -205,20 +205,20 @@ export function RedFlagPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* 1. Module Header */}
       <div
         className="card"
         style={{
-          padding: '24px 28px',
+          padding: '12px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
-          borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(20, 27, 45, 0.6) 100%)',
-          border: '1.5px solid rgba(239, 68, 68, 0.3)',
+          gap: '10px',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-color)',
         }}
       >
         <div>
@@ -227,28 +227,28 @@ export function RedFlagPage() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '5px',
                 background: '#EF4444',
                 color: '#FFFFFF',
-                fontSize: '0.74rem',
+                fontSize: '0.68rem',
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
             >
-              <Flag size={12} fill="#FFFFFF" />
+              <Flag size={11} fill="#FFFFFF" />
               Red Flag Diagnostic Hub
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Lag Detection · Missed Time Slots · Recovery Management
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+              Lag Detection · Recovery Management
             </span>
           </div>
-          <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px', margin: 0 }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px', margin: 0 }}>
             Red Flag & Schedule Lag Analytics
           </h1>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
             Detect inactive time slots, stalled categories, and lagging goals. Track recovery progress in real time.
           </p>
         </div>
@@ -259,39 +259,39 @@ export function RedFlagPage() {
             display: 'flex',
             background: 'var(--page-bg)',
             border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '4px',
-            gap: '4px',
+            borderRadius: 'var(--radius-md)',
+            padding: '2px',
+            gap: '2px',
           }}
         >
           <button
             type="button"
             className={`btn btn-sm ${activeTab === 'active' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('active')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
           >
-            <AlertTriangle size={15} color="#EF4444" />
-            Active Red Flags ({activeFlags.length})
+            <AlertTriangle size={13} color="#EF4444" />
+            Active ({activeFlags.length})
           </button>
 
           <button
             type="button"
             className={`btn btn-sm ${activeTab === 'recovered' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('recovered')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
           >
-            <CheckCircle2 size={15} color="#10B981" />
-            Recovered / Resolved ({recoveredFlags.length})
+            <CheckCircle2 size={13} color="#10B981" />
+            Recovered ({recoveredFlags.length})
           </button>
 
           <button
             type="button"
             className={`btn btn-sm ${activeTab === 'report' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('report')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
           >
-            <FileSpreadsheet size={15} />
-            Excel Lag Report
+            <FileSpreadsheet size={13} />
+            Lag Report
           </button>
         </div>
       </div>
@@ -300,54 +300,54 @@ export function RedFlagPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '14px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '10px',
         }}
       >
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #EF4444' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+        <div className="card" style={{ padding: '10px 14px', borderLeft: '3px solid #EF4444' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
             ACTIVE RED FLAGS
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: activeFlags.length > 0 ? '#EF4444' : '#10B981', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: activeFlags.length > 0 ? '#EF4444' : '#10B981', marginTop: '2px' }}>
             {activeFlags.length}
           </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            {criticalCount} critical · {highCount} high priority
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            {criticalCount} critical · {highCount} high
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #10B981' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+        <div className="card" style={{ padding: '10px 14px', borderLeft: '3px solid #10B981' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
             RECOVERED / RESOLVED
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>
             {recoveredFlags.length}
           </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             Safely cleared from lag status
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #3B82F6' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+        <div className="card" style={{ padding: '10px 14px', borderLeft: '3px solid #3B82F6' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
             SCHEDULE HEALTH SCORE
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: healthScore >= 80 ? '#10B981' : healthScore >= 50 ? '#F59E0B' : '#EF4444', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: healthScore >= 80 ? '#10B981' : healthScore >= 50 ? '#F59E0B' : '#EF4444', marginTop: '2px' }}>
             {healthScore}%
           </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             {healthScore >= 80 ? 'Robust momentum' : 'Lag interventions needed'}
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #8B5CF6' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+        <div className="card" style={{ padding: '10px 14px', borderLeft: '3px solid #8B5CF6' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
             DATE CONTEXT
           </div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: '6px' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>
             {isToday ? 'Today' : formatDate(activeDate, { month: 'short', day: 'numeric' })}
           </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             {formatDate(activeDate, { weekday: 'long' })}
           </div>
         </div>

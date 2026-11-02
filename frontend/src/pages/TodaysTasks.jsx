@@ -83,37 +83,37 @@ export function TodaysTasks() {
   const isToday = selectedDate === getTodayDateString();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* 1. Header with Day Controls, Google Calendar View Toggle & Add Button */}
       <div
         className="card"
         style={{
-          padding: '20px 26px',
+          padding: '12px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '10px',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
               {isToday ? "Today's Schedule & Tasks" : "Day's Schedule & Tasks"}
             </h1>
             {isToday && (
-              <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
+              <span className="badge badge-primary" style={{ fontSize: '0.68rem', padding: '2px 7px' }}>
                 Today
               </span>
             )}
           </div>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
             {formatDate(selectedDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
 
         {/* Date Switcher & View Mode Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Day Navigation Buttons */}
           <div
             style={{
@@ -128,28 +128,28 @@ export function TodaysTasks() {
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '32px', height: '32px' }}
+              style={{ width: '26px', height: '26px' }}
               onClick={() => changeDay(-1)}
               title="Previous Day"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} />
             </button>
             <button
               type="button"
               className="btn btn-ghost btn-sm"
               onClick={jumpToToday}
-              style={{ padding: '4px 10px', fontSize: '0.8rem', fontWeight: 700 }}
+              style={{ padding: '2px 8px', fontSize: '0.74rem', fontWeight: 700, height: '26px' }}
             >
               Today
             </button>
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '32px', height: '32px' }}
+              style={{ width: '26px', height: '26px' }}
               onClick={() => changeDay(1)}
               title="Next Day"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} />
             </button>
           </div>
 
@@ -157,7 +157,7 @@ export function TodaysTasks() {
           <input
             type="date"
             className="form-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '0.84rem' }}
+            style={{ width: 'auto', padding: '4px 8px', fontSize: '0.78rem', height: '30px' }}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
@@ -177,63 +177,68 @@ export function TodaysTasks() {
               type="button"
               className={`btn btn-sm ${viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost'}`}
               style={{
-                padding: '5px 12px',
-                fontSize: '0.78rem',
+                padding: '3px 9px',
+                fontSize: '0.74rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
+                height: '26px',
                 fontWeight: viewMode === 'calendar' ? 700 : 600,
               }}
               onClick={() => setViewMode('calendar')}
               title="Google Calendar Day Grid View"
             >
-              <CalendarIcon size={14} />
+              <CalendarIcon size={13} />
               <span>Day Calendar</span>
             </button>
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-ghost'}`}
               style={{
-                padding: '5px 12px',
-                fontSize: '0.78rem',
+                padding: '3px 9px',
+                fontSize: '0.74rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
+                height: '26px',
                 fontWeight: viewMode === 'list' ? 700 : 600,
               }}
               onClick={() => setViewMode('list')}
               title="Grouped List View"
             >
-              <List size={14} />
+              <List size={13} />
               <span>List View</span>
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-sm"
               onClick={() => setIsRescheduleOpen(true)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
+                height: '30px',
+                padding: '0 10px',
+                fontSize: '0.78rem',
                 color: overdueCount > 0 ? '#F59E0B' : 'var(--text-primary)',
                 borderColor: overdueCount > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)',
                 background: overdueCount > 0 ? 'rgba(245, 158, 11, 0.08)' : 'var(--card-bg)',
               }}
               title="Auto-balance overdue tasks from previous days into open time slots"
             >
-              <Wand2 size={16} color={overdueCount > 0 ? '#F59E0B' : 'var(--primary-color)'} />
+              <Wand2 size={14} color={overdueCount > 0 ? '#F59E0B' : 'var(--primary-color)'} />
               <span>Smart Reschedule</span>
               {overdueCount > 0 && (
                 <span
                   style={{
-                    padding: '1px 6px',
+                    padding: '1px 5px',
                     borderRadius: '999px',
                     background: '#F59E0B',
                     color: '#FFFFFF',
-                    fontSize: '0.68rem',
+                    fontSize: '0.65rem',
                     fontWeight: 800,
                   }}
                 >
@@ -243,22 +248,22 @@ export function TodaysTasks() {
             </button>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-sm"
               onClick={() => openModal('bulk-import', { type: 'tasks' })}
               id="btn-bulk-import-tasks"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', padding: '0 10px', fontSize: '0.78rem' }}
             >
-              <UploadCloud size={16} />
+              <UploadCloud size={14} />
               <span>Bulk Import</span>
             </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={() => openModal('task', { date: selectedDate })}
               id="btn-add-today-task"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', padding: '0 12px', fontSize: '0.78rem' }}
             >
-              <Plus size={16} />
+              <Plus size={14} />
               <span>Add Task</span>
             </button>
           </div>
@@ -269,99 +274,99 @@ export function TodaysTasks() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '10px',
         }}
       >
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
               background: 'rgba(37, 99, 235, 0.12)',
               color: '#3B82F6',
               border: '1px solid rgba(59, 130, 246, 0.28)',
-              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <CalendarCheck2 size={22} strokeWidth={2.2} />
+            <CalendarCheck2 size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Tasks</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{dayStats.total}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Tasks</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1.2 }}>{dayStats.total}</div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
               background: 'rgba(16, 185, 129, 0.12)',
               color: '#10B981',
               border: '1px solid rgba(16, 185, 129, 0.28)',
-              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <CircleCheckBig size={22} strokeWidth={2.3} />
+            <CircleCheckBig size={18} strokeWidth={2.3} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Completed</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>{dayStats.completed}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Completed</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1.2 }}>{dayStats.completed}</div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
               background: 'rgba(245, 158, 11, 0.12)',
               color: '#F59E0B',
               border: '1px solid rgba(245, 158, 11, 0.28)',
-              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <Timer size={22} strokeWidth={2.2} />
+            <Timer size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--warning)' }}>{dayStats.pending}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--warning)', lineHeight: 1.2 }}>{dayStats.pending}</div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
               background: 'rgba(239, 68, 68, 0.12)',
               color: '#EF4444',
               border: '1px solid rgba(239, 68, 68, 0.28)',
-              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <CircleAlert size={22} strokeWidth={2.2} />
+            <CircleAlert size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Overdue</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>{dayStats.overdue}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Overdue</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--danger)', lineHeight: 1.2 }}>{dayStats.overdue}</div>
           </div>
         </div>
       </div>
@@ -370,10 +375,10 @@ export function TodaysTasks() {
       <div
         className="card"
         style={{
-          padding: '16px 20px',
+          padding: '10px 16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '14px',
+          gap: '10px',
           overflow: 'visible',
           position: 'relative',
           zIndex: 20,

@@ -72,7 +72,7 @@ export default function RequestsPage() {
   };
 
   return (
-    <div className="page-container" style={{ padding: '24px 28px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
       {/* Header */}
       <div
         style={{
@@ -132,30 +132,40 @@ export default function RequestsPage() {
       </div>
 
       {/* KPI Cards */}
+      {/* KPI Cards (All 5 in One Line & Compact Design) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
+          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          gap: '10px',
+          marginBottom: '18px',
         }}
       >
         {/* Total */}
         <div
           onClick={() => setActiveTab('all')}
+          className="card"
           style={{
-            background: 'var(--bg-secondary, #1a2234)',
-            border: activeTab === 'all' ? '1.5px solid var(--accent-primary, #1769FF)' : '1px solid var(--border-color, rgba(255,255,255,0.08))',
-            borderRadius: '14px',
-            padding: '16px 18px',
+            background: 'var(--card-bg)',
+            border: activeTab === 'all' ? '1.5px solid var(--accent-primary, #1769FF)' : '1px solid var(--border-color)',
+            borderTop: activeTab === 'all' ? '3px solid var(--accent-primary, #1769FF)' : '3px solid transparent',
+            borderRadius: '12px',
+            padding: '10px 14px',
             cursor: 'pointer',
-            transition: 'border 0.2s ease',
+            transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'all' ? '0 4px 12px rgba(23, 105, 255, 0.12)' : 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-            Total Requests (All-Time)
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Total Requests
+            </span>
+            <FileText size={13} color="var(--accent-primary, #1769FF)" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px', lineHeight: 1.15 }}>
             {allRequests.length}
           </div>
         </div>
@@ -163,18 +173,28 @@ export default function RequestsPage() {
         {/* Pending */}
         <div
           onClick={() => setActiveTab('pending')}
+          className="card"
           style={{
-            background: 'var(--bg-secondary, #1a2234)',
-            border: activeTab === 'pending' ? '1.5px solid #F59E0B' : '1px solid var(--border-color, rgba(255,255,255,0.08))',
-            borderRadius: '14px',
-            padding: '16px 18px',
+            background: 'var(--card-bg)',
+            border: activeTab === 'pending' ? '1.5px solid #F59E0B' : '1px solid var(--border-color)',
+            borderTop: activeTab === 'pending' ? '3px solid #F59E0B' : '3px solid transparent',
+            borderRadius: '12px',
+            padding: '10px 14px',
             cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'pending' ? '0 4px 12px rgba(245, 158, 11, 0.12)' : 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase' }}>
-            Pending Action
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Pending Action
+            </span>
+            <Clock size={13} color="#F59E0B" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#F59E0B', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#F59E0B', marginTop: '2px', lineHeight: 1.15 }}>
             {pendingCount}
           </div>
         </div>
@@ -182,18 +202,28 @@ export default function RequestsPage() {
         {/* Completed */}
         <div
           onClick={() => setActiveTab('completed')}
+          className="card"
           style={{
-            background: 'var(--bg-secondary, #1a2234)',
-            border: activeTab === 'completed' ? '1.5px solid #10B981' : '1px solid var(--border-color, rgba(255,255,255,0.08))',
-            borderRadius: '14px',
-            padding: '16px 18px',
+            background: 'var(--card-bg)',
+            border: activeTab === 'completed' ? '1.5px solid #10B981' : '1px solid var(--border-color)',
+            borderTop: activeTab === 'completed' ? '3px solid #10B981' : '3px solid transparent',
+            borderRadius: '12px',
+            padding: '10px 14px',
             cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'completed' ? '0 4px 12px rgba(16, 185, 129, 0.12)' : 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10B981', textTransform: 'uppercase' }}>
-            Completed
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Completed
+            </span>
+            <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#10B981', marginTop: '2px', lineHeight: 1.15 }}>
             {completedCount}
           </div>
         </div>
@@ -201,18 +231,28 @@ export default function RequestsPage() {
         {/* Rescheduled */}
         <div
           onClick={() => setActiveTab('rescheduled')}
+          className="card"
           style={{
-            background: 'var(--bg-secondary, #1a2234)',
-            border: activeTab === 'rescheduled' ? '1.5px solid #3B82F6' : '1px solid var(--border-color, rgba(255,255,255,0.08))',
-            borderRadius: '14px',
-            padding: '16px 18px',
+            background: 'var(--card-bg)',
+            border: activeTab === 'rescheduled' ? '1.5px solid #3B82F6' : '1px solid var(--border-color)',
+            borderTop: activeTab === 'rescheduled' ? '3px solid #3B82F6' : '3px solid transparent',
+            borderRadius: '12px',
+            padding: '10px 14px',
             cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'rescheduled' ? '0 4px 12px rgba(59, 130, 246, 0.12)' : 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase' }}>
-            Rescheduled
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Rescheduled
+            </span>
+            <RotateCcw size={13} color="#3B82F6" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#3B82F6', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#3B82F6', marginTop: '2px', lineHeight: 1.15 }}>
             {rescheduledCount}
           </div>
         </div>
@@ -220,18 +260,28 @@ export default function RequestsPage() {
         {/* Cancelled */}
         <div
           onClick={() => setActiveTab('cancelled')}
+          className="card"
           style={{
-            background: 'var(--bg-secondary, #1a2234)',
-            border: activeTab === 'cancelled' ? '1.5px solid #EF4444' : '1px solid var(--border-color, rgba(255,255,255,0.08))',
-            borderRadius: '14px',
-            padding: '16px 18px',
+            background: 'var(--card-bg)',
+            border: activeTab === 'cancelled' ? '1.5px solid #EF4444' : '1px solid var(--border-color)',
+            borderTop: activeTab === 'cancelled' ? '3px solid #EF4444' : '3px solid transparent',
+            borderRadius: '12px',
+            padding: '10px 14px',
             cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'cancelled' ? '0 4px 12px rgba(239, 68, 68, 0.12)' : 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase' }}>
-            Cancelled (With Remarks)
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Cancelled
+            </span>
+            <AlertCircle size={13} color="#EF4444" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#EF4444', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#EF4444', marginTop: '2px', lineHeight: 1.15 }}>
             {cancelledCount}
           </div>
         </div>
@@ -239,9 +289,10 @@ export default function RequestsPage() {
 
       {/* Filter and Search Bar */}
       <div
+        className="card"
         style={{
-          background: 'var(--bg-secondary, #1a2234)',
-          border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-color)',
           borderRadius: '14px',
           padding: '14px 18px',
           marginBottom: '20px',
@@ -250,6 +301,7 @@ export default function RequestsPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '14px',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
         {/* Status Tabs */}
@@ -268,7 +320,7 @@ export default function RequestsPage() {
                 padding: '7px 14px',
                 borderRadius: '8px',
                 border: 'none',
-                background: activeTab === tab.id ? 'var(--accent-primary, #1769FF)' : 'rgba(255,255,255,0.05)',
+                background: activeTab === tab.id ? 'var(--accent-primary, #1769FF)' : 'var(--page-bg)',
                 color: activeTab === tab.id ? '#FFFFFF' : 'var(--text-secondary)',
                 fontSize: '0.82rem',
                 fontWeight: 700,
@@ -292,8 +344,8 @@ export default function RequestsPage() {
               width: '100%',
               padding: '8px 12px 8px 34px',
               borderRadius: '8px',
-              background: 'var(--bg-primary, #0f172a)',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
+              background: 'var(--page-bg)',
+              border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
               fontSize: '0.84rem',
               outline: 'none',
@@ -307,12 +359,14 @@ export default function RequestsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {filteredRequests.length === 0 ? (
           <div
+            className="card"
             style={{
-              background: 'var(--bg-secondary, #1a2234)',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '14px',
               padding: '60px 20px',
               textAlign: 'center',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <CheckCircle2 size={48} color="#10B981" style={{ margin: '0 auto 16px auto' }} />
@@ -354,16 +408,18 @@ export default function RequestsPage() {
             return (
               <div
                 key={req.id}
+                className="card"
                 style={{
-                  background: 'var(--bg-secondary, #1a2234)',
+                  background: 'var(--card-bg)',
                   border: isPending
                     ? '1.5px solid rgba(245, 158, 11, 0.4)'
-                    : '1px solid var(--border-color, rgba(255,255,255,0.08))',
+                    : '1px solid var(--border-color)',
                   borderRadius: '14px',
                   padding: '20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '14px',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 {/* Top Row: Title, Date, Status */}
@@ -497,8 +553,8 @@ export default function RequestsPage() {
                 {/* Mandatory Reason Box */}
                 <div
                   style={{
-                    background: 'var(--bg-primary, #0f172a)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.06))',
+                    background: 'var(--page-bg)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '10px',
                     padding: '12px 16px',
                   }}

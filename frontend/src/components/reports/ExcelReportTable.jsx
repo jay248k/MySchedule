@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -11,6 +11,12 @@ import {
   ArrowUpDown,
   RefreshCw,
   Sparkles,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Move,
+  RotateCcw,
 } from 'lucide-react';
 import { exportToExcel, exportToWord, exportToPdf } from '../../utils/reportExporter';
 
@@ -37,6 +43,69 @@ export function ExcelReportTable({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState(defaultSortKey || (columns[0]?.key || ''));
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Scrollable container ref & mouse pan state
+  const tableContainerRef = useRef(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOrigin, setPanOrigin] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return; // Only primary mouse button
+    const interactive = e.target.closest('button, input, select, textarea, a, [role="button"]');
+    if (interactive) return;
+
+    if (!tableContainerRef.current) return;
+    setIsPanning(true);
+    setPanOrigin({
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: tableContainerRef.current.scrollLeft,
+      scrollTop: tableContainerRef.current.scrollTop,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isPanning || !tableContainerRef.current) return;
+    e.preventDefault();
+    const deltaX = e.clientX - panOrigin.x;
+    const deltaY = e.clientY - panOrigin.y;
+    tableContainerRef.current.scrollLeft = panOrigin.scrollLeft - deltaX;
+    tableContainerRef.current.scrollTop = panOrigin.scrollTop - deltaY;
+  };
+
+  const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+    }
+  };
+
+  // Window-level mouseup listener to catch releases outside the container
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsPanning(false);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  // Arrow scroll functions (horizontal and vertical)
+  const scrollTable = (dx, dy) => {
+    if (!tableContainerRef.current) return;
+    tableContainerRef.current.scrollBy({
+      left: dx,
+      top: dy,
+      behavior: 'smooth',
+    });
+  };
+
+  const resetTableScroll = () => {
+    if (!tableContainerRef.current) return;
+    tableContainerRef.current.scrollTo({
+      left: 0,
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   // Sorting Handler
   const handleSort = (key) => {
@@ -284,7 +353,7 @@ export function ExcelReportTable({
         </div>
       </div>
 
-      {/* 3. Excel Spreadsheet Data Table */}
+      {/* 3. Excel Spreadsheet Data Table with Arrow & Drag-to-Pan Navigation */}
       <div
         className="card"
         style={{
@@ -296,7 +365,104 @@ export function ExcelReportTable({
           boxShadow: 'var(--shadow-md)',
         }}
       >
-        <div style={{ overflowX: 'auto', maxHeight: '680px' }}>
+        {/* Navigation Toolbar: Pan Tip + Arrow Navigation Controls */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
+            padding: '8px 16px',
+            background: 'var(--page-bg)',
+            borderBottom: '1px solid var(--border-color)',
+            fontSize: '0.78rem',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Move size={14} color="var(--primary-color)" />
+            <span>
+              <strong>Pan & Scroll:</strong> Hold left-click & drag anywhere to scroll, or use the arrow controls:
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Left */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => scrollTable(-240, 0)}
+              title="Scroll Left"
+              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+            >
+              <ArrowLeft size={13} />
+              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Left</span>
+            </button>
+
+            {/* Right */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => scrollTable(240, 0)}
+              title="Scroll Right"
+              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+            >
+              <span style={{ fontSize: '0.72rem', marginRight: '4px' }}>Right</span>
+              <ArrowRight size={13} />
+            </button>
+
+            {/* Up */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => scrollTable(0, -180)}
+              title="Scroll Up"
+              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+            >
+              <ArrowUp size={13} />
+              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Up</span>
+            </button>
+
+            {/* Down */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => scrollTable(0, 180)}
+              title="Scroll Down"
+              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+            >
+              <ArrowDown size={13} />
+              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Down</span>
+            </button>
+
+            {/* Reset */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={resetTableScroll}
+              title="Reset to Top-Left"
+              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+            >
+              <RotateCcw size={12} />
+              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={tableContainerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          style={{
+            overflowX: 'auto',
+            overflowY: 'auto',
+            maxHeight: '680px',
+            cursor: isPanning ? 'grabbing' : 'grab',
+            userSelect: isPanning ? 'none' : 'auto',
+          }}
+        >
           <table
             style={{
               width: '100%',

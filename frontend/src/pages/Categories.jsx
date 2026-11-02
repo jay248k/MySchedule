@@ -35,6 +35,47 @@ import { useApp } from '../context/AppContext';
 import { ProgressBar } from '../components/common/ProgressRing';
 import { CustomSelect } from '../components/common/CustomSelect';
 
+function CategoryBarTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          boxShadow: 'var(--shadow-lg)',
+          fontSize: '0.8rem',
+          minWidth: '160px',
+          pointerEvents: 'none',
+        }}
+      >
+        <div style={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+          {label}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {payload.map((entry, index) => {
+            const isCompleted = entry.dataKey === 'completed';
+            const color = isCompleted ? '#10B981' : '#F59E0B';
+            return (
+              <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                  {entry.name}:
+                </span>
+                <strong style={{ color: color, fontWeight: 700 }}>
+                  {entry.value}
+                </strong>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function Categories() {
   const { categories, tasks, openModal, deleteCategory } = useApp();
   const [viewMode, setViewMode] = useState('both'); // 'both', 'charts', 'cards'
@@ -109,29 +150,29 @@ export function Categories() {
   const totalTasksCount = tasks.length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 1. Page Header with View Switcher */}
       <div
         className="card"
         style={{
-          padding: '22px 28px',
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
         }}
       >
         <div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Category Management & Analytics
           </h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
             Organize, color-code, and track trajectory trends across all life and work domains.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* View Mode Toggle */}
           <div
             style={{
@@ -139,55 +180,55 @@ export function Categories() {
               background: 'var(--page-bg)',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-md)',
-              padding: '3px',
+              padding: '2px',
               gap: '2px',
             }}
           >
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'both' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
+              style={{ fontSize: '0.78rem', padding: '4px 10px', height: '28px' }}
               onClick={() => setViewMode('both')}
             >
-              <Layers size={14} /> Both Views
+              <Layers size={13} /> Both Views
             </button>
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'charts' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
+              style={{ fontSize: '0.78rem', padding: '4px 10px', height: '28px' }}
               onClick={() => setViewMode('charts')}
             >
-              <BarChart2 size={14} /> Chart View
+              <BarChart2 size={13} /> Chart View
             </button>
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'cards' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
+              style={{ fontSize: '0.78rem', padding: '4px 10px', height: '28px' }}
               onClick={() => setViewMode('cards')}
             >
-              <LayoutGrid size={14} /> Cards View
+              <LayoutGrid size={13} /> Cards View
             </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-sm"
               onClick={() => openModal('bulk-import', { type: 'categories' })}
               id="btn-bulk-import-categories"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', fontSize: '0.78rem', padding: '0 10px' }}
             >
-              <UploadCloud size={16} />
+              <UploadCloud size={14} />
               <span>Bulk Import</span>
             </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={() => openModal('category')}
               id="btn-add-category"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', fontSize: '0.78rem', padding: '0 12px' }}
             >
-              <Plus size={16} />
+              <Plus size={14} />
               <span>Create Category</span>
             </button>
           </div>
@@ -198,16 +239,16 @@ export function Categories() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '12px',
         }}
       >
         {/* Total Categories */}
-        <div className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '46px',
-              height: '46px',
+              width: '38px',
+              height: '38px',
               borderRadius: 'var(--radius-md)',
               background: 'var(--primary-light)',
               color: 'var(--primary-color)',
@@ -217,20 +258,20 @@ export function Categories() {
               flexShrink: 0,
             }}
           >
-            <Tag size={22} />
+            <Tag size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Categories</div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>{categories.length}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Categories</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{categories.length}</div>
           </div>
         </div>
 
         {/* Total Categorized Tasks */}
-        <div className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '46px',
-              height: '46px',
+              width: '38px',
+              height: '38px',
               borderRadius: 'var(--radius-md)',
               background: 'rgba(16, 185, 129, 0.12)',
               color: 'var(--success)',
@@ -240,20 +281,20 @@ export function Categories() {
               flexShrink: 0,
             }}
           >
-            <ListTodo size={22} />
+            <ListTodo size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Logged Tasks</div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)' }}>{totalTasksCount}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Logged Tasks</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1.2 }}>{totalTasksCount}</div>
           </div>
         </div>
 
         {/* Most Active Category */}
-        <div className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '46px',
-              height: '46px',
+              width: '38px',
+              height: '38px',
               borderRadius: 'var(--radius-md)',
               background: 'rgba(139, 92, 246, 0.12)',
               color: '#8B5CF6',
@@ -263,22 +304,22 @@ export function Categories() {
               flexShrink: 0,
             }}
           >
-            <Award size={22} />
+            <Award size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Most Active Domain</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Most Active Domain</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
               {topVolumeCat.name} ({topVolumeCat.total})
             </div>
           </div>
         </div>
 
         {/* Highest Completion Rate */}
-        <div className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '46px',
-              height: '46px',
+              width: '38px',
+              height: '38px',
               borderRadius: 'var(--radius-md)',
               background: 'rgba(245, 158, 11, 0.12)',
               color: '#F59E0B',
@@ -288,11 +329,11 @@ export function Categories() {
               flexShrink: 0,
             }}
           >
-            <Sparkles size={22} />
+            <Sparkles size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Top Completion Rate</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F59E0B' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Top Completion Rate</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#F59E0B', lineHeight: 1.2 }}>
               {bestRateCat.name} ({bestRateCat.rate}%)
             </div>
           </div>
@@ -306,35 +347,54 @@ export function Categories() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '20px' }}>
             {/* Chart 1: Weekly Trajectory Trend (Exactly matching user requested design) */}
             <div style={{ gridColumn: 'span 7' }} className="dash-col-left">
-              <div className="card" style={{ padding: '24px' }}>
-                <div className="card-header-flex">
-                  <div>
-                    <h3 className="card-title">
-                      <TrendingUp size={20} color="var(--primary-color)" />
-                      Weekly Trajectory Trend
-                    </h3>
-                    <span className="card-subtitle">
-                      Daily completed vs pending tasks{' '}
-                      {selectedChartCat !== 'all'
-                        ? `for ${categories.find((c) => c.id === selectedChartCat)?.name}`
-                        : 'across all categories'}
-                    </span>
+              <div className="card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '10px',
+                        background: 'rgba(23, 105, 255, 0.12)',
+                        color: 'var(--primary-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid rgba(23, 105, 255, 0.25)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <TrendingUp size={18} strokeWidth={2.4} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        Weekly Trajectory Trend
+                      </h3>
+                      <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Daily completed vs pending tasks{' '}
+                        {selectedChartCat !== 'all'
+                          ? `for ${categories.find((c) => c.id === selectedChartCat)?.name || 'Category'}`
+                          : 'across all categories'}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Themed Custom Filter selector */}
-                  <CustomSelect
-                    value={selectedChartCat}
-                    onChange={(val) => setSelectedChartCat(val)}
-                    size="sm"
-                    options={[
-                      { value: 'all', label: 'All Categories' },
-                      ...categories.map((c) => ({
-                        value: c.id,
-                        label: c.name,
-                        color: c.color,
-                      })),
-                    ]}
-                  />
+                  <div style={{ width: '170px', flexShrink: 0 }}>
+                    <CustomSelect
+                      value={selectedChartCat}
+                      onChange={(val) => setSelectedChartCat(val)}
+                      size="sm"
+                      options={[
+                        { value: 'all', label: 'All Categories' },
+                        ...categories.map((c) => ({
+                          value: c.id,
+                          label: c.name,
+                          color: c.color,
+                        })),
+                      ]}
+                    />
+                  </div>
                 </div>
 
                 <div style={{ width: '100%', height: 270, marginTop: '16px' }}>
@@ -386,14 +446,33 @@ export function Categories() {
 
             {/* Chart 2: Category Workload Share (Donut Chart) */}
             <div style={{ gridColumn: 'span 5' }} className="dash-col-right">
-              <div className="card" style={{ padding: '24px' }}>
-                <div className="card-header-flex">
-                  <div>
-                    <h3 className="card-title">
-                      <PieIcon size={20} color="var(--primary-color)" />
-                      Workload Distribution
-                    </h3>
-                    <span className="card-subtitle">Share of total tasks by category</span>
+              <div className="card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '10px',
+                        background: 'rgba(139, 92, 246, 0.12)',
+                        color: '#8B5CF6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid rgba(139, 92, 246, 0.25)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <PieIcon size={18} strokeWidth={2.4} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        Workload Distribution
+                      </h3>
+                      <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Share of total tasks by category
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -472,15 +551,7 @@ export function Categories() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.15)" />
                   <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
                   <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'var(--card-bg)',
-                      borderColor: 'var(--border-color)',
-                      borderRadius: '8px',
-                      boxShadow: 'var(--shadow-md)',
-                      fontSize: '0.82rem',
-                    }}
-                  />
+                  <Tooltip content={<CategoryBarTooltip />} cursor={{ fill: 'rgba(23, 105, 255, 0.06)' }} />
                   <Legend
                     wrapperStyle={{ paddingTop: '12px' }}
                     content={({ payload }) => (
@@ -539,10 +610,10 @@ export function Categories() {
                   key={cat.id}
                   className="card"
                   style={{
-                    padding: '22px',
+                    padding: '14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '16px',
+                    gap: '12px',
                     position: 'relative',
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -561,41 +632,42 @@ export function Categories() {
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: '4px',
+                      height: '3px',
                       backgroundColor: cat.color,
                     }}
                   />
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div
                         style={{
-                          width: '42px',
-                          height: '42px',
+                          width: '34px',
+                          height: '34px',
                           borderRadius: 'var(--radius-md)',
                           backgroundColor: `${cat.color}18`,
                           color: cat.color,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          flexShrink: 0,
                         }}
                       >
-                        <Tag size={20} />
+                        <Tag size={16} />
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                           {cat.name}
                         </h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
                           <span
                             style={{
-                              width: '8px',
-                              height: '8px',
+                              width: '7px',
+                              height: '7px',
                               borderRadius: '50%',
                               backgroundColor: cat.color,
                             }}
                           />
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                             {cat.color}
                           </span>
                         </div>
@@ -603,32 +675,32 @@ export function Categories() {
                     </div>
 
                     {/* Edit & Delete Action Buttons */}
-                    <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '4px' }} onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         className="btn-icon"
-                        style={{ width: '32px', height: '32px' }}
+                        style={{ width: '28px', height: '28px' }}
                         onClick={() => openModal('category', cat)}
                         title="Edit Category"
                       >
-                        <Edit2 size={15} />
+                        <Edit2 size={13} />
                       </button>
                       {cat.id !== 'cat-other' && (
                         <button
                           type="button"
                           className="btn-icon"
-                          style={{ width: '32px', height: '32px', color: 'var(--danger)' }}
+                          style={{ width: '28px', height: '28px', color: 'var(--danger)' }}
                           onClick={() => deleteCategory(cat.id)}
                           title="Delete Category"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={13} />
                         </button>
                       )}
                     </div>
                   </div>
 
                   {cat.description && (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.35', margin: 0 }}>
                       {cat.description}
                     </p>
                   )}
@@ -637,34 +709,34 @@ export function Categories() {
                   <div
                     style={{
                       background: 'var(--page-bg)',
-                      padding: '14px 16px',
+                      padding: '10px 12px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-color)',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px',
+                      gap: '8px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
                       <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <ListTodo size={14} /> Total Tasks
+                        <ListTodo size={13} /> Total Tasks
                       </span>
                       <strong>{totalCount}</strong>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
                       <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle2 size={14} color="var(--success)" /> Completed
+                        <CheckCircle2 size={13} color="var(--success)" /> Completed
                       </span>
                       <strong style={{ color: 'var(--success)' }}>{completedCount}</strong>
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Completion Rate</span>
                         <strong>{percentage}%</strong>
                       </div>
-                      <ProgressBar progress={percentage} color={cat.color} />
+                      <ProgressBar progress={percentage} color={cat.color} height={6} />
                     </div>
                   </div>
                 </div>

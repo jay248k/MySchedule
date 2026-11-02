@@ -88,14 +88,14 @@ function CustomTrendTooltip({ active, payload, label }) {
     return (
       <div
         style={{
-          backgroundColor: '#0F172A',
-          background: '#0F172A',
-          border: '1.5px solid #334155',
+          backgroundColor: 'var(--card-bg)',
+          background: 'var(--card-bg)',
+          border: '1.5px solid var(--border-color)',
           borderRadius: '10px',
-          padding: '12px 16px',
-          color: '#FFFFFF',
+          padding: '10px 14px',
+          color: 'var(--text-primary)',
           fontSize: '0.82rem',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15)',
+          boxShadow: 'var(--shadow-lg)',
           minWidth: '185px',
           maxWidth: '280px',
           zIndex: 999999,
@@ -108,9 +108,9 @@ function CustomTrendTooltip({ active, payload, label }) {
           style={{
             fontWeight: 800,
             marginBottom: '8px',
-            color: '#CBD5E1',
+            color: 'var(--text-primary)',
             fontSize: '0.84rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+            borderBottom: '1px solid var(--border-color)',
             paddingBottom: '5px',
           }}
         >
@@ -121,11 +121,11 @@ function CustomTrendTooltip({ active, payload, label }) {
             <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
-                <span style={{ color: '#E2E8F0', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {entry.name}:
                 </span>
               </div>
-              <strong style={{ color: entry.color || '#38BDF8', fontSize: '0.84rem', flexShrink: 0 }}>
+              <strong style={{ color: entry.color || 'var(--primary-color)', fontSize: '0.84rem', flexShrink: 0 }}>
                 {entry.value || 0}
               </strong>
             </div>
@@ -207,6 +207,25 @@ export function Dashboard() {
     if (selectedTrendCategory === 'all') return null;
     return categories.find((c) => String(c.id) === String(selectedTrendCategory) || c.name === selectedTrendCategory);
   }, [categories, selectedTrendCategory]);
+
+  // Aggregate Total and Missed/Pending tasks per category over the selected trend window
+  const categoryTrendTotals = useMemo(() => {
+    const result = {};
+    activeCategories.forEach((cat) => {
+      let catTotal = 0;
+      let catCompleted = 0;
+      trendData.forEach((dp) => {
+        catTotal += dp[`cat_${cat.id}_total`] || 0;
+        catCompleted += dp[`cat_${cat.id}`] || 0;
+      });
+      result[cat.id] = {
+        total: catTotal,
+        completed: catCompleted,
+        missed: Math.max(0, catTotal - catCompleted),
+      };
+    });
+    return result;
+  }, [activeCategories, trendData]);
 
   const categoryData = useMemo(() => {
     const dist = getCategoryDistribution(tasks, categories);
@@ -525,21 +544,21 @@ export function Dashboard() {
           className="card"
           style={{
             gridColumn: 'span 8',
-            padding: '18px 22px',
+            padding: '12px 18px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
-            borderRadius: '18px',
+            gap: '10px',
+            borderRadius: '16px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div
                   style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '10px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
                     background: 'rgba(23, 105, 255, 0.14)',
                     color: 'var(--primary-color)',
                     display: 'flex',
@@ -548,18 +567,20 @@ export function Dashboard() {
                     border: '1px solid rgba(23, 105, 255, 0.28)',
                   }}
                 >
-                  <TrendingUp size={18} strokeWidth={2.4} />
+                  <TrendingUp size={17} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h2 className="card-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                  <h2 className="card-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
                     {trendRange === 'week' ? 'Weekly' : trendRange === 'month' ? 'Monthly' : 'Yearly'} Productivity Trend
                   </h2>
-                  <span className="card-subtitle" style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                  <span className="card-subtitle" style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                     {selectedTrendCategory === 'all'
-                      ? `Completed vs scheduled tasks across all categories over the last ${trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                      }`
-                      : `Showing tasks for "${currentCategory?.name || 'Category'}" over the last ${trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                      }`}
+                      ? `Total scheduled vs pending/missed tasks over the last ${
+                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                        }`
+                      : `Total and missed tasks for "${currentCategory?.name || 'Category'}" over the last ${
+                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
+                        }`}
                   </span>
                 </div>
               </div>
@@ -572,7 +593,7 @@ export function Dashboard() {
                   value={selectedTrendCategory}
                   onChange={(val) => setSelectedTrendCategory(val)}
                   options={[
-                    { value: 'all', label: 'All Categories (Multi-line)', color: '#38BDF8' },
+                    { value: 'all', label: 'All Tasks (Total & Pending)', color: '#38BDF8' },
                     ...allUniqueCategories.map((cat) => ({
                       value: cat.id,
                       label: cat.name,
@@ -582,7 +603,7 @@ export function Dashboard() {
                   placeholder="Select Category"
                   searchPlaceholder="Filter category..."
                   showSearch={allUniqueCategories.length > 4}
-                  style={{ minWidth: '180px' }}
+                  style={{ minWidth: '185px' }}
                 />
               </div>
 
@@ -591,10 +612,10 @@ export function Dashboard() {
                 style={{
                   display: 'inline-flex',
                   background: 'var(--page-bg)',
-                  padding: '3px',
-                  borderRadius: '10px',
+                  padding: '2px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  gap: '3px',
+                  gap: '2px',
                 }}
               >
                 {[
@@ -612,9 +633,9 @@ export function Dashboard() {
                         border: 'none',
                         background: isActive ? 'var(--primary-color)' : 'transparent',
                         color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
-                        padding: '4px 12px',
-                        borderRadius: '7px',
-                        fontSize: '0.76rem',
+                        padding: '3px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.74rem',
                         fontWeight: isActive ? 700 : 600,
                         cursor: 'pointer',
                         transition: 'background 0.15s ease',
@@ -628,143 +649,297 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Area Chart with Professional High-End Aesthetics */}
-          <div style={{ width: '100%', height: '260px', marginTop: '4px', position: 'relative' }}>
+          {/* Productivity Trend Chart: Total Tasks, Pending / Missed Tasks, and Completed Tasks */}
+          <div style={{ width: '100%', height: '190px', marginTop: '2px', position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={trendData} margin={{ top: 12, right: 12, left: -20, bottom: 4 }}>
                 <defs>
+                  <linearGradient id="totalTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="pendingTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
+                  </linearGradient>
                   <linearGradient id="completedGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={currentCategory?.color || '#10B981'} stopOpacity={0.4} />
-                    <stop offset="95%" stopColor={currentCategory?.color || '#10B981'} stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                   </linearGradient>
-                  <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+                  <linearGradient id="catTotalGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={currentCategory?.color || '#38BDF8'} stopOpacity={0.28} />
+                    <stop offset="95%" stopColor={currentCategory?.color || '#38BDF8'} stopOpacity={0.0} />
                   </linearGradient>
-                  {/* Category gradients for All Categories multi-line view */}
-                  {activeCategories.map((cat) => (
-                    <linearGradient key={`grad-${cat.id}`} id={`grad_${cat.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={cat.color || '#3B82F6'} stopOpacity={0.35} />
-                      <stop offset="95%" stopColor={cat.color || '#3B82F6'} stopOpacity={0.0} />
-                    </linearGradient>
-                  ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" vertical={false} />
-                <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} dy={6} />
+                <XAxis
+                  dataKey="day"
+                  stroke="#94A3B8"
+                  fontSize={11}
+                  tickLine={false}
+                  dy={6}
+                  interval={trendRange === 'month' ? 4 : trendRange === 'year' ? 0 : 0}
+                />
                 <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} allowDecimals={false} />
                 <Tooltip
                   wrapperStyle={{ zIndex: 999999, pointerEvents: 'none' }}
                   content={<CustomTrendTooltip />}
                 />
-                {selectedTrendCategory === 'all' && activeCategories.length > 0 && (
-                  <Legend
-                    wrapperStyle={{ fontSize: '0.74rem', paddingTop: '8px', zIndex: 1, position: 'relative' }}
-                    iconType="circle"
-                  />
-                )}
 
                 {selectedTrendCategory === 'all' ? (
-                  activeCategories.length > 0 ? (
-                    <>
-                      {activeCategories.map((cat) => (
-                        <Area
-                          key={cat.id}
-                          type="monotone"
-                          dataKey={`cat_${cat.id}`}
-                          name={cat.name}
-                          stroke={cat.color || '#3B82F6'}
-                          strokeWidth={2.5}
-                          fillOpacity={1}
-                          fill={`url(#grad_${cat.id})`}
-                          activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
-                        />
-                      ))}
-                      <Area
-                        type="monotone"
-                        dataKey="total"
-                        name="Total Scheduled Tasks"
-                        stroke="#94A3B8"
-                        strokeWidth={1.4}
-                        strokeDasharray="4 4"
-                        fillOpacity={1}
-                        fill="url(#totalGrad)"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <Area
-                        type="monotone"
-                        dataKey="completed"
-                        name="Completed Tasks"
-                        stroke="#10B981"
-                        strokeWidth={2.5}
-                        fillOpacity={1}
-                        fill="url(#completedGrad)"
-                        activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="total"
-                        name="Total Scheduled Tasks"
-                        stroke="#3B82F6"
-                        strokeWidth={1.5}
-                        strokeDasharray="4 4"
-                        fillOpacity={1}
-                        fill="url(#totalGrad)"
-                      />
-                    </>
-                  )
-                ) : (
                   <>
+                    {/* Total Scheduled Tasks Line */}
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      name="Total Scheduled Tasks"
+                      stroke="#38BDF8"
+                      strokeWidth={2.4}
+                      fillOpacity={1}
+                      fill="url(#totalTrendGrad)"
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
+                    />
+                    {/* Pending / Missed Tasks Line */}
+                    <Area
+                      type="monotone"
+                      dataKey="pending"
+                      name="Pending Tasks"
+                      stroke="#EF4444"
+                      strokeWidth={2.4}
+                      fillOpacity={1}
+                      fill="url(#pendingTrendGrad)"
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
+                    />
+                    {/* Completed Tasks (Dashed line) */}
                     <Area
                       type="monotone"
                       dataKey="completed"
-                      name={`${currentCategory?.name || 'Category'} Completed`}
-                      stroke={currentCategory?.color || '#10B981'}
-                      strokeWidth={2.5}
+                      name="Completed Tasks"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
                       fillOpacity={1}
                       fill="url(#completedGrad)"
-                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
+                      activeDot={{ r: 4, strokeWidth: 2, stroke: '#FFFFFF' }}
                     />
+                  </>
+                ) : (
+                  <>
+                    {/* Category Total Line */}
                     <Area
                       type="monotone"
                       dataKey="total"
                       name={`${currentCategory?.name || 'Category'} Total`}
-                      stroke={currentCategory?.color || '#3B82F6'}
-                      strokeWidth={1.5}
+                      stroke={currentCategory?.color || '#38BDF8'}
+                      strokeWidth={2.4}
+                      fillOpacity={1}
+                      fill="url(#catTotalGrad)"
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
+                    />
+                    {/* Category Missed / Pending Line */}
+                    <Area
+                      type="monotone"
+                      dataKey="pending"
+                      name={`${currentCategory?.name || 'Category'} Missed`}
+                      stroke="#EF4444"
+                      strokeWidth={2.4}
+                      fillOpacity={1}
+                      fill="url(#pendingTrendGrad)"
+                      activeDot={{ r: 5, strokeWidth: 2, stroke: '#FFFFFF' }}
+                    />
+                    {/* Category Completed Line */}
+                    <Area
+                      type="monotone"
+                      dataKey="completed"
+                      name={`${currentCategory?.name || 'Category'} Completed`}
+                      stroke="#10B981"
+                      strokeWidth={2}
                       strokeDasharray="4 4"
                       fillOpacity={1}
-                      fill="url(#totalGrad)"
+                      fill="url(#completedGrad)"
+                      activeDot={{ r: 4, strokeWidth: 2, stroke: '#FFFFFF' }}
                     />
                   </>
                 )}
               </AreaChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Chart Line Legends */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: '12px 20px',
+              paddingTop: '8px',
+              marginTop: '2px',
+              borderTop: '1px solid var(--border-color)',
+              fontSize: '0.74rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: selectedTrendCategory === 'all' ? '#38BDF8' : currentCategory?.color || '#38BDF8',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                {selectedTrendCategory === 'all' ? 'Total Scheduled Tasks' : `${currentCategory?.name || 'Category'} Total`}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#EF4444',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                {selectedTrendCategory === 'all' ? 'Pending Tasks' : `${currentCategory?.name || 'Category'} Missed`}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  width: '14px',
+                  height: '2px',
+                  borderTop: '2px dashed #10B981',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Completed Tasks</span>
+            </div>
+          </div>
+
+          {/* Categories Breakdown (Total & Missed Count for Each Category) */}
+          {activeCategories.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: '6px 8px',
+                paddingTop: '8px',
+                borderTop: '1px dashed var(--border-color)',
+                fontSize: '0.72rem',
+              }}
+            >
+              <span style={{ fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px' }}>
+                Categories:
+              </span>
+              {activeCategories.map((cat) => {
+                const isSelected = String(selectedTrendCategory) === String(cat.id);
+                const stats = categoryTrendTotals[cat.id] || { total: 0, missed: 0, completed: 0 };
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedTrendCategory(isSelected ? 'all' : cat.id)}
+                    style={{
+                      background: isSelected ? 'rgba(56, 189, 248, 0.14)' : 'var(--card-hover, rgba(255, 255, 255, 0.04))',
+                      border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      cursor: 'pointer',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={`Click to focus on "${cat.name}". ${stats.total} Total, ${stats.missed} Missed`}
+                  >
+                    <span
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: cat.color || '#3B82F6',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{cat.name}</span>
+                    <span
+                      style={{
+                        fontSize: '0.64rem',
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: '999px',
+                        background: 'var(--border-subtle, rgba(0, 0, 0, 0.05))',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {stats.total} Total
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.64rem',
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: '999px',
+                        background: stats.missed > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                        color: stats.missed > 0 ? '#EF4444' : '#10B981',
+                      }}
+                    >
+                      {stats.missed} Missed
+                    </span>
+                  </button>
+                );
+              })}
+              {selectedTrendCategory !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTrendCategory('all')}
+                  style={{
+                    background: 'transparent',
+                    border: '1px dashed var(--border-color)',
+                    color: 'var(--primary-color)',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: '3px 7px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  ← Show All Tasks
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
 
-        {/* Progress Overview (4 Columns) - Fits perfectly instead of Workload by Category */}
+        {/* Progress Overview (4 Columns) - Compact, High-End Aesthetic */}
         <motion.div
           variants={cardVariants}
           className="card"
           style={{
             gridColumn: 'span 4',
-            padding: '18px 20px',
+            padding: '12px 18px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '14px',
-            borderRadius: '18px',
+            gap: '8px',
+            borderRadius: '16px',
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
                 style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '10px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
                   background: 'rgba(16, 185, 129, 0.14)',
                   color: '#10B981',
                   display: 'flex',
@@ -773,13 +948,13 @@ export function Dashboard() {
                   border: '1px solid rgba(16, 185, 129, 0.28)',
                 }}
               >
-                <Zap size={18} strokeWidth={2.4} />
+                <Zap size={17} strokeWidth={2.4} />
               </div>
               <div>
-                <h2 className="card-title" style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800 }}>
+                <h2 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800 }}>
                   Progress Overview
                 </h2>
-                <span className="card-subtitle" style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                <span className="card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                   Daily & monthly velocity
                 </span>
               </div>
@@ -787,13 +962,13 @@ export function Dashboard() {
 
             <span
               style={{
-                background: todayStats.percentage === 100 ? '#ECFDF5' : '#EFF6FF',
-                color: todayStats.percentage === 100 ? '#059669' : '#1D4ED8',
-                border: `1px solid ${todayStats.percentage === 100 ? '#A7F3D0' : '#BFDBFE'}`,
+                background: todayStats.percentage === 100 ? 'rgba(16, 185, 129, 0.14)' : 'rgba(56, 189, 248, 0.14)',
+                color: todayStats.percentage === 100 ? '#10B981' : 'var(--primary-color)',
+                border: `1px solid ${todayStats.percentage === 100 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(56, 189, 248, 0.35)'}`,
                 padding: '2px 8px',
                 borderRadius: '999px',
-                fontSize: '0.70rem',
-                fontWeight: 700,
+                fontSize: '0.68rem',
+                fontWeight: 800,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
@@ -811,42 +986,52 @@ export function Dashboard() {
             </span>
           </div>
 
-          {/* Dual Circular Rings */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '6px 0' }}>
+          {/* Dual Large Circular Rings with Glow & Gradients */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '4px 0', flex: 1 }}>
             <ProgressRing
-              radius={36}
-              stroke={6}
+              radius={60}
+              stroke={9}
               progress={todayStats.percentage}
-              color="var(--primary-color)"
+              color="#38BDF8"
+              gradientColors={todayStats.percentage === 100 ? ['#10B981', '#059669'] : ['#38BDF8', '#1D4ED8']}
+              trackColor="var(--border-color, rgba(255, 255, 255, 0.08))"
               label="Today"
+              subtitle={`${todayStats.completed}/${todayStats.total}`}
               animateOnMount={true}
             />
             <ProgressRing
-              radius={36}
-              stroke={6}
+              radius={60}
+              stroke={9}
               progress={currentMonthStats.percentage}
-              color="var(--success)"
+              color="#10B981"
+              gradientColors={['#34D399', '#059669']}
+              trackColor="var(--border-color, rgba(255, 255, 255, 0.08))"
               label="This Month"
+              subtitle={`${currentMonthStats.completed}/${currentMonthStats.total}`}
               animateOnMount={true}
             />
           </div>
 
-          {/* Progress Bars */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Progress Bars (Compact Micro-Bars) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Today's Tasks Done</span>
-                <strong>{todayStats.completed} / {todayStats.total} ({todayStats.percentage}%)</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Today's Tasks Done</span>
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {todayStats.completed} / {todayStats.total} ({todayStats.percentage}%)
+                </strong>
               </div>
-              <ProgressBar progress={todayStats.percentage} color="var(--primary-color)" animateOnMount={true} />
+              <ProgressBar progress={todayStats.percentage} height={5} color={todayStats.percentage === 100 ? '#10B981' : '#38BDF8'} animateOnMount={true} />
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Monthly Target</span>
-                <strong>{currentMonthStats.completed} / {currentMonthStats.total} ({currentMonthStats.percentage}%)</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Monthly Target</span>
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {currentMonthStats.completed} / {currentMonthStats.total} ({currentMonthStats.percentage}%)
+                </strong>
               </div>
-              <ProgressBar progress={currentMonthStats.percentage} color="var(--success)" animateOnMount={true} />
+              <ProgressBar progress={currentMonthStats.percentage} height={5} color="#10B981" animateOnMount={true} />
             </div>
           </div>
         </motion.div>
@@ -855,13 +1040,14 @@ export function Dashboard() {
       {/* 6. Today's Schedule Sequence (Full Screen Width) */}
       <motion.div
         variants={cardVariants}
+        className="card"
         style={{
           padding: '22px 24px',
           width: '100%',
           borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(22, 30, 49, 0.95) 0%, rgba(13, 20, 36, 0.98) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 16px 40px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          background: 'var(--card-bg)',
+          border: '1.5px solid var(--border-color)',
+          boxShadow: 'var(--shadow-md)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -875,7 +1061,7 @@ export function Dashboard() {
             width: '280px',
             height: '280px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(23, 105, 255, 0.14) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(23, 105, 255, 0.08) 0%, transparent 70%)',
             pointerEvents: 'none',
           }}
         />
@@ -891,7 +1077,7 @@ export function Dashboard() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 16px rgba(23, 105, 255, 0.4)',
+                boxShadow: '0 4px 16px rgba(23, 105, 255, 0.3)',
                 color: '#ffffff',
                 flexShrink: 0,
               }}
@@ -900,7 +1086,7 @@ export function Dashboard() {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h2 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+                <h2 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                   Today's Schedule Sequence
                 </h2>
                 <span
@@ -912,16 +1098,16 @@ export function Dashboard() {
                     borderRadius: '9999px',
                     background: 'rgba(16, 185, 129, 0.15)',
                     border: '1px solid rgba(16, 185, 129, 0.4)',
-                    color: '#34D399',
+                    color: '#10B981',
                     fontSize: '0.72rem',
                     fontWeight: 700,
                   }}
                 >
-                  <span className="live-pulse-dot" style={{ width: '6px', height: '6px', background: '#34D399' }} />
+                  <span className="live-pulse-dot" style={{ width: '6px', height: '6px', background: '#10B981' }} />
                   Live Flow
                 </span>
               </div>
-              <span style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 500, marginTop: '2px', display: 'block' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '2px', display: 'block' }}>
                 Sequential timeline progression of planned tasks
               </span>
             </div>
@@ -937,14 +1123,14 @@ export function Dashboard() {
                   gap: '8px',
                   padding: '5px 12px',
                   borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'var(--page-bg)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#FFFFFF' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {todayStats.completed}/{todayStats.total} Done
                 </span>
-                <div style={{ width: '56px', height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ width: '56px', height: '6px', background: 'var(--border-color)', borderRadius: '999px', overflow: 'hidden' }}>
                   <div
                     style={{
                       width: `${todayStats.percentage}%`,
@@ -955,13 +1141,13 @@ export function Dashboard() {
                     }}
                   />
                 </div>
-                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#34D399' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#10B981' }}>
                   {todayStats.percentage}%
                 </span>
               </div>
             )}
 
-            <span style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               {formatDate(todayStr, { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
 
@@ -1368,9 +1554,8 @@ export function Dashboard() {
             marginTop: '14px',
             padding: '12px 18px',
             borderRadius: '12px',
-            background: 'rgba(15, 23, 42, 0.65)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(10px)',
+            background: 'var(--page-bg)',
+            border: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1388,9 +1573,9 @@ export function Dashboard() {
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                color: activeInspectionDay?.count > 0 ? '#34D399' : '#94A3B8',
-                border: `1px solid ${activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                background: activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.15)' : 'var(--card-bg)',
+                color: activeInspectionDay?.count > 0 ? '#10B981' : 'var(--text-muted)',
+                border: `1px solid ${activeInspectionDay?.count > 0 ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-color)'}`,
                 flexShrink: 0,
               }}
             >
@@ -1410,7 +1595,7 @@ export function Dashboard() {
                       padding: '2px 8px',
                       borderRadius: '9999px',
                       background: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38BDF8',
+                      color: 'var(--primary-color)',
                       border: '1px solid rgba(56, 189, 248, 0.35)',
                     }}
                   >
@@ -1436,9 +1621,9 @@ export function Dashboard() {
                   <button
                     onClick={() => setSelectedHeatmapMonth(null)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#94A3B8',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-secondary)',
                       fontSize: '0.68rem',
                       padding: '2px 8px',
                       borderRadius: '6px',
@@ -1454,8 +1639,8 @@ export function Dashboard() {
                 {activeInspectionDay?.isFuture ? (
                   <span style={{ color: 'var(--text-muted)' }}>Upcoming date (future)</span>
                 ) : activeInspectionDay?.count > 0 ? (
-                  <span style={{ color: '#34D399', fontWeight: 700 }}>
-                    ✓ {activeInspectionDay.count} task{activeInspectionDay.count === 1 ? '' : 's'} completed on this day
+                  <span style={{ color: '#10B981', fontWeight: 700 }}>
+                    ✓ {activeInspectionDay.count} {activeInspectionDay.count === 1 ? 'task' : 'tasks'} completed on this day
                   </span>
                 ) : (
                   <span style={{ color: 'var(--text-muted)' }}>No completed tasks recorded on this date</span>
@@ -1481,11 +1666,11 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.1)' }} />
+            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }} />
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Total Year Activity</div>
-              <div style={{ color: '#34D399', fontWeight: 800 }}>
+              <div style={{ color: '#10B981', fontWeight: 800 }}>
                 {heatmapStats.totalCompletedYear} completed tasks
               </div>
             </div>
@@ -1500,21 +1685,21 @@ export function Dashboard() {
               left: `${heatmapTooltip.x}px`,
               top: `${heatmapTooltip.y}px`,
               transform: 'translate(-50%, -100%)',
-              background: '#0F172A',
-              color: '#FFFFFF',
-              border: '1px solid #334155',
+              background: 'var(--card-bg)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
               padding: '8px 14px',
               borderRadius: '8px',
               fontSize: '0.76rem',
               fontWeight: 600,
               pointerEvents: 'none',
               zIndex: 9999,
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              boxShadow: 'var(--shadow-lg)',
               whiteSpace: 'nowrap',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-              <span style={{ fontWeight: 800, color: '#F8FAFC' }}>
+              <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
                 {heatmapTooltip.dayName}, {heatmapTooltip.formattedDate}
               </span>
               {heatmapTooltip.dateStr === todayStr && (
@@ -1523,18 +1708,18 @@ export function Dashboard() {
                     fontSize: '0.65rem',
                     padding: '1px 5px',
                     borderRadius: '4px',
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    color: '#38BDF8',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: 'var(--primary-color)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
                   }}
                 >
                   Today
                 </span>
               )}
             </div>
-            <div style={{ color: heatmapTooltip.count > 0 ? '#34D399' : '#94A3B8', fontSize: '0.74rem' }}>
+            <div style={{ color: heatmapTooltip.count > 0 ? '#10B981' : 'var(--text-muted)', fontSize: '0.74rem' }}>
               {heatmapTooltip.count > 0
-                ? `✓ ${heatmapTooltip.count} task{heatmapTooltip.count === 1 ? '' : 's'} completed`
+                ? `✓ ${heatmapTooltip.count} ${heatmapTooltip.count === 1 ? 'task' : 'tasks'} completed`
                 : '0 tasks completed'}
             </div>
           </div>

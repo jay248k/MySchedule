@@ -203,7 +203,7 @@ export function Goals() {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
             gap: '20px',
-            alignItems: 'start',
+            alignItems: 'stretch',
           }}
         >
           {filteredGoals.map((goal) => {
@@ -229,11 +229,12 @@ export function Goals() {
                   borderTop: `4px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
                   transition: 'all 0.2s ease',
                   boxShadow: isExpanded ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+                  height: '100%',
                 }}
               >
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span className={`badge ${isCompleted ? 'badge-success' : 'badge-primary'}`}>
                         {isCompleted ? 'Completed' : 'In Progress'}
@@ -255,12 +256,27 @@ export function Goals() {
                         <span>{relatedTasks.length} {relatedTasks.length === 1 ? 'task' : 'tasks'} linked</span>
                       </span>
                     </div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '8px', color: 'var(--text-primary)' }}>
+                    <h3
+                      style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        marginTop: '8px',
+                        marginBottom: '0px',
+                        color: 'var(--text-primary)',
+                        lineHeight: '1.3',
+                        minHeight: '3.25rem',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                      title={goal.title}
+                    >
                       {goal.title}
                     </h3>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                     <button
                       type="button"
                       className="btn-icon"
@@ -282,23 +298,23 @@ export function Goals() {
                   </div>
                 </div>
 
-                {goal.description && (
-                  <p
-                    style={{
-                      fontSize: '0.86rem',
-                      color: 'var(--text-secondary)',
-                      lineHeight: '1.45',
-                      margin: 0,
-                      display: '-webkit-box',
-                      WebkitLineClamp: isExpanded ? 'unset' : 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: isExpanded ? 'visible' : 'hidden',
-                    }}
-                    title={!isExpanded && goal.description.length > 80 ? goal.description : undefined}
-                  >
-                    {goal.description}
-                  </p>
-                )}
+                <p
+                  style={{
+                    fontSize: '0.86rem',
+                    color: goal.description ? 'var(--text-secondary)' : 'transparent',
+                    lineHeight: '1.45',
+                    margin: 0,
+                    minHeight: '2.5rem',
+                    display: '-webkit-box',
+                    WebkitLineClamp: isExpanded ? 'unset' : 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: isExpanded ? 'visible' : 'hidden',
+                    userSelect: goal.description ? 'auto' : 'none',
+                  }}
+                  title={!isExpanded && goal.description && goal.description.length > 80 ? goal.description : undefined}
+                >
+                  {goal.description || 'No description'}
+                </p>
 
                 {/* Progress Bar & Real-Time Auto Progress Indicator */}
                 <div>
@@ -582,6 +598,7 @@ export function Goals() {
                 {/* Target Date Footer */}
                 <div
                   style={{
+                    marginTop: 'auto',
                     borderTop: '1px solid var(--border-subtle)',
                     paddingTop: '12px',
                     display: 'flex',

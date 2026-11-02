@@ -428,7 +428,7 @@ export function DailyScheduleTimeline({
                         ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)'
                         : itemState === 'overdue'
                         ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.03) 100%)'
-                        : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+                        : 'var(--card-bg)',
                     border:
                       itemState === 'in_progress'
                         ? '1.5px solid rgba(56, 189, 248, 0.55)'
@@ -436,7 +436,7 @@ export function DailyScheduleTimeline({
                         ? '1px solid rgba(16, 185, 129, 0.3)'
                         : itemState === 'overdue'
                         ? '1.5px solid rgba(239, 68, 68, 0.5)'
-                        : '1px solid rgba(255, 255, 255, 0.08)',
+                        : '1px solid var(--border-color)',
                     borderLeft: `4px solid ${
                       itemState === 'in_progress'
                         ? '#38BDF8'
@@ -449,7 +449,7 @@ export function DailyScheduleTimeline({
                     boxShadow:
                       itemState === 'in_progress'
                         ? '0 0 20px rgba(56, 189, 248, 0.25)'
-                        : '0 4px 14px rgba(0, 0, 0, 0.25)',
+                        : 'var(--shadow-sm)',
                     cursor: readOnly ? 'default' : 'pointer',
                     position: 'relative',
                     zIndex: openMenuId === item.id ? 100 : 'auto',
@@ -472,8 +472,8 @@ export function DailyScheduleTimeline({
                       justifyContent: 'center',
                       padding: '6px 12px',
                       borderRadius: '10px',
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      border: '1px solid rgba(255, 255, 255, 0.07)',
+                      background: 'var(--page-bg)',
+                      border: '1px solid var(--border-color)',
                       minWidth: '82px',
                       flexShrink: 0,
                       gap: '2px',
@@ -483,7 +483,7 @@ export function DailyScheduleTimeline({
                       style={{
                         fontSize: '0.84rem',
                         fontWeight: 800,
-                        color: itemState === 'in_progress' ? '#38BDF8' : '#FFFFFF',
+                        color: itemState === 'in_progress' ? '#0284C7' : 'var(--text-primary)',
                         letterSpacing: '0.02em',
                         lineHeight: 1.2,
                       }}
@@ -494,7 +494,7 @@ export function DailyScheduleTimeline({
                       style={{
                         fontSize: '0.68rem',
                         fontWeight: 600,
-                        color: 'rgba(255, 255, 255, 0.45)',
+                        color: 'var(--text-muted)',
                         lineHeight: 1.2,
                       }}
                     >
@@ -515,7 +515,7 @@ export function DailyScheduleTimeline({
                         width: '24px',
                         height: '24px',
                         borderRadius: '50%',
-                        border: isCompleted ? 'none' : '2px solid rgba(255, 255, 255, 0.22)',
+                        border: isCompleted ? 'none' : '2px solid var(--border-color)',
                         background: isCompleted ? '#10B981' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
@@ -547,7 +547,7 @@ export function DailyScheduleTimeline({
                           margin: 0,
                           fontSize: '0.94rem',
                           fontWeight: 700,
-                          color: isCompleted ? 'rgba(255, 255, 255, 0.45)' : '#FFFFFF',
+                          color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)',
                           textDecoration: isCompleted ? 'line-through' : 'none',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -563,7 +563,7 @@ export function DailyScheduleTimeline({
                       style={{
                         margin: 0,
                         fontSize: '0.78rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: 'var(--text-secondary)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',

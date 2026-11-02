@@ -221,11 +221,13 @@ export function Header() {
               background: isSelectedToday ? 'var(--page-bg)' : 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)',
               border: isSelectedToday ? '1px solid var(--border-color)' : '1.5px solid var(--primary-color)',
               color: isSelectedToday ? 'var(--text-secondary)' : 'var(--primary-color)',
-              padding: '6px 14px',
+              height: '32px',
+              padding: '0 12px',
               borderRadius: 'var(--radius-full)',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
               fontWeight: 700,
               transition: 'all 0.2s ease',
+              boxSizing: 'border-box',
             }}
           >
             <Calendar size={15} color="var(--primary-color)" />
@@ -433,8 +435,8 @@ export function Header() {
           id="btn-header-sync-rotate"
           style={{
             position: 'relative',
-            width: '36px',
-            height: '36px',
+            width: '32px',
+            height: '32px',
             color: isSyncing ? 'var(--primary-color)' : 'var(--text-secondary)',
             background: isSyncing ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)' : 'var(--card-bg)',
             border: `1px solid ${isSyncing ? 'var(--primary-color)' : 'var(--border-color)'}`,

@@ -1,4 +1,4 @@
-const { WorkSession, Task } = require('../models');
+const { WorkSession, Task, Category } = require('../models');
 
 exports.getAllWorkSessions = async (req, res, next) => {
   try {
@@ -15,7 +15,12 @@ exports.getAllWorkSessions = async (req, res, next) => {
     const sessions = await WorkSession.findAll({
       where,
       order: [['createdAt', 'DESC']],
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category', 'priority'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     res.json({
@@ -32,7 +37,12 @@ exports.getWorkSessionById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const session = await WorkSession.findByPk(id, {
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     if (!session) {

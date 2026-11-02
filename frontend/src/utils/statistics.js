@@ -120,8 +120,8 @@ export function getProductivityTrend(tasks = [], timeRange = 'week', selectedCat
       pending: total - completed,
     };
 
-    // If 'all' is selected, also compute breakdown per category for multi-line rendering
-    if (selectedCategoryId === 'all' && categories.length > 0) {
+    // Compute breakdown per category for category stats and filtering
+    if (categories.length > 0) {
       categories.forEach((cat) => {
         const catTasks = pointTasks.filter((t) => matchesCategory(t, cat));
         const catCompleted = catTasks.filter((t) => t.status === 'completed').length;
@@ -160,10 +160,8 @@ export function getProductivityTrend(tasks = [], timeRange = 'week', selectedCat
       const day = String(d.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
 
-      // Show readable label on axis for clean spacing
-      const dayLabel = d.getDate() === 1 || i % 5 === 0 || i === 0
-        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : String(d.getDate());
+      // Clean formatted date label (e.g. "Oct 5", "Nov 2")
+      const dayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
       const pointTasks = tasks.filter((t) => t.date === dateStr);
       days.push(buildDataPoint(dayLabel, dateStr, pointTasks));

@@ -8,10 +8,15 @@ const COOKIE_USER_KEY = 'myschedule_auth_user';
 // On boot, purge all legacy unusual static data dumped into localStorage
 purgeLegacyLocalStorage();
 
-// Helpers to load initial state safely from Cookie
+// Helpers to load initial state safely from Cookie or localStorage
 const getStoredToken = () => {
   try {
-    return cookieUtils.get(COOKIE_TOKEN_KEY) || cookieUtils.get('my_schedule_auth_token') || null;
+    const fromCookie = cookieUtils.get(COOKIE_TOKEN_KEY) || cookieUtils.get('my_schedule_auth_token');
+    if (fromCookie) return fromCookie;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem(COOKIE_TOKEN_KEY) || localStorage.getItem('my_schedule_auth_token') || null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -19,10 +24,43 @@ const getStoredToken = () => {
 
 const getStoredUser = () => {
   try {
-    return cookieUtils.getJSON(COOKIE_USER_KEY) || cookieUtils.getJSON('my_schedule_auth_user') || null;
+    const fromCookie = cookieUtils.getJSON(COOKIE_USER_KEY) || cookieUtils.getJSON('my_schedule_auth_user');
+    if (fromCookie) return fromCookie;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = localStorage.getItem(COOKIE_USER_KEY) || localStorage.getItem('my_schedule_auth_user');
+      return raw ? JSON.parse(raw) : null;
+    }
+    return null;
   } catch {
     return null;
   }
+};
+
+const saveSession = (token, user) => {
+  if (token) {
+    cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(COOKIE_TOKEN_KEY, token);
+    }
+  }
+  if (user) {
+    cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(COOKIE_USER_KEY, JSON.stringify(user));
+    }
+  }
+};
+
+const formatAuthError = (err, fallback) => {
+  const status = err.status || err.data?.status || err.response?.status;
+  const msg = err.data?.message || err.response?.data?.message || err.message || '';
+  if (status === 404 || msg.toLowerCase().includes('not registered') || msg.toLowerCase().includes('not found')) {
+    return '❌ Email Not Registered: No account found with this email. Please check for typos or click Sign Up.';
+  }
+  if (status === 401 || msg.toLowerCase().includes('password') || msg.toLowerCase().includes('incorrect') || msg.toLowerCase().includes('mismatch')) {
+    return '❌ Incorrect Password: The password you entered is incorrect. Please check caps lock and try again.';
+  }
+  return msg || fallback;
 };
 
 // Async Thunks
@@ -37,15 +75,11 @@ export const loginUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      // Store in Cookie only - never in localStorage
-      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
-      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
-      purgeLegacyLocalStorage();
+      saveSession(token, user);
 
       return { token, user, message: res.message };
     } catch (err) {
-      const msg = err.data?.message || err.response?.data?.message || err.message || 'Login failed';
-      return rejectWithValue(msg);
+      return rejectWithValue(formatAuthError(err, 'Login failed. Please check credentials.'));
     }
   }
 );
@@ -61,15 +95,11 @@ export const signupUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      // Store in Cookie only - never in localStorage
-      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
-      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
-      purgeLegacyLocalStorage();
+      saveSession(token, user);
 
       return { token, user, message: res.message };
     } catch (err) {
-      const msg = err.data?.message || err.response?.data?.message || err.message || 'Signup failed';
-      return rejectWithValue(msg);
+      return rejectWithValue(formatAuthError(err, 'Registration failed. Please check details.'));
     }
   }
 );
@@ -85,15 +115,11 @@ export const demoLoginUser = createAsyncThunk(
       const token = res.accessToken || res.token || res.data?.accessToken;
       const user = res.user || res.data?.user;
 
-      // Store in Cookie only - never in localStorage
-      cookieUtils.set(COOKIE_TOKEN_KEY, token, 30);
-      cookieUtils.setJSON(COOKIE_USER_KEY, user, 30);
-      purgeLegacyLocalStorage();
+      saveSession(token, user);
 
       return { token, user, message: res.message };
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Demo login failed';
-      return rejectWithValue(msg);
+      return rejectWithValue(formatAuthError(err, 'Demo login failed'));
     }
   }
 );
@@ -104,12 +130,17 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   } catch (err) {
     console.warn('Backend logout failed:', err);
   } finally {
-    // Clear cookies & purge any lingering localStorage items
+    // Clear cookies & localStorage
     cookieUtils.remove(COOKIE_TOKEN_KEY);
     cookieUtils.remove('my_schedule_auth_token');
     cookieUtils.remove(COOKIE_USER_KEY);
     cookieUtils.remove('my_schedule_auth_user');
-    purgeLegacyLocalStorage();
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem(COOKIE_TOKEN_KEY);
+      localStorage.removeItem('my_schedule_auth_token');
+      localStorage.removeItem(COOKIE_USER_KEY);
+      localStorage.removeItem('my_schedule_auth_user');
+    }
   }
   return true;
 });

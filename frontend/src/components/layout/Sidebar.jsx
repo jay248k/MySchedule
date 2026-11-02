@@ -135,6 +135,7 @@ export function Sidebar() {
         { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle },
         { name: 'Goal Progression', path: '/reports/goals', icon: Target },
         { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag },
+        { name: 'Tracker & Gap Logs', path: '/reports/tracker-logs', icon: Timer },
         { name: 'Daily Standup', path: '/reports', icon: FileText },
       ],
     },
@@ -192,7 +193,7 @@ export function Sidebar() {
               const isOpen = reportsSubmenuOpen || isItemActive;
 
               return (
-                <div key={item.path} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={item.path} style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: sidebarCollapsed ? 'center' : 'stretch' }}>
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
@@ -205,7 +206,7 @@ export function Sidebar() {
                     }}
                     title={sidebarCollapsed ? item.name : undefined}
                   >
-                    <Icon size={16} style={{ flexShrink: 0 }} />
+                    <Icon size={sidebarCollapsed ? 19 : 17} style={{ flexShrink: 0 }} />
                     {!sidebarCollapsed && <span>{item.name}</span>}
                     {!sidebarCollapsed && (
                       <span style={{ marginLeft: 'auto', color: 'inherit', display: 'flex', alignItems: 'center' }}>
@@ -251,7 +252,7 @@ export function Sidebar() {
                 onClick={() => setMobileSidebarOpen(false)}
                 title={sidebarCollapsed ? item.name : undefined}
               >
-                <Icon size={16} style={{ flexShrink: 0 }} />
+                <Icon size={sidebarCollapsed ? 19 : 17} style={{ flexShrink: 0 }} />
                 {!sidebarCollapsed && <span>{item.name}</span>}
                 {!sidebarCollapsed && item.badge && (
                   <span
@@ -264,6 +265,21 @@ export function Sidebar() {
                   >
                     {item.badge}
                   </span>
+                )}
+                {sidebarCollapsed && item.badge && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '6px',
+                      right: '6px',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: item.badgeColor || '#38BDF8',
+                      boxShadow: `0 0 6px ${item.badgeColor || '#38BDF8'}`,
+                      pointerEvents: 'none',
+                    }}
+                  />
                 )}
               </NavLink>
             );
@@ -283,44 +299,75 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* User Account / Auth Status in Sidebar */}
+        {/* Unified Sidebar Footer */}
         <div
+          className="sidebar-footer"
           style={{
-            padding: sidebarCollapsed ? '6px 6px' : '6px 12px',
+            padding: sidebarCollapsed ? '10px 0' : '8px 12px',
             borderTop: '1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08))',
             display: 'flex',
+            flexDirection: sidebarCollapsed ? 'column' : 'row',
             alignItems: 'center',
             justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-            gap: '8px',
+            gap: sidebarCollapsed ? '8px' : '8px',
+            flexShrink: 0,
+            boxSizing: 'border-box',
           }}
         >
           {sidebarCollapsed ? (
-            <button
-              type="button"
-              className="btn-icon"
-              style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '50%',
-                background: currentUser?.avatarBg || '#1769FF',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              onClick={openLoginModal}
-              title={isAuthenticated ? `${currentUser?.name} (${currentUser?.email})` : 'Sign In / Register'}
-            >
-              {currentUser?.avatarInitials || 'AM'}
-            </button>
+            <>
+              <button
+                type="button"
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  background: currentUser?.avatarBg || '#1769FF',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                  transition: 'all 0.15s ease',
+                }}
+                onClick={openLoginModal}
+                title={isAuthenticated ? `${currentUser?.name} (${currentUser?.email})` : 'Sign In / Register'}
+              >
+                {currentUser?.avatarInitials || 'AM'}
+              </button>
+              <button
+                type="button"
+                className="btn-icon"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--sidebar-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onClick={() => setSidebarCollapsed(false)}
+                title="Expand sidebar"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
                 <div
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
                     background: currentUser?.avatarBg || '#1769FF',
                     color: '#ffffff',
@@ -330,6 +377,7 @@ export function Sidebar() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
                   }}
                 >
                   {currentUser?.avatarInitials || 'AM'}
@@ -368,72 +416,73 @@ export function Sidebar() {
                 </div>
               </div>
 
-              {!isAuthenticated ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                {!isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={openLoginModal}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      color: '#38BDF8',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                    title="Sign In or Register"
+                  >
+                    <LogIn size={12} />
+                    Sign In
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="btn-icon"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      color: '#ef4444',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    title="Sign Out"
+                  >
+                    <LogOut size={13} />
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={openLoginModal}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                    background: 'rgba(56, 189, 248, 0.12)',
-                    color: '#38BDF8',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                  title="Sign In or Register"
-                >
-                  <LogIn size={12} />
-                  Sign In
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={logout}
                   className="btn-icon"
                   style={{
                     width: '28px',
                     height: '28px',
-                    color: '#ef4444',
-                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: 'var(--sidebar-muted)',
                     borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
-                  title="Sign Out"
+                  onClick={() => setSidebarCollapsed(true)}
+                  title="Collapse sidebar"
                 >
-                  <LogOut size={13} />
+                  <ChevronLeft size={16} />
                 </button>
-              )}
+              </div>
             </>
           )}
-        </div>
-
-        {/* Desktop Expand / Collapse toggle */}
-        <div
-          style={{
-            padding: '10px 14px',
-            borderTop: '1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08))',
-            display: 'flex',
-            justifyContent: sidebarCollapsed ? 'center' : 'flex-end',
-          }}
-        >
-          <button
-            type="button"
-            className="btn-icon"
-            style={{ color: 'var(--sidebar-muted)' }}
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
         </div>
       </aside>
     </>

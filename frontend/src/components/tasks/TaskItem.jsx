@@ -46,6 +46,7 @@ export function TaskItem({ task, showDate = false, compact = false, asCard = fal
           opacity: isCompleted ? 0.72 : 1,
           minHeight: '138px',
           gap: '10px',
+          flexShrink: 0,
         }}
       >
         {/* Card Header: Category Tag, Priority Badge & Action Menu */}
@@ -304,6 +305,7 @@ export function TaskItem({ task, showDate = false, compact = false, asCard = fal
         boxShadow: isCompleted ? 'none' : 'var(--shadow-sm)',
         opacity: isCompleted ? 0.72 : 1,
         overflow: menuOpen ? 'visible' : 'hidden',
+        flexShrink: 0,
       }}
       className={`task-row-item ${compact ? 'compact' : ''}`}
     >

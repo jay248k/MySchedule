@@ -1,4 +1,4 @@
-const { WorkRequest, Task } = require('../models');
+const { WorkRequest, Task, Category } = require('../models');
 
 exports.getAllRequests = async (req, res, next) => {
   try {
@@ -18,7 +18,12 @@ exports.getAllRequests = async (req, res, next) => {
     const requests = await WorkRequest.findAll({
       where,
       order: [['createdAt', 'DESC']],
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category', 'status'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority', 'status'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     res.json({
@@ -35,7 +40,12 @@ exports.getRequestById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const request = await WorkRequest.findByPk(id, {
-      include: Task ? [{ model: Task, as: 'task', attributes: ['id', 'title', 'category', 'status'] }] : [],
+      include: Task ? [{
+        model: Task,
+        as: 'task',
+        attributes: ['id', 'title', 'categoryId', 'priority', 'status'],
+        include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
+      }] : [],
     });
 
     if (!request) {

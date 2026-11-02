@@ -99,10 +99,6 @@ export function purgeLegacyLocalStorage() {
     'my_schedule_habits',
     'my_schedule_import_history',
     'my_schedule_work_chain',
-    'my_schedule_auth_token',
-    'my_schedule_auth_user',
-    'myschedule_auth_token',
-    'myschedule_auth_user',
   ];
 
   try {

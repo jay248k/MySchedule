@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
 export function ProgressRing({
-  radius = 50,
-  stroke = 8,
+  radius = 48,
+  stroke = 7,
   progress = 0,
   color = '#1769FF',
-  trackColor = '#DFEAFE',
+  gradientColors,
+  trackColor = 'var(--border-color, rgba(255, 255, 255, 0.08))',
   label = '',
+  subtitle = '',
   animateOnMount = true,
 }) {
   const [currentProgress, setCurrentProgress] = useState(animateOnMount ? 0 : progress);
+  const gradId = React.useId ? React.useId().replace(/:/g, '') : `ring-grad-${Math.random().toString(36).substr(2, 9)}`;
 
   useEffect(() => {
     let startTimestamp = null;
-    const duration = 1200; // 1.2s smooth count-up from 0 to N
+    const duration = 1000;
     const target = Math.min(100, Math.max(0, progress));
     let animationFrameId;
 
@@ -21,7 +24,6 @@ export function ProgressRing({
       if (!startTimestamp) startTimestamp = timestamp;
       const elapsed = timestamp - startTimestamp;
       const progressRatio = Math.min(elapsed / duration, 1);
-      // easeOutCubic curve for smooth decelerating count-up
       const easeOut = 1 - Math.pow(1 - progressRatio, 3);
       setCurrentProgress(easeOut * target);
 
@@ -36,14 +38,26 @@ export function ProgressRing({
     return () => cancelAnimationFrame(animationFrameId);
   }, [progress]);
 
-  const normalizedRadius = radius - stroke * 2;
+  // Proper radius so circle fills the SVG without clipping
+  const normalizedRadius = radius - stroke / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (currentProgress / 100) * circumference;
 
+  const strokeColor = gradientColors && gradientColors.length >= 2 ? `url(#${gradId})` : color;
+
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
       <div style={{ position: 'relative', width: radius * 2, height: radius * 2 }}>
-        <svg height={radius * 2} width={radius * 2} style={{ transform: 'rotate(-90deg)' }}>
+        <svg height={radius * 2} width={radius * 2} style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+          {gradientColors && gradientColors.length >= 2 && (
+            <defs>
+              <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={gradientColors[0]} />
+                <stop offset="100%" stopColor={gradientColors[1]} />
+              </linearGradient>
+            </defs>
+          )}
+          {/* Background Track */}
           <circle
             stroke={trackColor}
             fill="transparent"
@@ -52,14 +66,16 @@ export function ProgressRing({
             cx={radius}
             cy={radius}
           />
+          {/* Animated Value Arc with subtle glow */}
           <circle
-            stroke={color}
+            stroke={strokeColor}
             fill="transparent"
             strokeWidth={stroke}
             strokeDasharray={`${circumference} ${circumference}`}
             style={{
               strokeDashoffset,
               transition: 'stroke-dashoffset 0.1s linear',
+              filter: currentProgress > 0 ? `drop-shadow(0 0 5px ${gradientColors ? gradientColors[0] : color}55)` : 'none',
             }}
             strokeLinecap="round"
             r={normalizedRadius}
@@ -67,6 +83,8 @@ export function ProgressRing({
             cy={radius}
           />
         </svg>
+
+        {/* Center Readout */}
         <div
           style={{
             position: 'absolute',
@@ -75,15 +93,46 @@ export function ProgressRing({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            lineHeight: 1,
+            gap: '3px',
           }}
         >
-          <span style={{ fontSize: `${radius * 0.38}px`, fontWeight: 800, color: 'var(--text-primary)' }}>
+          <span
+            style={{
+              fontSize: `${Math.round(radius * 0.44)}px`,
+              fontWeight: 900,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.025em',
+            }}
+          >
             {Math.round(currentProgress)}%
           </span>
+          {subtitle && (
+            <span
+              style={{
+                fontSize: `${Math.max(11, Math.round(radius * 0.22))}px`,
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+              }}
+            >
+              {subtitle}
+            </span>
+          )}
         </div>
       </div>
       {label && (
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+        <span
+          style={{
+            fontSize: '0.78rem',
+            fontWeight: 800,
+            color: 'var(--text-secondary)',
+            background: 'var(--card-hover, rgba(255, 255, 255, 0.05))',
+            border: '1px solid var(--border-color)',
+            padding: '2px 10px',
+            borderRadius: '999px',
+            marginTop: '2px',
+          }}
+        >
           {label}
         </span>
       )}
