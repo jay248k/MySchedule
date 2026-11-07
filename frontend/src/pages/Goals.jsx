@@ -221,10 +221,10 @@ export function Goals() {
                 key={goal.id}
                 className="card"
                 style={{
-                  padding: '20px 22px',
+                  padding: '14px 18px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px',
+                  gap: '8px',
                   position: 'relative',
                   borderTop: `4px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
                   transition: 'all 0.2s ease',
@@ -264,7 +264,7 @@ export function Goals() {
                         marginBottom: '0px',
                         color: 'var(--text-primary)',
                         lineHeight: '1.3',
-                        minHeight: '3.25rem',
+                        
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',

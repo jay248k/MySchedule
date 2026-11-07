@@ -41,6 +41,10 @@ module.exports = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      notificationSettings: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,

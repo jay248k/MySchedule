@@ -17,6 +17,8 @@ import { WorkTracker } from './pages/WorkTracker';
 import { DeviationsPage } from './pages/DeviationsPage';
 import RequestsPage from './pages/RequestsPage';
 import { Settings } from './pages/Settings';
+import { ThoughtsPage } from './pages/ThoughtsPage';
+import { KnowledgePage } from './pages/KnowledgePage';
 import { NotFound } from './pages/NotFound';
 
 import './styles/global.css';
@@ -71,6 +73,8 @@ function AppRoutes() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="categories" element={<Categories />} />
         <Route path="goals" element={<Goals />} />
+        <Route path="thoughts" element={<ThoughtsPage />} />
+        <Route path="knowledge" element={<KnowledgePage />} />
         <Route path="red-flags" element={<RedFlagPage />} />
         <Route path="reports" element={<Reports />} />
         <Route path="reports/:reportType" element={<Reports />} />

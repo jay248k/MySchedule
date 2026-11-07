@@ -21,6 +21,8 @@ import {
   ArrowRight,
   TrendingUp,
   Award,
+Link2,
+  Briefcase
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
@@ -887,7 +889,7 @@ export function WorkTracker() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>🔗</span> Work & Remarks Session Chain
+              <Link2 size={18} color="var(--primary-color)" /> Work & Remarks Session Chain
               {(todayChain?.chain?.length > 0 || dateSessions.length > 0) && (
                 <span style={{ fontSize: '0.68rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', padding: '1px 6px', borderRadius: '999px', fontWeight: 700 }}>
                   {(todayChain?.chain?.length || dateSessions.length)} nodes
@@ -968,7 +970,7 @@ export function WorkTracker() {
                             flexShrink: 0,
                           }}
                         >
-                          {isWork ? '💼' : '☕'}
+                          {isWork ? <Briefcase size={14} color="#10B981" /> : <Coffee size={14} color="#F59E0B" />}
                         </div>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

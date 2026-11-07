@@ -27,6 +27,8 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  Lightbulb,
+  BookOpen,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -293,9 +295,7 @@ export function Sidebar() {
               <Sparkles size={16} color="var(--primary-color, #38BDF8)" />
               <span>Daily Focus</span>
             </div>
-            <p className="sidebar-motivation-quote">
-              "Small disciplines repeated with consistency every day lead to great achievements."
-            </p>
+            
           </div>
         )}
 

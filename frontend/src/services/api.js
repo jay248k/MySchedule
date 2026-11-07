@@ -150,6 +150,19 @@ export const api = {
   getUserProfile: () => apiClient.get('/user'),
   updateUserProfile: (payload) => apiClient.put('/user', payload),
 
+  // Thoughts & Motivation
+  getThoughts: (params = {}) => apiClient.get('/thoughts', { params }),
+  createThought: (payload) => apiClient.post('/thoughts', payload),
+  updateThought: (id, payload) => apiClient.put(`/thoughts/${id}`, payload),
+  deleteThought: (id) => apiClient.delete(`/thoughts/${id}`),
+
+  // Knowledge Base & Lessons
+  getKnowledgeItems: (params = {}) => apiClient.get('/knowledge', { params }),
+  getKnowledgeItem: (id) => apiClient.get(`/knowledge/${id}`),
+  createKnowledgeItem: (payload) => apiClient.post('/knowledge', payload),
+  updateKnowledgeItem: (id, payload) => apiClient.put(`/knowledge/${id}`, payload),
+  deleteKnowledgeItem: (id) => apiClient.delete(`/knowledge/${id}`),
+
   // Work Tracker & Time Sessions
   getWorkSessions: (params = {}) => apiClient.get('/work-sessions', { params }),
   getActiveWorkSession: () => apiClient.get('/work-sessions/active'),

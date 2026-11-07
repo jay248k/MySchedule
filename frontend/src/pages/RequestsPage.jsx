@@ -72,7 +72,7 @@ export default function RequestsPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
       {/* Header */}
       <div
         style={{
@@ -415,7 +415,7 @@ export default function RequestsPage() {
                     ? '1.5px solid rgba(245, 158, 11, 0.4)'
                     : '1px solid var(--border-color)',
                   borderRadius: '14px',
-                  padding: '20px 24px',
+                  padding: '12px 18px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '14px',
@@ -475,7 +475,7 @@ export default function RequestsPage() {
                         onClick={() => handleMarkComplete(req.id)}
                         title="Mark this request as completed"
                         style={{
-                          padding: '8px 14px',
+                          padding: '6px 12px',
                           borderRadius: '8px',
                           border: 'none',
                           background: '#10B981',
@@ -556,7 +556,7 @@ export default function RequestsPage() {
                     background: 'var(--page-bg)',
                     border: '1px solid var(--border-color)',
                     borderRadius: '10px',
-                    padding: '12px 16px',
+                    padding: '8px 12px',
                   }}
                 >
                   <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>

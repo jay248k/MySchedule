@@ -68,11 +68,25 @@ export const storageService = {
   },
 
   getSettings() {
+    try {
+      const cookieSettings = cookieUtils.getJSON('myschedule_user_settings');
+      if (cookieSettings && typeof cookieSettings === 'object') {
+        return { ...initialSettings, ...cookieSettings };
+      }
+    } catch {
+      // Fallback
+    }
     return inMemoryStore.settings || initialSettings;
   },
 
   saveSettings(settings) {
-    inMemoryStore.settings = settings || initialSettings;
+    const updated = { ...initialSettings, ...(settings || {}) };
+    inMemoryStore.settings = updated;
+    try {
+      cookieUtils.setJSON('myschedule_user_settings', updated, 365);
+    } catch {
+      // Cookie set fallback
+    }
   },
 
   getNotifications() {

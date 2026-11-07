@@ -533,20 +533,38 @@ export function Header() {
         <div style={{ position: 'relative' }}>
           <button
             type="button"
-            className="btn-icon"
+            className="btn-icon header-notif-btn"
             onClick={() => setNotifOpen(!notifOpen)}
             aria-label="Notifications"
             id="btn-notifications"
+            title={`Notifications (${totalAlertCount} alerts)`}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: notifOpen ? 'var(--primary-light)' : 'var(--card-bg, rgba(255, 255, 255, 0.05))',
+              border: notifOpen ? '1.5px solid var(--primary-color)' : '1px solid var(--border-color)',
+              color: notifOpen ? 'var(--primary-color)' : 'var(--text-primary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
           >
-            <Bell size={19} />
+            <Bell size={20} strokeWidth={2.2} />
             {totalAlertCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
-                  top: '6px',
-                  right: '6px',
-                  minWidth: '16px',
-                  height: '16px',
+                  top: '-4px',
+                  right: '-4px',
+                  minWidth: '18px',
+                  height: '18px',
+                  border: '2px solid var(--header-bg, #0F172A)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                  lineHeight: 1,
                   borderRadius: '10px',
                   backgroundColor: pendingRequests.length > 0 ? '#F59E0B' : 'var(--danger)',
                   color: '#FFFFFF',

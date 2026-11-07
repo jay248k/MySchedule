@@ -22,6 +22,8 @@ const authRoutes = require('./routes/authRoutes');
 const workSessionRoutes = require('./routes/workSessionRoutes');
 const scheduleDeviationRoutes = require('./routes/scheduleDeviationRoutes');
 const workRequestRoutes = require('./routes/workRequestRoutes');
+const thoughtRoutes = require('./routes/thoughtRoutes');
+const knowledgeRoutes = require('./routes/knowledgeRoutes');
 
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -104,6 +106,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/work-sessions', workSessionRoutes);
 app.use('/api/deviations', scheduleDeviationRoutes);
 app.use('/api/requests', workRequestRoutes);
+app.use('/api/thoughts', thoughtRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 
 // Root Status Endpoint
 app.get('/', (req, res) => {
@@ -177,6 +181,9 @@ if (!process.env.VERCEL) {
         const runSeed = require('./seeders/seedRunner');
         await runSeed();
       }
+
+      const { seedNewModules } = require('./seeders/moduleSeeder');
+      await seedNewModules();
 
       app.listen(PORT, () => {
         console.log(`\n==================================================`);

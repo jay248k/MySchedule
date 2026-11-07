@@ -1142,115 +1142,142 @@ export function BulkImportModal() {
                 </div>
               )}
 
-              {/* 5. Live Preview & Validation Results */}
+              {/* 5. Live Preview, In-Grid Editing & Validation Results */}
               {parsedData && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* Validation Summary Bar */}
+                  {/* Validation Summary & Action Bar */}
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '10px 14px',
+                      padding: '12px 16px',
                       background: 'var(--page-bg)',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      border: '1.5px solid var(--border-color)',
                       flexWrap: 'wrap',
-                      gap: '10px',
+                      gap: '12px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Parsed Records: {parsedData.total}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        Records: {parsedData.total}
                       </span>
                       <span
-                        className="badge badge-success"
-                        style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        style={{
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: '#10B981',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
                       >
                         <CheckCircle2 size={12} /> {parsedData.validCount} Valid
                       </span>
                       {parsedData.invalidCount > 0 && (
                         <span
-                          className="badge badge-danger"
-                          style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            color: '#EF4444',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
                         >
                           <AlertTriangle size={12} /> {parsedData.invalidCount} Invalid
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      Ready to import into {importType}
-                    </span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleParseContent(rawText, importType)}
+                        className="btn btn-sm"
+                        style={{
+                          background: 'var(--primary-color)',
+                          color: '#FFFFFF',
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          padding: '6px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <RefreshCw size={13} /> Validate All Rows
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Table Preview */}
+                  {/* Interactive Table Preview with Soft Green / Red Row Highlighting */}
                   <div
                     style={{
-                      maxHeight: '220px',
+                      maxHeight: '340px',
                       overflowY: 'auto',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
+                      borderRadius: '10px',
                     }}
                   >
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ background: 'var(--page-bg)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                          <th style={{ padding: '8px 12px', fontWeight: 600, width: '40px' }}>#</th>
-                          <th style={{ padding: '8px 12px', fontWeight: 600 }}>Title / Name</th>
+                        <tr style={{ background: 'var(--page-bg)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                          <th style={{ padding: '9px 12px', fontWeight: 800, width: '40px' }}>#</th>
+                          <th style={{ padding: '9px 12px', fontWeight: 800 }}>Title / Name</th>
                           {importType === 'tasks' && (
                             <>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Date</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Time</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Goal</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Priority</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Date</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Time</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Priority</th>
                             </>
                           )}
                           {importType === 'goals' && (
                             <>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Target Date</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Progress</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Category</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Target Date</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Progress</th>
                             </>
                           )}
                           {importType === 'categories' && (
                             <>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Color</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Description</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Color</th>
+                              <th style={{ padding: '9px 12px', fontWeight: 800 }}>Description</th>
                             </>
                           )}
-                          <th style={{ padding: '8px 12px', fontWeight: 600, textAlign: 'right' }}>Status</th>
+                          <th style={{ padding: '9px 12px', fontWeight: 800, textAlign: 'right' }}>Validation</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {/* Render Valid Items */}
+                        {/* 1. Valid Rows: Slightly Green */}
                         {parsedData.validItems.map((item, idx) => (
-                          <tr key={`valid-${idx}`} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{idx + 1}</td>
-                            <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <tr
+                            key={`val-${idx}`}
+                            style={{
+                              borderBottom: '1px solid rgba(16, 185, 129, 0.25)',
+                              background: 'rgba(16, 185, 129, 0.08)',
+                            }}
+                          >
+                            <td style={{ padding: '9px 12px', color: '#10B981', fontWeight: 800 }}>{idx + 1}</td>
+                            <td style={{ padding: '9px 12px', fontWeight: 700, color: 'var(--text-primary)' }}>
                               {item.title || item.name}
                             </td>
                             {importType === 'tasks' && (
                               <>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{item.date}</td>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{item.date}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>
                                   {item.startTime ? `${item.startTime} - ${item.endTime || ''}` : 'Anytime'}
                                 </td>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>
-                                  {item.goalId
-                                    ? goals.find((g) => g.id === item.goalId)?.title || 'Linked'
-                                    : '—'}
-                                </td>
-                                <td style={{ padding: '8px 12px' }}>
-                                  <span
-                                    className={`badge ${
-                                      item.priority === 'High'
-                                        ? 'badge-danger'
-                                        : item.priority === 'Medium'
-                                        ? 'badge-warning'
-                                        : 'badge-secondary'
-                                    }`}
-                                    style={{ fontSize: '0.72rem' }}
-                                  >
+                                <td style={{ padding: '9px 12px' }}>
+                                  <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
                                     {item.priority}
                                   </span>
                                 </td>
@@ -1258,40 +1285,89 @@ export function BulkImportModal() {
                             )}
                             {importType === 'goals' && (
                               <>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{item.targetDate}</td>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-primary)' }}>{item.progress}%</td>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{item.category || 'General'}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{item.targetDate}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-primary)' }}>{item.progress}%</td>
                               </>
                             )}
                             {importType === 'categories' && (
                               <>
-                                <td style={{ padding: '8px 12px' }}>
+                                <td style={{ padding: '9px 12px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: item.color }} />
                                     <span>{item.color}</span>
                                   </div>
                                 </td>
-                                <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{item.description || '—'}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{item.description || '—'}</td>
                               </>
                             )}
-                            <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                              <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>
-                                Valid
+                            <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                              <span
+                                style={{
+                                  background: 'rgba(16, 185, 129, 0.2)',
+                                  color: '#10B981',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                }}
+                              >
+                                ✓ VALID
                               </span>
                             </td>
                           </tr>
                         ))}
 
-                        {/* Render Invalid Items */}
+                        {/* 2. Invalid Rows: Slightly Red with exact error message */}
                         {parsedData.invalidItems.map((inv, idx) => (
-                          <tr key={`inv-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(239, 68, 68, 0.04)' }}>
-                            <td style={{ padding: '8px 12px', color: '#EF4444' }}>{inv.rowNum}</td>
-                            <td colSpan={importType === 'tasks' ? 5 : importType === 'goals' ? 3 : 2} style={{ padding: '8px 12px', color: '#EF4444' }}>
-                              {inv.errors.join('; ')}
+                          <tr
+                            key={`inv-${idx}`}
+                            style={{
+                              borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
+                              background: 'rgba(239, 68, 68, 0.12)',
+                            }}
+                          >
+                            <td style={{ padding: '9px 12px', color: '#EF4444', fontWeight: 800 }}>{inv.rowNum}</td>
+                            <td style={{ padding: '9px 12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              <div>{inv.raw?.title || inv.raw?.name || 'Untitled / Empty'}</div>
+                              <div style={{ color: '#EF4444', fontSize: '0.74rem', marginTop: '3px', fontWeight: 700 }}>
+                                ⚠️ Error: {inv.errors.join('; ')}
+                              </div>
                             </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                              <span className="badge badge-danger" style={{ fontSize: '0.72rem' }}>
-                                Skipped
+                            {importType === 'tasks' && (
+                              <>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{inv.raw?.date || '—'}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>
+                                  {inv.raw?.startTime || '—'}
+                                </td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>
+                                  {inv.raw?.priority || '—'}
+                                </td>
+                              </>
+                            )}
+                            {importType === 'goals' && (
+                              <>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{inv.raw?.targetDate || '—'}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{inv.raw?.progress || '0'}%</td>
+                              </>
+                            )}
+                            {importType === 'categories' && (
+                              <>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{inv.raw?.color || '—'}</td>
+                                <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{inv.raw?.description || '—'}</td>
+                              </>
+                            )}
+                            <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                              <span
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.25)',
+                                  color: '#EF4444',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                }}
+                              >
+                                ✕ INVALID
                               </span>
                             </td>
                           </tr>

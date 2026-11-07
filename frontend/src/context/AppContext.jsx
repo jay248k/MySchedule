@@ -157,7 +157,7 @@ export function AppProvider({ children }) {
     if (!currentUser) return;
     setIsSyncing(true);
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes] = await Promise.all([
+      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes, settingsRes] = await Promise.all([
         api.getTasks().catch(() => null),
         api.getCategories().catch(() => null),
         api.getGoals().catch(() => null),
@@ -167,6 +167,7 @@ export function AppProvider({ children }) {
         api.getRequests().catch(() => null),
         api.getReports().catch(() => null),
         api.getActiveWorkSession().catch(() => null),
+        api.getSettings().catch(() => null),
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
@@ -218,6 +219,11 @@ export function AppProvider({ children }) {
         const combined = [...reportsRes.data, ...localReports];
         setDailyReports(combined);
         storageService.saveDailyReports(combined);
+      }
+      if (settingsRes?.data) {
+        const serverSettings = settingsRes.data;
+        dispatch(updateSettingsAction(serverSettings));
+        storageService.saveSettings(serverSettings);
       }
 
       // Synchronize Live Active Work Session with Mobile & Backend

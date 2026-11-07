@@ -572,6 +572,26 @@ export function DeviationsPage() {
                         INCIDENT #{idx + 1}
                       </span>
 
+                      {/* Date Pill */}
+                      <span
+                        className="dev-date-pill"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: '5px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <Calendar size={11} />
+                        <span>{dev.date}</span>
+                      </span>
+
                       {/* Timeslot Pill */}
                       <span
                         style={{

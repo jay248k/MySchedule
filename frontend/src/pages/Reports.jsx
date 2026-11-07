@@ -559,8 +559,8 @@ export function Reports() {
 
   // 2. Completed Tasks Report Data
   const completedTasks = useMemo(() => {
-    return tasks.filter((t) => t.completed || getEffectiveStatus(t) === 'completed');
-  }, [tasks]);
+    return dateRangeTasks.filter((t) => t.completed || getEffectiveStatus(t) === 'completed');
+  }, [dateRangeTasks]);
 
   const completedTableData = useMemo(() => {
     return completedTasks.map((t) => {
@@ -1177,6 +1177,103 @@ export function Reports() {
           </p>
         </div>
 
+        {/* Date Range Selector & Presets */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            flexWrap: 'wrap',
+            gap: '12px',
+            width: '100%',
+          }}
+        >
+          {/* Quick Presets */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px' }}>
+              DATE FILTER:
+            </span>
+            {[
+              { id: 'today', label: 'Today' },
+              { id: 'month', label: 'This Month' },
+              { id: '6months', label: 'Last 6 Months' },
+              { id: 'year', label: 'Year (' + currentYear + ')' },
+            ].map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleApplyPreset(p.id)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: reportDatePreset === p.id ? 'var(--primary-color)' : 'var(--page-bg)',
+                  color: reportDatePreset === p.id ? '#FFFFFF' : 'var(--text-secondary)',
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* From - To Date Pickers */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>From:</span>
+              <input
+                type="date"
+                value={reportFromDate}
+                onChange={(e) => {
+                  setReportFromDate(e.target.value);
+                  setReportDatePreset('custom');
+                }}
+                style={{
+                  padding: '5px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--page-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>To:</span>
+              <input
+                type="date"
+                value={reportToDate}
+                onChange={(e) => {
+                  setReportToDate(e.target.value);
+                  setReportDatePreset('custom');
+                }}
+                style={{
+                  padding: '5px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--page-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10B981', marginLeft: '6px' }}>
+              ({dateRangeTasks.length} in range)
+            </span>
+          </div>
+        </div>
+
         {/* Primary View Switcher Tabs */}
         <div
           className="report-mode-tabs"
@@ -1429,14 +1526,7 @@ export function Reports() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={() => navigate('/red-flags')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              Open Dedicated Red Flag Hub <ArrowRight size={14} />
-            </button>
+            {/* Internal navigation removed - navigate via sidebar */}
           </div>
 
           <ExcelReportTable
@@ -2206,14 +2296,7 @@ export function Reports() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => navigate('/archive')}
-                style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
-              >
-                Open Full Archive Page <ArrowRight size={14} />
-              </button>
+              {/* Internal navigation removed - navigate via sidebar */}
             </div>
 
             {/* Recent Reports Quick Strip */}

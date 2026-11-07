@@ -582,23 +582,7 @@ export function MonthlySchedule() {
             </div>
           </div>
 
-          {/* Widget 3: Monthly Highlights & Tips */}
-          <div
-            className="card"
-            style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, #0B2454 0%, #17387B 100%)',
-              color: '#ffffff',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Sparkles size={16} color="#38BDF8" />
-              <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff' }}>Schedule Insights</h4>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: '#CBD5E1', lineHeight: '1.4' }}>
-              You have completed {monthStats.completed} tasks this month! Keep scheduling daily focus sessions to achieve your VLSI and reading milestones.
-            </p>
-          </div>
+          {/* Schedule Insights widget removed per user request */}
         </div>
       </div>
     </div>

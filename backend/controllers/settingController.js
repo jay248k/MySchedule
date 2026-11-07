@@ -34,10 +34,11 @@ exports.getSettings = async (req, res, next) => {
 
 exports.updateSettings = async (req, res, next) => {
   try {
-    const { theme, timeFormat, layoutComfort } = req.body;
+    let { theme, timeFormat, layoutComfort, notificationSettings, accentColor } = req.body;
 
-    if (theme && !['light', 'dark', 'system'].includes(theme)) {
-      return res.status(400).json({ success: false, message: 'Invalid theme. Allowed values: light, dark, system' });
+    if (theme === 'white') theme = 'light';
+    if (theme && !['light', 'dark', 'system', 'white'].includes(theme)) {
+      return res.status(400).json({ success: false, message: 'Invalid theme. Allowed values: light, dark, system, white' });
     }
 
     if (timeFormat && !['12h', '24h'].includes(timeFormat)) {
@@ -56,7 +57,15 @@ exports.updateSettings = async (req, res, next) => {
       },
     });
 
-    await setting.update(req.body);
+    const updatePayload = {
+      ...req.body,
+      ...(theme && { theme }),
+      ...(notificationSettings !== undefined && {
+        notificationSettings: typeof notificationSettings === 'object' ? JSON.stringify(notificationSettings) : notificationSettings,
+      }),
+    };
+
+    await setting.update(updatePayload);
     cacheManager.invalidateSettings(req.userId);
     res.json({ success: true, data: setting });
   } catch (error) {

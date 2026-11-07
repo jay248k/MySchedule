@@ -16,6 +16,8 @@ const WorkSessionModel = require('./WorkSession');
 const ActiveWorkSessionModel = require('./ActiveWorkSession');
 const ScheduleDeviationModel = require('./ScheduleDeviation');
 const WorkRequestModel = require('./WorkRequest');
+const ThoughtModel = require('./Thought');
+const KnowledgeItemModel = require('./KnowledgeItem');
 
 // Initialize models
 const db = {
@@ -33,6 +35,8 @@ const db = {
   ActiveWorkSession: ActiveWorkSessionModel(sequelize),
   ScheduleDeviation: ScheduleDeviationModel(sequelize),
   WorkRequest: WorkRequestModel(sequelize),
+  Thought: ThoughtModel(sequelize),
+  KnowledgeItem: KnowledgeItemModel(sequelize),
 };
 
 // Establish associations

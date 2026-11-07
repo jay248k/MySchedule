@@ -10,6 +10,7 @@ import { CategoryModal } from '../categories/CategoryModal';
 import { BulkImportModal } from '../common/BulkImportModal';
 import { ConfirmDialog, ToastContainer } from '../common/ConfirmDialog';
 import { StopReasonModal } from '../workTracker/StopReasonModal';
+import MissedTaskFloatingPopup from '../common/MissedTaskFloatingPopup';
 
 export function AppLayout() {
   return (
@@ -29,7 +30,8 @@ export function AppLayout() {
         <MobileNavigation />
       </div>
 
-      {/* Persistent Bottom-Right Missed Task Alert Popup disabled per user request */}
+      {/* Bottom-Right Notification & Missed Task Alert Popup */}
+      <MissedTaskFloatingPopup />
 
       {/* Global Modals */}
       <TaskModal />
