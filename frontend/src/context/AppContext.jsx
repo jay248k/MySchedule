@@ -179,43 +179,50 @@ export function AppProvider({ children }) {
       }
       if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
         const serverIds = new Set(categoriesRes.data.map((c) => c.id));
-        const localCats = storageService.getCategories().filter((c) => !serverIds.has(c.id));
+        const stored = storageService.getCategories();
+        const localCats = (Array.isArray(stored) ? stored : []).filter((c) => !serverIds.has(c.id));
         dispatch(setCategories([...categoriesRes.data, ...localCats]));
       }
       if (goalsRes?.data && Array.isArray(goalsRes.data)) {
         const serverIds = new Set(goalsRes.data.map((g) => g.id));
-        const localGoals = storageService.getGoals().filter((g) => !serverIds.has(g.id));
+        const stored = storageService.getGoals();
+        const localGoals = (Array.isArray(stored) ? stored : []).filter((g) => !serverIds.has(g.id));
         dispatch(setGoals([...goalsRes.data, ...localGoals]));
       }
       if (eventsRes?.data && Array.isArray(eventsRes.data)) {
         const serverIds = new Set(eventsRes.data.map((e) => e.id));
-        const localEvents = storageService.getEvents().filter((e) => !serverIds.has(e.id));
+        const stored = storageService.getEvents();
+        const localEvents = (Array.isArray(stored) ? stored : []).filter((e) => !serverIds.has(e.id));
         dispatch(setEvents([...eventsRes.data, ...localEvents]));
       }
       if (workSessionsRes?.data && Array.isArray(workSessionsRes.data)) {
         const serverIds = new Set(workSessionsRes.data.map((s) => s.id));
-        const localSessions = storageService.getWorkSessions().filter((s) => !serverIds.has(s.id));
+        const stored = storageService.getWorkSessions();
+        const localSessions = (Array.isArray(stored) ? stored : []).filter((s) => !serverIds.has(s.id));
         const combined = [...workSessionsRes.data, ...localSessions];
         setWorkSessions(combined);
         storageService.saveWorkSessions(combined);
       }
       if (deviationsRes?.data && Array.isArray(deviationsRes.data)) {
         const serverIds = new Set(deviationsRes.data.map((d) => d.id));
-        const localDeviations = storageService.getDeviations().filter((d) => !serverIds.has(d.id));
+        const stored = storageService.getDeviations();
+        const localDeviations = (Array.isArray(stored) ? stored : []).filter((d) => !serverIds.has(d.id));
         const combined = [...deviationsRes.data, ...localDeviations];
         setDeviations(combined);
         storageService.saveDeviations(combined);
       }
       if (requestsRes?.data && Array.isArray(requestsRes.data)) {
         const serverIds = new Set(requestsRes.data.map((r) => r.id));
-        const localRequests = storageService.getRequests().filter((r) => !serverIds.has(r.id));
+        const stored = storageService.getRequests();
+        const localRequests = (Array.isArray(stored) ? stored : []).filter((r) => !serverIds.has(r.id));
         const combined = [...requestsRes.data, ...localRequests];
         setRequests(combined);
         storageService.saveRequests(combined);
       }
       if (reportsRes?.data && Array.isArray(reportsRes.data)) {
         const serverDates = new Set(reportsRes.data.map((r) => r.date || r.id));
-        const localReports = storageService.getDailyReports().filter((r) => !serverDates.has(r.date || r.id));
+        const stored = storageService.getDailyReports();
+        const localReports = (Array.isArray(stored) ? stored : []).filter((r) => !serverDates.has(r.date || r.id));
         const combined = [...reportsRes.data, ...localReports];
         setDailyReports(combined);
         storageService.saveDailyReports(combined);

@@ -464,13 +464,51 @@ export function Reports() {
   // SUB-REPORTS DATA & CONFIGURATIONS (Excel-Style Reports)
   // =========================================================================
 
+  // Range presets: Today, Month, Last 6 Months, Year (default)
+  const currentYear = new Date().getFullYear();
+  const [reportDatePreset, setReportDatePreset] = useState('year');
+  const [reportFromDate, setReportFromDate] = useState(currentYear + '-01-01');
+  const [reportToDate, setReportToDate] = useState(currentYear + '-12-31');
+
+  const handleApplyPreset = (presetId) => {
+    setReportDatePreset(presetId);
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    if (presetId === 'today') {
+      setReportFromDate(today);
+      setReportToDate(today);
+    } else if (presetId === 'month') {
+      const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+      setReportFromDate(monthStart);
+      setReportToDate(today);
+    } else if (presetId === '6months') {
+      const sixAgo = new Date(now);
+      sixAgo.setMonth(now.getMonth() - 6);
+      setReportFromDate(sixAgo.toISOString().split('T')[0]);
+      setReportToDate(today);
+    } else if (presetId === 'year') {
+      setReportFromDate(now.getFullYear() + '-01-01');
+      setReportToDate(now.getFullYear() + '-12-31');
+    }
+  };
+
+  // Filter tasks within selected date range
+  const dateRangeTasks = useMemo(() => {
+    return (tasks || []).filter((t) => {
+      if (!t.date) return false;
+      if (reportFromDate && t.date < reportFromDate) return false;
+      if (reportToDate && t.date > reportToDate) return false;
+      return true;
+    });
+  }, [tasks, reportFromDate, reportToDate]);
+
   // 1. Pending Tasks Report Data
   const pendingTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    return dateRangeTasks.filter((t) => {
       const eff = getEffectiveStatus(t);
       return eff === 'pending' || (!t.completed && eff !== 'overdue');
     });
-  }, [tasks]);
+  }, [dateRangeTasks]);
 
   const pendingTableData = useMemo(() => {
     return pendingTasks.map((t) => {
