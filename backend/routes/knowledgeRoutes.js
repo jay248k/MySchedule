@@ -12,3 +12,4 @@ router.put('/:id', knowledgeController.updateKnowledgeItem);
 router.delete('/:id', knowledgeController.deleteKnowledgeItem);
 
 module.exports = router;
+

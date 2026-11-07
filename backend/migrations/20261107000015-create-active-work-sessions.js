@@ -81,3 +81,4 @@ module.exports = {
     await queryInterface.dropTable('active_work_sessions');
   },
 };
+

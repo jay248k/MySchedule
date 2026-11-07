@@ -582,3 +582,4 @@ export function ThoughtsPage() {
   );
 }
 export default ThoughtsPage;
+

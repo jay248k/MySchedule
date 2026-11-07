@@ -111,3 +111,4 @@ exports.deleteThought = async (req, res, next) => {
     next(error);
   }
 };
+

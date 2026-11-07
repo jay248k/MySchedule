@@ -12,3 +12,4 @@ router.put('/:id', thoughtController.updateThought);
 router.delete('/:id', thoughtController.deleteThought);
 
 module.exports = router;
+

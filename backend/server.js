@@ -175,16 +175,6 @@ if (!process.env.VERCEL) {
 
       await optimizeDatabase();
 
-      const categoryCount = await db.Category.count();
-      if (categoryCount === 0) {
-        console.log('📦 Database is empty. Seeding initial categories, tasks, goals & settings...');
-        const runSeed = require('./seeders/seedRunner');
-        await runSeed();
-      }
-
-      const { seedNewModules } = require('./seeders/moduleSeeder');
-      await seedNewModules();
-
       app.listen(PORT, () => {
         console.log(`\n==================================================`);
         console.log(`🚀 Server running on: http://localhost:${PORT}`);

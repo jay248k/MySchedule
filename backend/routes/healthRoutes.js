@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { sequelize } = require('../config/database');
-const runSeed = require('../seeders/seedRunner');
 
 router.get('/health', (req, res) => {
   res.json({
@@ -27,15 +26,6 @@ router.get('/db-status', async (req, res) => {
       status: 'error',
       message: error.message,
     });
-  }
-});
-
-router.post('/seed', async (req, res, next) => {
-  try {
-    await runSeed();
-    res.json({ success: true, message: 'Database seeded successfully' });
-  } catch (error) {
-    next(error);
   }
 });
 
