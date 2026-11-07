@@ -6,6 +6,9 @@ const { optionalAuth } = require('../middleware/auth');
 router.use(optionalAuth);
 
 router.get('/', workSessionController.getAllWorkSessions);
+router.get('/active', workSessionController.getActiveWorkSession);
+router.post('/active', workSessionController.setActiveWorkSession);
+router.delete('/active', workSessionController.clearActiveWorkSession);
 router.get('/:id', workSessionController.getWorkSessionById);
 router.post('/', workSessionController.createWorkSession);
 router.put('/:id', workSessionController.updateWorkSession);

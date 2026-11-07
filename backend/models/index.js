@@ -13,6 +13,7 @@ const NotificationModel = require('./Notification');
 const SettingModel = require('./Setting');
 const UserProfileModel = require('./UserProfile');
 const WorkSessionModel = require('./WorkSession');
+const ActiveWorkSessionModel = require('./ActiveWorkSession');
 const ScheduleDeviationModel = require('./ScheduleDeviation');
 const WorkRequestModel = require('./WorkRequest');
 
@@ -29,6 +30,7 @@ const db = {
   Setting: SettingModel(sequelize),
   UserProfile: UserProfileModel(sequelize),
   WorkSession: WorkSessionModel(sequelize),
+  ActiveWorkSession: ActiveWorkSessionModel(sequelize),
   ScheduleDeviation: ScheduleDeviationModel(sequelize),
   WorkRequest: WorkRequestModel(sequelize),
 };

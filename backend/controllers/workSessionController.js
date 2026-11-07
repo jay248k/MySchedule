@@ -1,4 +1,114 @@
-const { WorkSession, Task, Category } = require('../models');
+const { WorkSession, ActiveWorkSession, Task, Category } = require('../models');
+
+// GET /api/work-sessions/active
+exports.getActiveWorkSession = async (req, res, next) => {
+  try {
+    const userId = req.userId || null;
+    let active = null;
+
+    if (userId) {
+      active = await ActiveWorkSession.findOne({ where: { userId } });
+    }
+    if (!active) {
+      active = await ActiveWorkSession.findByPk('default') || await ActiveWorkSession.findOne({ where: { isRunning: true } });
+    }
+
+    res.json({
+      success: true,
+      data: active ? active.toJSON() : null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/work-sessions/active
+exports.setActiveWorkSession = async (req, res, next) => {
+  try {
+    const userId = req.userId || null;
+    const sessionKey = userId ? String(userId) : 'default';
+
+    const {
+      isRunning,
+      startTimestamp,
+      startTime,
+      date,
+      taskId,
+      taskTitle,
+      baseAccumulatedSeconds,
+      status,
+      lastPausedTimestamp,
+      lastPauseReason,
+      lastPauseRemarks,
+    } = req.body || {};
+
+    let active = null;
+    if (userId) {
+      active = await ActiveWorkSession.findOne({ where: { userId } });
+    }
+    if (!active) {
+      active = await ActiveWorkSession.findByPk(sessionKey) || await ActiveWorkSession.findByPk('default');
+    }
+
+    const payload = {
+      id: sessionKey,
+      userId,
+      isRunning: Boolean(isRunning),
+      startTimestamp: startTimestamp ? Number(startTimestamp) : null,
+      startTime: startTime || null,
+      date: date || null,
+      taskId: taskId || null,
+      taskTitle: taskTitle || null,
+      baseAccumulatedSeconds: Number(baseAccumulatedSeconds) || 0,
+      status: status || (isRunning ? 'running' : 'idle'),
+      lastPausedTimestamp: lastPausedTimestamp ? Number(lastPausedTimestamp) : null,
+      lastPauseReason: lastPauseReason || null,
+      lastPauseRemarks: lastPauseRemarks || null,
+    };
+
+    if (active) {
+      await active.update(payload);
+    } else {
+      active = await ActiveWorkSession.create(payload);
+    }
+
+    res.json({
+      success: true,
+      message: 'Active work session synchronized',
+      data: active.toJSON(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /api/work-sessions/active
+exports.clearActiveWorkSession = async (req, res, next) => {
+  try {
+    const userId = req.userId || null;
+    const clearPayload = {
+      isRunning: false,
+      status: 'idle',
+      startTimestamp: null,
+      startTime: null,
+      baseAccumulatedSeconds: 0,
+      lastPausedTimestamp: null,
+    };
+
+    if (userId) {
+      await ActiveWorkSession.update(clearPayload, { where: { userId } });
+    }
+    await ActiveWorkSession.update(clearPayload, { where: { id: 'default' } });
+
+    res.json({
+      success: true,
+      message: 'Active work session cleared',
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.getAllWorkSessions = async (req, res, next) => {
   try {
@@ -105,6 +215,24 @@ exports.createWorkSession = async (req, res, next) => {
       taskTitle: taskTitle || null,
       userId,
     });
+
+    // Auto-clear active session when a work session is logged/completed
+    try {
+      const clearPayload = {
+        isRunning: false,
+        status: 'idle',
+        startTimestamp: null,
+        startTime: null,
+        baseAccumulatedSeconds: 0,
+        lastPausedTimestamp: null,
+      };
+      if (userId) {
+        await ActiveWorkSession.update(clearPayload, { where: { userId } });
+      }
+      await ActiveWorkSession.update(clearPayload, { where: { id: 'default' } });
+    } catch (clearErr) {
+      // non-blocking
+    }
 
     res.status(201).json({
       success: true,

@@ -157,7 +157,7 @@ export function AppProvider({ children }) {
     if (!currentUser) return;
     setIsSyncing(true);
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes] = await Promise.all([
+      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes] = await Promise.all([
         api.getTasks().catch(() => null),
         api.getCategories().catch(() => null),
         api.getGoals().catch(() => null),
@@ -166,6 +166,7 @@ export function AppProvider({ children }) {
         api.getDeviations().catch(() => null),
         api.getRequests().catch(() => null),
         api.getReports().catch(() => null),
+        api.getActiveWorkSession().catch(() => null),
       ]);
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
@@ -218,6 +219,34 @@ export function AppProvider({ children }) {
         setDailyReports(combined);
         storageService.saveDailyReports(combined);
       }
+
+      // Synchronize Live Active Work Session with Mobile & Backend
+      if (activeSessionRes && activeSessionRes.success !== false) {
+        const s = activeSessionRes.data;
+        if (s && s.isRunning) {
+          const syncedActive = {
+            isRunning: true,
+            startTimestamp: Number(s.startTimestamp),
+            startTime: s.startTime,
+            date: s.date,
+            taskId: s.taskId || null,
+            taskTitle: s.taskTitle || '',
+            baseAccumulatedSeconds: Number(s.baseAccumulatedSeconds) || 0,
+            status: s.status || 'running',
+          };
+          setActiveWorkSession(syncedActive);
+          storageService.saveActiveWorkSession(syncedActive);
+        } else if (!s || !s.isRunning) {
+          setActiveWorkSession((prev) => {
+            if (prev?.isRunning) {
+              storageService.saveActiveWorkSession(null);
+              return null;
+            }
+            return prev;
+          });
+        }
+      }
+
       setLastSyncedAt(Date.now());
       if (options.showToastNotification) {
         showToast({
@@ -243,6 +272,45 @@ export function AppProvider({ children }) {
       fetchAllData();
     }, 12000);
 
+    // Fast 3-second poller dedicated to active work session so Web and Mobile timers are in lock-step
+    const activePollTimer = setInterval(async () => {
+      try {
+        const res = await api.getActiveWorkSession();
+        if (res && res.success !== false) {
+          const s = res.data;
+          if (s && s.isRunning) {
+            setActiveWorkSession((prev) => {
+              if (!prev || !prev.isRunning || Math.abs(Number(prev.startTimestamp) - Number(s.startTimestamp)) > 1000) {
+                const updated = {
+                  isRunning: true,
+                  startTimestamp: Number(s.startTimestamp),
+                  startTime: s.startTime,
+                  date: s.date,
+                  taskId: s.taskId || null,
+                  taskTitle: s.taskTitle || '',
+                  baseAccumulatedSeconds: Number(s.baseAccumulatedSeconds) || 0,
+                  status: s.status || 'running',
+                };
+                storageService.saveActiveWorkSession(updated);
+                return updated;
+              }
+              return prev;
+            });
+          } else {
+            setActiveWorkSession((prev) => {
+              if (prev && prev.isRunning) {
+                storageService.saveActiveWorkSession(null);
+                return null;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (e) {
+        // quiet fallback
+      }
+    }, 3000);
+
     // Automatically re-sync whenever user focuses the browser tab or returns to web
     const handleWindowFocus = () => {
       fetchAllData();
@@ -251,6 +319,7 @@ export function AppProvider({ children }) {
     window.addEventListener('focus', handleWindowFocus);
     return () => {
       clearInterval(syncTimer);
+      clearInterval(activePollTimer);
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [fetchAllData, authUser]);
@@ -1113,9 +1182,11 @@ export function AppProvider({ children }) {
       taskId: task?.id || null,
       taskTitle: task?.title || '',
       baseAccumulatedSeconds: existingChain.accumulatedWorkSeconds || 0,
+      status: 'running',
     };
     setActiveWorkSession(newActive);
     storageService.saveActiveWorkSession(newActive);
+    api.setActiveWorkSession(newActive).catch(() => {});
 
     showToast({
       type: 'success',
@@ -1198,6 +1269,7 @@ export function AppProvider({ children }) {
       setActiveWorkSession(null);
       storageService.saveActiveWorkSession(null);
       setIsStopModalOpen(false);
+      api.clearActiveWorkSession().catch(() => {});
 
       // Save locally to historical workSessions
       setWorkSessions((prev) => {
@@ -1233,6 +1305,7 @@ export function AppProvider({ children }) {
   const finishDayWorkSession = useCallback((dateStr = getTodayDateString()) => {
     setActiveWorkSession(null);
     storageService.saveActiveWorkSession(null);
+    api.clearActiveWorkSession().catch(() => {});
     setWorkChains((prev) => {
       const current = prev[dateStr] || { accumulatedWorkSeconds: 0, chain: [] };
       const updated = {

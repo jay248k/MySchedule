@@ -152,6 +152,9 @@ export const api = {
 
   // Work Tracker & Time Sessions
   getWorkSessions: (params = {}) => apiClient.get('/work-sessions', { params }),
+  getActiveWorkSession: () => apiClient.get('/work-sessions/active'),
+  setActiveWorkSession: (payload) => apiClient.post('/work-sessions/active', payload),
+  clearActiveWorkSession: () => apiClient.delete('/work-sessions/active'),
   createWorkSession: (payload) => apiClient.post('/work-sessions', payload),
   updateWorkSession: (id, payload) => apiClient.put(`/work-sessions/${id}`, payload),
   deleteWorkSession: (id) => apiClient.delete(`/work-sessions/${id}`),

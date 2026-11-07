@@ -50,10 +50,10 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
   }
 
   // Display mode: Strictly show actual tracked working time in 00:00:00 format
-  // When active: shows live tracked session duration
+  // When active: shows live tracked session duration (including accumulated time if resumed)
   // When stopped: shows total recorded work time for today (or 00:00:00 if no work tracked yet)
   const displayTotalSeconds = isRunning
-    ? liveSessionElapsedSeconds
+    ? ((Number(activeWorkSession?.baseAccumulatedSeconds) || 0) + liveSessionElapsedSeconds)
     : totalRecordedSeconds > 0
     ? totalRecordedSeconds
     : 0;
