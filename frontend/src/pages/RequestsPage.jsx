@@ -355,8 +355,14 @@ export default function RequestsPage() {
         </div>
       </div>
 
-      {/* Requests List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Requests Grid: Compact multi-column grid, no full-width stretching or empty dead spaces */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: filteredRequests.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(360px, 1fr))',
+          gap: '12px',
+        }}
+      >
         {filteredRequests.length === 0 ? (
           <div
             className="card"
@@ -364,16 +370,16 @@ export default function RequestsPage() {
               background: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
               borderRadius: '14px',
-              padding: '60px 20px',
+              padding: '40px 20px',
               textAlign: 'center',
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <CheckCircle2 size={48} color="#10B981" style={{ margin: '0 auto 16px auto' }} />
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+            <CheckCircle2 size={40} color="#10B981" style={{ margin: '0 auto 12px auto' }} />
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
               No requests matching your criteria
             </h3>
-            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
               {activeTab === 'pending'
                 ? 'All work requests have been resolved!'
                 : 'No missed work request records found.'}
@@ -381,13 +387,13 @@ export default function RequestsPage() {
             <button
               onClick={() => setIsSubmitModalOpen(true)}
               style={{
-                marginTop: '18px',
-                padding: '9px 18px',
+                marginTop: '14px',
+                padding: '7px 14px',
                 borderRadius: '8px',
                 border: 'none',
                 background: 'var(--accent-primary, #1769FF)',
                 color: '#FFFFFF',
-                fontSize: '0.84rem',
+                fontSize: '0.8rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -395,7 +401,7 @@ export default function RequestsPage() {
                 gap: '6px',
               }}
             >
-              <PlusCircle size={15} /> Submit New Request
+              <PlusCircle size={14} /> Submit New Request
             </button>
           </div>
         ) : (
@@ -412,188 +418,200 @@ export default function RequestsPage() {
                 style={{
                   background: 'var(--card-bg)',
                   border: isPending
-                    ? '1.5px solid rgba(245, 158, 11, 0.4)'
+                    ? '1.5px solid rgba(245, 158, 11, 0.45)'
                     : '1px solid var(--border-color)',
-                  borderRadius: '14px',
-                  padding: '12px 18px',
+                  borderLeft: isPending
+                    ? '4px solid #F59E0B'
+                    : isCompleted
+                    ? '4px solid #10B981'
+                    : isCancelled
+                    ? '4px solid #EF4444'
+                    : '4px solid #3B82F6',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px',
+                  gap: '8px',
                   boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {/* Top Row: Title, Date, Status */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                        {req.title}
-                      </h3>
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          textTransform: 'uppercase',
-                          background: isPending
-                            ? 'rgba(245, 158, 11, 0.15)'
-                            : isCompleted
-                            ? 'rgba(16, 185, 129, 0.15)'
-                            : isCancelled
-                            ? 'rgba(239, 68, 68, 0.15)'
-                            : 'rgba(59, 130, 246, 0.15)',
-                          color: isPending
-                            ? '#F59E0B'
-                            : isCompleted
-                            ? '#10B981'
-                            : isCancelled
-                            ? '#EF4444'
-                            : '#3B82F6',
-                        }}
-                      >
-                        {req.status}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '6px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Calendar size={14} /> Date: <strong>{req.date}</strong>
-                      </span>
-                      {(req.startTime || req.endTime) && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Clock size={14} /> Time: <strong>{req.startTime} - {req.endTime}</strong>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions for Pending Requests */}
-                  {isPending ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button
-                        onClick={() => handleMarkComplete(req.id)}
-                        title="Mark this request as completed"
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: '#10B981',
-                          color: '#FFFFFF',
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <Check size={15} /> Mark Completed
-                      </button>
-
-                      <button
-                        onClick={() => setReschedulingRequest(req)}
-                        title="Reschedule to another date/time"
-                        style={{
-                          padding: '8px 14px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: '#3B82F6',
-                          color: '#FFFFFF',
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <Calendar size={15} /> Reschedule
-                      </button>
-
-                      <button
-                        onClick={() => setCancellingRequest(req)}
-                        title="Cancel with mandatory remarks"
-                        style={{
-                          padding: '8px 14px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: '#EF4444',
-                          color: '#FFFFFF',
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <X size={15} /> Canceled
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => deleteWorkRequest(req.id)}
-                      title="Delete this request record"
+                {/* Header: Title & Status Badge & Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+                    <h3
                       style={{
-                        padding: '6px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        opacity: 0.7,
+                        margin: 0,
+                        fontSize: '0.94rem',
+                        fontWeight: 800,
+                        color: 'var(--text-primary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      title={req.title}
+                    >
+                      {req.title}
+                    </h3>
+                    <span
+                      style={{
+                        fontSize: '0.66rem',
+                        fontWeight: 800,
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        flexShrink: 0,
+                        background: isPending
+                          ? 'rgba(245, 158, 11, 0.15)'
+                          : isCompleted
+                          ? 'rgba(16, 185, 129, 0.15)'
+                          : isCancelled
+                          ? 'rgba(239, 68, 68, 0.15)'
+                          : 'rgba(59, 130, 246, 0.15)',
+                        color: isPending
+                          ? '#F59E0B'
+                          : isCompleted
+                          ? '#10B981'
+                          : isCancelled
+                          ? '#EF4444'
+                          : '#3B82F6',
                       }}
                     >
-                      <Trash2 size={16} />
+                      {req.status}
+                    </span>
+                  </div>
+
+                  {!isPending && (
+                    <button
+                      onClick={() => deleteWorkRequest(req.id)}
+                      title="Delete request"
+                      style={{
+                        padding: '2px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        opacity: 0.6,
+                      }}
+                    >
+                      <Trash2 size={13} />
                     </button>
                   )}
                 </div>
 
-                {/* Mandatory Reason Box */}
-                <div
-                  style={{
-                    background: 'var(--page-bg)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '10px',
-                    padding: '8px 12px',
-                  }}
-                >
-                  <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Reason For Missing / Request:
-                  </div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                    {req.reason}
-                  </div>
+                {/* Inline Metadata (Date & Time) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Calendar size={12} color="var(--primary-color)" />
+                    <strong>{req.date}</strong>
+                  </span>
+                  {(req.startTime || req.endTime) && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={12} color="#38BDF8" />
+                      <span>{req.startTime}{req.endTime ? ` - ${req.endTime}` : ''}</span>
+                    </span>
+                  )}
                 </div>
 
-                {/* Action Remarks (Audit Trail) */}
+                {/* Compact Reason Snippet */}
+                {req.reason && (
+                  <div
+                    style={{
+                      background: 'var(--page-bg)',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '0.78rem',
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Reason: </span>
+                    {req.reason}
+                  </div>
+                )}
+
+                {/* Audit remarks if any */}
                 {req.actionRemarks && (
                   <div
                     style={{
-                      background: isCancelled
-                        ? 'rgba(239, 68, 68, 0.08)'
-                        : isRescheduled
-                        ? 'rgba(59, 130, 246, 0.08)'
-                        : 'rgba(16, 185, 129, 0.08)',
-                      borderLeft: isCancelled
-                        ? '4px solid #EF4444'
-                        : isRescheduled
-                        ? '4px solid #3B82F6'
-                        : '4px solid #10B981',
-                      borderRadius: '6px',
-                      padding: '10px 14px',
-                      fontSize: '0.84rem',
-                      color: 'var(--text-primary)',
+                      fontSize: '0.74rem',
+                      color: isCancelled ? '#EF4444' : isCompleted ? '#10B981' : '#3B82F6',
+                      fontWeight: 600,
+                      padding: '2px 0',
                     }}
                   >
-                    <strong>{isCancelled ? 'Cancellation Remarks (Mandatory):' : 'Action Audit:'}</strong>{' '}
-                    {req.actionRemarks}
+                    Audit: {req.actionRemarks}
                     {req.rescheduledDate && (
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                        Rescheduled to: <strong>{req.rescheduledDate}</strong> ({req.rescheduledStartTime || '09:00'} - {req.rescheduledEndTime || '10:00'})
-                      </div>
+                      <span style={{ color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                        (Rescheduled: {req.rescheduledDate})
+                      </span>
                     )}
+                  </div>
+                )}
+
+                {/* Action Buttons for Pending Requests */}
+                {isPending && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 0.9fr', gap: '6px', marginTop: '4px' }}>
+                    <button
+                      onClick={() => handleMarkComplete(req.id)}
+                      title="Complete"
+                      style={{
+                        padding: '5px 8px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#10B981',
+                        color: '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Check size={12} strokeWidth={2.5} /> Completed
+                    </button>
+                    <button
+                      onClick={() => setReschedulingRequest(req)}
+                      title="Reschedule"
+                      style={{
+                        padding: '5px 8px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#3B82F6',
+                        color: '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Calendar size={12} /> Reschedule
+                    </button>
+                    <button
+                      onClick={() => setCancellingRequest(req)}
+                      title="Cancel"
+                      style={{
+                        padding: '5px 8px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#EF4444',
+                        color: '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <X size={12} strokeWidth={2.5} /> Cancel
+                    </button>
                   </div>
                 )}
               </div>

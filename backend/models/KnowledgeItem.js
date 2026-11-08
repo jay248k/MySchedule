@@ -42,6 +42,18 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      isPinned: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      nextLessonId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      linkedLessonIds: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,

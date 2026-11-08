@@ -13,7 +13,10 @@ exports.getThoughts = async (req, res, next) => {
 
     const thoughts = await Thought.findAll({
       where,
-      order: [['createdAt', 'DESC']],
+      order: [
+        ['isPinned', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
     });
 
     res.json({
@@ -41,7 +44,7 @@ exports.getThoughtById = async (req, res, next) => {
 
 exports.createThought = async (req, res, next) => {
   try {
-    const { text, author, category, tags, isFavorite } = req.body;
+    const { text, author, category, tags, isFavorite, isPinned } = req.body;
     if (!text || !text.trim()) {
       return res.status(400).json({ success: false, message: 'Thought text is required' });
     }
@@ -53,6 +56,7 @@ exports.createThought = async (req, res, next) => {
       category: category || 'Motivation',
       tags: tags || null,
       isFavorite: Boolean(isFavorite),
+      isPinned: Boolean(isPinned),
       userId: req.userId || null,
     });
 
@@ -74,13 +78,14 @@ exports.updateThought = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Thought not found' });
     }
 
-    const { text, author, category, tags, isFavorite } = req.body;
+    const { text, author, category, tags, isFavorite, isPinned } = req.body;
     await thought.update({
       ...(text !== undefined && { text: text.trim() }),
       ...(author !== undefined && { author: author.trim() }),
       ...(category !== undefined && { category }),
       ...(tags !== undefined && { tags }),
       ...(isFavorite !== undefined && { isFavorite: Boolean(isFavorite) }),
+      ...(isPinned !== undefined && { isPinned: Boolean(isPinned) }),
     });
 
     res.json({

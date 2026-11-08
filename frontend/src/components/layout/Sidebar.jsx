@@ -51,6 +51,7 @@ export function Sidebar() {
     user: appUser,
     activeWorkSession,
     requests = [],
+    settings,
   } = useApp();
 
   const {
@@ -88,25 +89,40 @@ export function Sidebar() {
   const isReportsActive = location.pathname.startsWith('/reports');
   const [reportsSubmenuOpen, setReportsSubmenuOpen] = useState(isReportsActive);
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+  const allNavItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard, iconColor: '#3B82F6' },
     {
       name: isSelectedToday ? "Today's Tasks" : "Day's Tasks",
       path: '/today',
       icon: CheckSquare,
+      iconColor: '#10B981',
       badge: pendingActiveCount > 0 ? pendingActiveCount : null,
     },
     {
       name: 'Work Tracker',
       path: '/work-tracker',
       icon: Timer,
+      iconColor: '#06B6D4',
       badge: isTrackingLive ? 'LIVE' : null,
       badgeColor: isTrackingLive ? '#10B981' : undefined,
+    },
+    {
+      name: 'Knowledge Base',
+      path: '/knowledge',
+      icon: BookOpen,
+      iconColor: '#F59E0B',
+    },
+    {
+      name: 'Thoughts & Motivation',
+      path: '/thoughts',
+      icon: Lightbulb,
+      iconColor: '#EC4899',
     },
     {
       name: 'Red Flags',
       path: '/red-flags',
       icon: Flag,
+      iconColor: '#EF4444',
       badge: activeRedFlagsCount > 0 ? activeRedFlagsCount : null,
       badgeColor: '#EF4444',
     },
@@ -114,22 +130,25 @@ export function Sidebar() {
       name: 'Mistakes & Deviations',
       path: '/deviations',
       icon: AlertCircle,
+      iconColor: '#F97316',
     },
     {
       name: 'Work Requests',
       path: '/requests',
       icon: FileText,
+      iconColor: '#8B5CF6',
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
       badgeColor: '#F59E0B',
     },
-    { name: 'Monthly Schedule', path: '/monthly', icon: CalendarDays },
-    { name: 'Calendar', path: '/calendar', icon: Calendar },
-    { name: 'Categories', path: '/categories', icon: Tags },
-    { name: 'Goals', path: '/goals', icon: Target },
+    { name: 'Monthly Schedule', path: '/monthly', icon: CalendarDays, iconColor: '#6366F1' },
+    { name: 'Calendar', path: '/calendar', icon: Calendar, iconColor: '#3B82F6' },
+    { name: 'Categories', path: '/categories', icon: Tags, iconColor: '#10B981' },
+    { name: 'Goals', path: '/goals', icon: Target, iconColor: '#EC4899' },
     {
       name: 'Reports',
       path: '/reports',
       icon: BarChart3,
+      iconColor: '#06B6D4',
       hasSubmenu: true,
       subItems: [
         { name: 'Pending Tasks', path: '/reports/pending', icon: Clock },
@@ -141,11 +160,27 @@ export function Sidebar() {
         { name: 'Daily Standup', path: '/reports', icon: FileText },
       ],
     },
-    { name: 'Reports Archive', path: '/archive', icon: Archive },
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Reports Archive', path: '/archive', icon: Archive, iconColor: '#64748B' },
+    { name: 'Settings', path: '/settings', icon: Settings, iconColor: '#94A3B8' },
   ];
 
-  const visibleNavItems = navItems;
+  // Dynamic ordering support from settings.navigationOrder
+  const visibleNavItems = useMemo(() => {
+    let order = settings?.navigationOrder;
+    if (typeof order === 'string') {
+      try { order = JSON.parse(order); } catch { order = null; }
+    }
+    if (!Array.isArray(order) || order.length === 0) {
+      return allNavItems;
+    }
+    const orderMap = new Map();
+    order.forEach((p, idx) => orderMap.set(p, idx));
+    return [...allNavItems].sort((a, b) => {
+      const idxA = orderMap.has(a.path) ? orderMap.get(a.path) : 999;
+      const idxB = orderMap.has(b.path) ? orderMap.get(b.path) : 999;
+      return idxA - idxB;
+    });
+  }, [allNavItems, settings?.navigationOrder]);
 
   return (
     <>

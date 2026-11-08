@@ -69,6 +69,15 @@ export const storageService = {
 
   getSettings() {
     try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const local = localStorage.getItem('myschedule_user_settings');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && typeof parsed === 'object') {
+            return { ...initialSettings, ...parsed };
+          }
+        }
+      }
       const cookieSettings = cookieUtils.getJSON('myschedule_user_settings');
       if (cookieSettings && typeof cookieSettings === 'object') {
         return { ...initialSettings, ...cookieSettings };
@@ -83,9 +92,15 @@ export const storageService = {
     const updated = { ...initialSettings, ...(settings || {}) };
     inMemoryStore.settings = updated;
     try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('myschedule_user_settings', JSON.stringify(updated));
+        if (updated.theme) {
+          localStorage.setItem('myschedule_theme', updated.theme);
+        }
+      }
       cookieUtils.setJSON('myschedule_user_settings', updated, 365);
     } catch {
-      // Cookie set fallback
+      // Storage fallback
     }
   },
 

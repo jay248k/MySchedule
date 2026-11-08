@@ -9,12 +9,17 @@ exports.getSettings = async (req, res, next) => {
       return res.json({ success: true, data: cached, fromCache: true });
     }
 
-    const where = req.userId ? { userId: req.userId } : { id: 1 };
-    let [setting] = await Setting.findOrCreate({
-      where,
-      defaults: {
+    let setting;
+    if (req.userId) {
+      setting = await Setting.findOne({ where: { userId: req.userId } });
+    }
+    if (!setting) {
+      setting = await Setting.findOne();
+    }
+    if (!setting) {
+      setting = await Setting.create({
         userId: req.userId || null,
-        theme: 'light',
+        theme: 'dark',
         accentColor: '#1769FF',
         weekStartsOnSunday: true,
         defaultCalendarView: 'week',
@@ -22,8 +27,8 @@ exports.getSettings = async (req, res, next) => {
         layoutComfort: 'comfortable',
         enableInAppNotifications: true,
         soundEffects: false,
-      },
-    });
+      });
+    }
 
     cacheManager.set(cacheKey, setting, 300); // 5-minute cache with instant update invalidation
     res.json({ success: true, data: setting });
@@ -34,7 +39,7 @@ exports.getSettings = async (req, res, next) => {
 
 exports.updateSettings = async (req, res, next) => {
   try {
-    let { theme, timeFormat, layoutComfort, notificationSettings, accentColor } = req.body;
+    let { theme, timeFormat, layoutComfort, notificationSettings, navigationOrder, accentColor } = req.body;
 
     if (theme === 'white') theme = 'light';
     if (theme && !['light', 'dark', 'system', 'white'].includes(theme)) {
@@ -49,19 +54,25 @@ exports.updateSettings = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid layoutComfort. Allowed values: comfortable, compact, spacious' });
     }
 
-    const where = req.userId ? { userId: req.userId } : { id: 1 };
-    let [setting] = await Setting.findOrCreate({
-      where,
-      defaults: {
-        userId: req.userId || null,
-      },
-    });
+    let setting;
+    if (req.userId) {
+      setting = await Setting.findOne({ where: { userId: req.userId } });
+    }
+    if (!setting) {
+      setting = await Setting.findOne();
+    }
+    if (!setting) {
+      setting = await Setting.create({ userId: req.userId || null, theme: 'dark' });
+    }
 
     const updatePayload = {
       ...req.body,
       ...(theme && { theme }),
       ...(notificationSettings !== undefined && {
         notificationSettings: typeof notificationSettings === 'object' ? JSON.stringify(notificationSettings) : notificationSettings,
+      }),
+      ...(navigationOrder !== undefined && {
+        navigationOrder: typeof navigationOrder === 'object' ? JSON.stringify(navigationOrder) : navigationOrder,
       }),
     };
 

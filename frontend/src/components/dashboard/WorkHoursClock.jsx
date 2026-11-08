@@ -10,6 +10,7 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
     startWorkSession,
     requestStopWorkSession,
     workSessions = [],
+    currentLiveWorkSeconds = 0,
   } = useApp();
 
   const [time, setTime] = useState(new Date());
@@ -39,21 +40,14 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
     0
   );
 
-  // If session is active right now, calculate current session elapsed seconds
+  // If session is active right now, use single source of truth from AppContext
   const isRunning = Boolean(activeWorkSession?.isRunning);
-  let liveSessionElapsedSeconds = 0;
-  if (isRunning && activeWorkSession?.startTimestamp) {
-    liveSessionElapsedSeconds = Math.max(
-      0,
-      Math.floor((Date.now() - activeWorkSession.startTimestamp) / 1000)
-    );
-  }
 
   // Display mode: Strictly show actual tracked working time in 00:00:00 format
-  // When active: shows live tracked session duration (including accumulated time if resumed)
+  // When active: shows live tracked session duration (synchronized lock-step across web & mobile)
   // When stopped: shows total recorded work time for today (or 00:00:00 if no work tracked yet)
   const displayTotalSeconds = isRunning
-    ? ((Number(activeWorkSession?.baseAccumulatedSeconds) || 0) + liveSessionElapsedSeconds)
+    ? currentLiveWorkSeconds
     : totalRecordedSeconds > 0
     ? totalRecordedSeconds
     : 0;

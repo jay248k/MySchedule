@@ -52,19 +52,20 @@ export default function MissedTaskFloatingPopup() {
   const items = useMemo(() => {
     const list = [];
 
-    // Check if work session is currently paused
+    // Check if work session is currently paused or stopped
     const todayStr = getTodayDateString();
     const todayChain = workChains?.[todayStr];
-    const isWorkPaused = todayChain?.status === 'paused' && !activeWorkSession?.isRunning;
-    if (isWorkPaused) {
+    const isTimerActive = !!activeWorkSession?.isRunning;
+    const hasStoppedTimer = !isTimerActive && (todayChain?.status === 'paused' || (todayChain?.accumulatedWorkSeconds || 0) > 0);
+    if (hasStoppedTimer) {
       list.push({
         id: 'work-paused-notification',
         isWorkPaused: true,
-        title: `Work Paused: ${todayChain.lastPauseReason || 'Break'}`,
-        reason: todayChain.lastPauseReason || 'Break',
-        remarks: todayChain.lastPauseRemarks || '',
-        stoppedAt: todayChain.lastPausedTimeStr || '',
-        accumulatedSeconds: todayChain.accumulatedWorkSeconds || 0,
+        title: `Work Timer: ${todayChain?.lastPauseReason || 'Paused'}`,
+        reason: todayChain?.lastPauseReason || 'Paused',
+        remarks: todayChain?.lastPauseRemarks || '',
+        stoppedAt: todayChain?.lastPausedTimeStr || '',
+        accumulatedSeconds: todayChain?.accumulatedWorkSeconds || 0,
       });
     }
 
@@ -437,8 +438,8 @@ export default function MissedTaskFloatingPopup() {
               </div>
             )}
 
-            {/* Action Buttons: Work Paused -> Restart Work; Otherwise: Completed, Reschedule, Cancel */}
-            {currentItem.isWorkPaused ? (
+            {/* Action Buttons: Work Paused / Stopped Timer -> ONLY show Start Timer button; Otherwise: Completed, Reschedule, Cancel */}
+            {currentItem.isWorkPaused || currentItem.isWorkSession || currentItem.isTimer ? (
               <div
                 style={{
                   display: 'flex',
@@ -456,8 +457,8 @@ export default function MissedTaskFloatingPopup() {
                     startWorkSession();
                     showToast({
                       type: 'success',
-                      title: 'Work Resumed',
-                      message: 'Timer tracking resumed from where you stopped!',
+                      title: 'Work Timer Started',
+                      message: 'Live session timer is tracking!',
                     });
                   }}
                   style={{
@@ -467,7 +468,7 @@ export default function MissedTaskFloatingPopup() {
                     border: 'none',
                     background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                     color: '#FFFFFF',
-                    fontSize: '0.8rem',
+                    fontSize: '0.82rem',
                     fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
@@ -478,7 +479,7 @@ export default function MissedTaskFloatingPopup() {
                   }}
                 >
                   <Play size={14} fill="#FFFFFF" />
-                  <span>Restart Work Now</span>
+                  <span>Start Timer</span>
                 </button>
 
                 {items.length > 1 && (
@@ -499,7 +500,7 @@ export default function MissedTaskFloatingPopup() {
                       padding: '2px',
                     }}
                   >
-                    Show Other Notifications ({items.length - 1} pending)
+                    Next Notification ({items.length - 1} more)
                   </button>
                 )}
               </div>

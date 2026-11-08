@@ -11,6 +11,7 @@ import {
   Quote,
   Share2,
   BookOpen,
+  Pin,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -58,7 +59,7 @@ export function ThoughtsPage() {
   }, [thoughts]);
 
   const filteredThoughts = useMemo(() => {
-    return thoughts.filter((t) => {
+    const list = thoughts.filter((t) => {
       if (selectedCategory !== 'all' && t.category !== selectedCategory) {
         return false;
       }
@@ -71,7 +72,30 @@ export function ThoughtsPage() {
       }
       return true;
     });
+
+    return list.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
   }, [thoughts, selectedCategory, searchQuery]);
+
+  const handleTogglePin = async (thought) => {
+    try {
+      const nextPin = !thought.isPinned;
+      await api.updateThought(thought.id, { isPinned: nextPin });
+      setThoughts((prev) =>
+        prev.map((t) => (t.id === thought.id ? { ...t, isPinned: nextPin } : t))
+      );
+      showToast({
+        type: 'success',
+        title: nextPin ? 'Thought Pinned' : 'Thought Unpinned',
+        message: nextPin ? 'Pinned to top.' : 'Unpinned from top.',
+      });
+    } catch (e) {
+      showToast({ type: 'danger', title: 'Error', message: 'Could not update pin.' });
+    }
+  };
 
   const handleCreateThought = async (e) => {
     e.preventDefault();
@@ -346,6 +370,20 @@ export function ThoughtsPage() {
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <button
+                      onClick={() => handleTogglePin(item)}
+                      title={item.isPinned ? 'Unpin' : 'Pin to top'}
+                      style={{
+                        background: item.isPinned ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
+                        padding: '4px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      <Pin size={14} fill={item.isPinned ? '#F59E0B' : 'none'} />
+                    </button>
+                    <button
                       onClick={() => handleCopy(`"${item.text}" — ${item.author}`, item.id)}
                       title="Copy quote"
                       style={{
@@ -489,7 +527,7 @@ export function ThoughtsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Marcus Aurelius, Steve Jobs"
+                    placeholder="Enter author or source..."
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     style={{

@@ -55,6 +55,7 @@ export function WorkTracker() {
     workChains = {},
     finishDayWorkSession,
     showToast,
+    currentLiveWorkSeconds = 0,
   } = useApp();
 
   const todayStr = getTodayDateString();
@@ -67,25 +68,14 @@ export function WorkTracker() {
     chain: [],
   };
 
-  // Live timer tick for active session
-  const [ticker, setTicker] = useState(Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => setTicker(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const isRunning = Boolean(activeWorkSession?.isRunning);
   const isPaused = isToday && todayChain?.status === 'paused' && !isRunning;
   const isFinished = isToday && todayChain?.status === 'finished' && !isRunning;
 
-  // Active session or accumulated duration (freezes on pause, resumes forward on restart)
+  // Active session or accumulated duration (derived from shared AppContext master ticker)
   let activeElapsedSeconds = 0;
-  if (isRunning && activeWorkSession?.startTimestamp) {
-    const liveSegmentSeconds = Math.max(
-      0,
-      Math.floor((ticker - activeWorkSession.startTimestamp) / 1000)
-    );
-    activeElapsedSeconds = (activeWorkSession.baseAccumulatedSeconds || 0) + liveSegmentSeconds;
+  if (isRunning) {
+    activeElapsedSeconds = currentLiveWorkSeconds;
   } else if (isPaused) {
     activeElapsedSeconds = todayChain.accumulatedWorkSeconds || 0;
   }

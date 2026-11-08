@@ -45,6 +45,10 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      navigationOrder: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,

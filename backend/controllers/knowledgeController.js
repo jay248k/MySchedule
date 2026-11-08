@@ -27,6 +27,7 @@ exports.getKnowledgeItems = async (req, res, next) => {
     const items = await KnowledgeItem.findAll({
       where,
       order: [
+        ['isPinned', 'DESC'],
         ['orderIndex', 'ASC'],
         ['createdAt', 'ASC'],
       ],
@@ -57,7 +58,7 @@ exports.getKnowledgeItemById = async (req, res, next) => {
 
 exports.createKnowledgeItem = async (req, res, next) => {
   try {
-    const { title, type, parentId, content, orderIndex, tags, icon, color } = req.body;
+    const { title, type, parentId, content, orderIndex, tags, icon, color, isPinned, nextLessonId, linkedLessonIds } = req.body;
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
@@ -75,6 +76,9 @@ exports.createKnowledgeItem = async (req, res, next) => {
       tags: tags || null,
       icon: icon || (itemType === 'folder' ? 'Folder' : itemType === 'table' ? 'Table' : 'FileText'),
       color: color || (itemType === 'folder' ? '#F59E0B' : itemType === 'table' ? '#10B981' : '#3B82F6'),
+      isPinned: Boolean(isPinned),
+      nextLessonId: nextLessonId || null,
+      linkedLessonIds: typeof linkedLessonIds === 'object' ? JSON.stringify(linkedLessonIds) : (linkedLessonIds || null),
       userId: req.userId || null,
     });
 
@@ -96,7 +100,7 @@ exports.updateKnowledgeItem = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Item not found' });
     }
 
-    const { title, parentId, content, orderIndex, tags, icon, color } = req.body;
+    const { title, parentId, content, orderIndex, tags, icon, color, isPinned, nextLessonId, linkedLessonIds } = req.body;
     await item.update({
       ...(title !== undefined && { title: title.trim() }),
       ...(parentId !== undefined && { parentId: parentId || null }),
@@ -105,6 +109,11 @@ exports.updateKnowledgeItem = async (req, res, next) => {
       ...(tags !== undefined && { tags }),
       ...(icon !== undefined && { icon }),
       ...(color !== undefined && { color }),
+      ...(isPinned !== undefined && { isPinned: Boolean(isPinned) }),
+      ...(nextLessonId !== undefined && { nextLessonId: nextLessonId || null }),
+      ...(linkedLessonIds !== undefined && {
+        linkedLessonIds: typeof linkedLessonIds === 'object' ? JSON.stringify(linkedLessonIds) : linkedLessonIds,
+      }),
     });
 
     res.json({

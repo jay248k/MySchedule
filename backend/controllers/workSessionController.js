@@ -122,7 +122,10 @@ exports.getAllWorkSessions = async (req, res, next) => {
       where.userId = req.userId;
     }
 
-    const sessions = await WorkSession.findAll({
+    const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
+    const offset = req.query.offset || req.query.skip ? parseInt(req.query.offset || req.query.skip, 10) : undefined;
+
+    const findOptions = {
       where,
       order: [['createdAt', 'DESC']],
       include: Task ? [{
@@ -131,11 +134,17 @@ exports.getAllWorkSessions = async (req, res, next) => {
         attributes: ['id', 'title', 'categoryId', 'priority'],
         include: Category ? [{ model: Category, as: 'category', attributes: ['id', 'name', 'color'] }] : [],
       }] : [],
-    });
+      ...(limit !== undefined && !isNaN(limit) && { limit }),
+      ...(offset !== undefined && !isNaN(offset) && { offset }),
+    };
+
+    const sessions = await WorkSession.findAll(findOptions);
+    const total = (limit !== undefined || offset !== undefined) ? await WorkSession.count({ where }) : sessions.length;
 
     res.json({
       success: true,
       count: sessions.length,
+      total,
       data: sessions,
     });
   } catch (error) {

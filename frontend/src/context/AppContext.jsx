@@ -90,6 +90,34 @@ export function AppProvider({ children }) {
   const [importHistory, setImportHistory] = useState(() => storageService.getImportHistory());
   const [workChains, setWorkChains] = useState(() => storageService.getWorkChains());
 
+  // Production-level session guards & single shared live ticker (No per-component drift)
+  const lastStoppedWorkSessionAtRef = useRef(0);
+  const isSessionTransitioningRef = useRef(false);
+  const [masterTimerTicker, setMasterTimerTicker] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMasterTimerTicker(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentLiveWorkSeconds = useMemo(() => {
+    if (!activeWorkSession || !activeWorkSession.isRunning || !activeWorkSession.startTimestamp) {
+      return 0;
+    }
+    const todayStr = getTodayDateString();
+    const sessionDate = activeWorkSession.date || todayStr;
+    const elapsedSinceStart = Math.max(0, Math.floor((masterTimerTicker - Number(activeWorkSession.startTimestamp)) / 1000));
+
+    // Cap overnight runaway session
+    if (sessionDate !== todayStr && elapsedSinceStart > 16 * 3600) {
+      return Number(activeWorkSession.baseAccumulatedSeconds) || 0;
+    }
+
+    return (Number(activeWorkSession.baseAccumulatedSeconds) || 0) + elapsedSinceStart;
+  }, [activeWorkSession, masterTimerTicker]);
+
   // Purge any legacy static data stored in Chrome localStorage on mount
   useEffect(() => {
     purgeLegacyLocalStorage();
@@ -304,7 +332,8 @@ export function AppProvider({ children }) {
         const res = await api.getActiveWorkSession();
         if (res && res.success !== false) {
           const s = res.data;
-          if (s && s.isRunning) {
+          const recentlyStopped = Date.now() - lastStoppedWorkSessionAtRef.current < 6000;
+          if (s && s.isRunning && !recentlyStopped) {
             setActiveWorkSession((prev) => {
               if (!prev || !prev.isRunning || Math.abs(Number(prev.startTimestamp) - Number(s.startTimestamp)) > 1000) {
                 const updated = {
@@ -322,7 +351,7 @@ export function AppProvider({ children }) {
               }
               return prev;
             });
-          } else {
+          } else if (!recentlyStopped) {
             setActiveWorkSession((prev) => {
               if (prev && prev.isRunning) {
                 storageService.saveActiveWorkSession(null);
@@ -1164,6 +1193,10 @@ export function AppProvider({ children }) {
 
   // Work Session Handlers (Start, Stop with Reason & Auto-Gap Chaining)
   const startWorkSession = useCallback((task = null) => {
+    if (isSessionTransitioningRef.current) return;
+    isSessionTransitioningRef.current = true;
+    setTimeout(() => { isSessionTransitioningRef.current = false; }, 800);
+
     const today = getTodayDateString();
     const existingChain = workChains[today] || {
       status: 'idle',
@@ -1242,6 +1275,11 @@ export function AppProvider({ children }) {
 
   const completeStopWorkSession = useCallback(
     async ({ stopReason = 'Finished Work', notes = '', taskId = null, taskTitle = '' }) => {
+      if (isSessionTransitioningRef.current) return;
+      isSessionTransitioningRef.current = true;
+      lastStoppedWorkSessionAtRef.current = Date.now();
+      setTimeout(() => { isSessionTransitioningRef.current = false; }, 800);
+
       if (!activeWorkSession) {
         setIsStopModalOpen(false);
         return;
@@ -1340,6 +1378,7 @@ export function AppProvider({ children }) {
   );
 
   const finishDayWorkSession = useCallback((dateStr = getTodayDateString()) => {
+    lastStoppedWorkSessionAtRef.current = Date.now();
     setActiveWorkSession(null);
     storageService.saveActiveWorkSession(null);
     api.clearActiveWorkSession().catch(() => {});
@@ -1801,6 +1840,8 @@ export function AppProvider({ children }) {
         deleteImportBatch,
         workChains,
         finishDayWorkSession,
+        masterTimerTicker,
+        currentLiveWorkSeconds,
       }}
     >
       {children}

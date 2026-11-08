@@ -401,13 +401,13 @@ export function ReportsArchive() {
           </div>
         ) : (
           <>
-            {/* VIEW 1: CARDS VIEW */}
+            {/* VIEW 1: CARDS VIEW (COMPACT) */}
             {archiveView === 'cards' && (
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                  gap: '18px',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                  gap: '10px',
                 }}
               >
                 {filteredReports.map((report) => {
@@ -429,7 +429,11 @@ export function ReportsArchive() {
                       key={report.id || report.date}
                       className="history-report-card"
                       style={{
-                        borderTop: `3.5px solid ${moodMeta.color}`,
+                        padding: '10px 14px',
+                        borderTop: `3px solid ${moodMeta.color}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
                       }}
                     >
                       {/* Header */}
@@ -438,22 +442,22 @@ export function ReportsArchive() {
                           display: 'flex',
                           alignItems: 'flex-start',
                           justifyContent: 'space-between',
-                          gap: '8px',
+                          gap: '6px',
                           borderBottom: '1px solid var(--border-color)',
-                          paddingBottom: '10px',
+                          paddingBottom: '6px',
                         }}
                       >
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Calendar size={14} color="var(--primary-color)" />
-                            <strong style={{ fontSize: '0.96rem', color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Calendar size={13} color="var(--primary-color)" />
+                            <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                               {formattedDate}
                             </strong>
                           </div>
                           {report.date === todayStr && (
                             <span
                               className="badge badge-success"
-                              style={{ fontSize: '0.68rem', padding: '1px 6px', marginTop: '4px' }}
+                              style={{ fontSize: '0.64rem', padding: '1px 5px', marginTop: '2px' }}
                             >
                               Today
                             </span>
@@ -466,8 +470,8 @@ export function ReportsArchive() {
                             background: moodMeta.bg,
                             color: moodMeta.color,
                             border: `1px solid ${moodMeta.border}`,
-                            fontSize: '0.74rem',
-                            padding: '2px 8px',
+                            fontSize: '0.68rem',
+                            padding: '1px 6px',
                             flexShrink: 0,
                           }}
                         >
@@ -481,19 +485,19 @@ export function ReportsArchive() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          fontSize: '0.78rem',
+                          fontSize: '0.74rem',
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                          <Clock size={12} color="var(--primary-color)" />
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={11} color="var(--primary-color)" />
                           <strong>Logged:</strong> {report.hoursLogged || '7.0'} hrs
                         </span>
 
                         {bullets.length > 0 && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={12} color="#10B981" />
-                            {bullets.length} {bullets.length === 1 ? 'task' : 'tasks'} accomplished
+                            <CheckCircle2 size={11} color="#10B981" />
+                            {bullets.length} done
                           </span>
                         )}
                       </div>
@@ -504,10 +508,10 @@ export function ReportsArchive() {
                           style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '6px',
+                            gap: '4px',
                             background: 'var(--page-bg)',
-                            padding: '10px 12px',
-                            borderRadius: 'var(--radius-md)',
+                            padding: '6px 10px',
+                            borderRadius: 'var(--radius-sm)',
                             border: '1px solid var(--border-color)',
                           }}
                         >
@@ -517,13 +521,13 @@ export function ReportsArchive() {
                               style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
-                                gap: '6px',
-                                fontSize: '0.8rem',
+                                gap: '5px',
+                                fontSize: '0.76rem',
                                 color: 'var(--text-primary)',
-                                lineHeight: '1.4',
+                                lineHeight: '1.35',
                               }}
                             >
-                              <span style={{ color: '#10B981', marginTop: '2px', flexShrink: 0 }}>•</span>
+                              <span style={{ color: '#10B981', flexShrink: 0 }}>•</span>
                               <span>{bullet}</span>
                             </div>
                           ))}
@@ -536,25 +540,14 @@ export function ReportsArchive() {
                                 background: 'transparent',
                                 border: 'none',
                                 color: 'var(--primary-color)',
-                                fontSize: '0.74rem',
+                                fontSize: '0.72rem',
                                 fontWeight: 700,
                                 cursor: 'pointer',
-                                padding: '4px 0 0 0',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
+                                padding: '2px 0 0',
                                 textAlign: 'left',
                               }}
                             >
-                              {isExpanded ? (
-                                <>
-                                  <ChevronUp size={13} /> Show fewer accomplishments
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronDown size={13} /> +{bullets.length - 3} more accomplishments...
-                                </>
-                              )}
+                              {isExpanded ? '▲ Show Less' : `▼ +${bullets.length - 3} more accomplishments`}
                             </button>
                           )}
                         </div>

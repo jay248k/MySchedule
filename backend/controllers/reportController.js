@@ -14,13 +14,23 @@ exports.getAllReports = async (req, res, next) => {
       where.userId = req.userId;
     }
 
-    const reports = await DailyReport.findAll({
+    const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
+    const offset = req.query.offset || req.query.skip ? parseInt(req.query.offset || req.query.skip, 10) : undefined;
+
+    const findOptions = {
       where,
       order: [['date', 'DESC']],
-    });
+      ...(limit !== undefined && !isNaN(limit) && { limit }),
+      ...(offset !== undefined && !isNaN(offset) && { offset }),
+    };
 
-    cacheManager.set(cacheKey, reports, 60);
-    res.json({ success: true, count: reports.length, data: reports });
+    const reports = await DailyReport.findAll(findOptions);
+    const total = (limit !== undefined || offset !== undefined) ? await DailyReport.count({ where }) : reports.length;
+
+    if (!limit && !offset) {
+      cacheManager.set(cacheKey, reports, 60);
+    }
+    res.json({ success: true, count: reports.length, total, data: reports });
   } catch (error) {
     next(error);
   }

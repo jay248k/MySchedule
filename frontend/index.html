@@ -14,6 +14,28 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
+  <script>
+    (function () {
+      try {
+        var local = localStorage.getItem('myschedule_user_settings');
+        var theme = 'dark';
+        if (local) {
+          var p = JSON.parse(local);
+          if (p && p.theme) theme = p.theme;
+        } else {
+          var direct = localStorage.getItem('myschedule_theme');
+          if (direct) theme = direct;
+        }
+        var root = document.documentElement;
+        root.setAttribute('data-theme', theme);
+        if (theme === 'dark' || theme === 'oled') {
+          root.classList.add('dark-mode');
+        } else {
+          root.classList.remove('dark-mode');
+        }
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>

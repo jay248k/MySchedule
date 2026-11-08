@@ -355,25 +355,31 @@ export function RedFlagPage() {
 
       {/* 3. TAB CONTENT */}
 
-      {/* TAB A: ACTIVE RED FLAGS (ACTION CARDS) */}
+      {/* TAB A: ACTIVE RED FLAGS (COMPACT GRID CARDS) */}
       {activeTab === 'active' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: activeFlags.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))',
+            gap: '12px',
+          }}
+        >
           {activeFlags.length === 0 ? (
             <div
               className="card"
               style={{
-                padding: '48px 24px',
+                padding: '36px 20px',
                 textAlign: 'center',
                 background: 'rgba(16, 185, 129, 0.05)',
                 border: '1.5px dashed rgba(16, 185, 129, 0.3)',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
-              <CheckCircle2 size={42} color="#10B981" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              <CheckCircle2 size={36} color="#10B981" style={{ margin: '0 auto 10px' }} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Zero Active Red Flags!
               </h3>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                 All scheduled time slots, categories, and goals are on track. No schedule lags detected.
               </p>
             </div>
@@ -383,14 +389,15 @@ export function RedFlagPage() {
                 key={flag.id}
                 className="card"
                 style={{
-                  padding: '20px 24px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1.5px solid rgba(239, 68, 68, 0.35)',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderLeft: '4px solid #EF4444',
                   background: 'var(--card-bg)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px',
-                  boxShadow: '0 4px 18px rgba(239, 68, 68, 0.06)',
+                  gap: '8px',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.05)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
@@ -522,12 +529,18 @@ export function RedFlagPage() {
 
       {/* TAB B: RECOVERED & RESOLVED FLAGS */}
       {activeTab === 'recovered' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: recoveredFlags.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))',
+            gap: '12px',
+          }}
+        >
           {recoveredFlags.length === 0 ? (
             <div
               className="card"
               style={{
-                padding: '48px 24px',
+                padding: '36px 20px',
                 textAlign: 'center',
                 color: 'var(--text-muted)',
                 borderRadius: 'var(--radius-lg)',
@@ -541,15 +554,16 @@ export function RedFlagPage() {
                 key={flag.id}
                 className="card"
                 style={{
-                  padding: '18px 22px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  borderLeft: '4px solid #10B981',
                   background: 'var(--card-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
-                  gap: '12px',
+                  gap: '8px',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

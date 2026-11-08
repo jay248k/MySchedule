@@ -524,7 +524,7 @@ export function DeviationsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '12px' }}>
             {dateDeviations.map((dev, idx) => {
               const durM = Number(dev.durationMinutes) || 60;
               const h = Math.floor(durM / 60);
@@ -975,7 +975,7 @@ export function DeviationsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Code API endpoints for work session"
+                    placeholder="Enter planned task commitment..."
                     className="form-input"
                     style={{
                       width: '100%',
@@ -1011,7 +1011,7 @@ export function DeviationsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Scrolled social media, watched videos..."
+                    placeholder="Enter what was done instead..."
                     className="form-input"
                     style={{
                       width: '100%',
@@ -1134,7 +1134,7 @@ export function DeviationsPage() {
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="e.g., Turn on Do Not Disturb before starting, break large tasks into 15m chunks..."
+                  placeholder="Enter preventive rule or corrective step..."
                   value={form.lessonLearned}
                   onChange={(e) => setForm({ ...form, lessonLearned: e.target.value })}
                   style={{ width: '100%', fontSize: '0.84rem', borderColor: 'rgba(16, 185, 129, 0.4)' }}

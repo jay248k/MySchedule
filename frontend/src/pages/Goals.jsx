@@ -221,52 +221,51 @@ export function Goals() {
                 key={goal.id}
                 className="card"
                 style={{
-                  padding: '14px 18px',
+                  padding: '12px 14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
+                  gap: '6px',
                   position: 'relative',
-                  borderTop: `4px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
-                  transition: 'all 0.2s ease',
+                  borderTop: `3px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
+                  transition: 'all 0.15s ease',
                   boxShadow: isExpanded ? 'var(--shadow-md)' : 'var(--shadow-sm)',
-                  height: '100%',
                 }}
               >
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span className={`badge ${isCompleted ? 'badge-success' : 'badge-primary'}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span className={`badge ${isCompleted ? 'badge-success' : 'badge-primary'}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
                         {isCompleted ? 'Completed' : 'In Progress'}
                       </span>
                       {goal.category && (
-                        <span className="badge badge-neutral">{goal.category}</span>
+                        <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>{goal.category}</span>
                       )}
                       <span
                         className="badge badge-neutral"
                         style={{
-                          fontSize: '0.72rem',
+                          fontSize: '0.68rem',
+                          padding: '1px 6px',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '4px',
                           border: '1px solid var(--border-color)',
                         }}
                       >
-                        <Target size={12} color="var(--primary-color)" />
-                        <span>{relatedTasks.length} {relatedTasks.length === 1 ? 'task' : 'tasks'} linked</span>
+                        <Target size={11} color="var(--primary-color)" />
+                        <span>{relatedTasks.length} linked</span>
                       </span>
                     </div>
                     <h3
                       style={{
-                        fontSize: '1.25rem',
+                        fontSize: '1rem',
                         fontWeight: 700,
-                        marginTop: '8px',
+                        marginTop: '4px',
                         marginBottom: '0px',
                         color: 'var(--text-primary)',
-                        lineHeight: '1.3',
-                        
+                        lineHeight: '1.25',
                         display: '-webkit-box',
-                        WebkitLineClamp: 2,
+                        WebkitLineClamp: 1,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
                       }}
@@ -276,58 +275,53 @@ export function Goals() {
                     </h3>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
                     <button
                       type="button"
                       className="btn-icon"
-                      style={{ width: '32px', height: '32px' }}
+                      style={{ width: '28px', height: '28px' }}
                       onClick={() => openModal('goal', goal)}
                       title="Edit Goal"
                     >
-                      <Edit2 size={15} />
+                      <Edit2 size={13} />
                     </button>
                     <button
                       type="button"
                       className="btn-icon"
-                      style={{ width: '32px', height: '32px', color: 'var(--danger)' }}
+                      style={{ width: '28px', height: '28px', color: 'var(--danger)' }}
                       onClick={() => deleteGoal(goal.id)}
                       title="Delete Goal"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                <p
-                  style={{
-                    fontSize: '0.86rem',
-                    color: goal.description ? 'var(--text-secondary)' : 'transparent',
-                    lineHeight: '1.45',
-                    margin: 0,
-                    minHeight: '2.5rem',
-                    display: '-webkit-box',
-                    WebkitLineClamp: isExpanded ? 'unset' : 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: isExpanded ? 'visible' : 'hidden',
-                    userSelect: goal.description ? 'auto' : 'none',
-                  }}
-                  title={!isExpanded && goal.description && goal.description.length > 80 ? goal.description : undefined}
-                >
-                  {goal.description || 'No description'}
-                </p>
+                {goal.description ? (
+                  <p
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--text-secondary)',
+                      lineHeight: '1.35',
+                      margin: '2px 0 0',
+                      display: '-webkit-box',
+                      WebkitLineClamp: isExpanded ? 'unset' : 1,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: isExpanded ? 'visible' : 'hidden',
+                    }}
+                    title={!isExpanded ? goal.description : undefined}
+                  >
+                    {goal.description}
+                  </p>
+                ) : null}
 
-                {/* Progress Bar & Real-Time Auto Progress Indicator */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      Progress
-                      {hasLinkedTasks && (
-                        <span style={{ fontSize: '0.72rem', color: 'var(--primary-color)', fontWeight: 600 }}>
-                          (Auto-tracked)
-                        </span>
-                      )}
+                {/* Compact Progress Line & Bar */}
+                <div style={{ marginTop: '2px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {hasLinkedTasks ? `Auto-track: ${completedLinkedCount}/${relatedTasks.length} done` : 'Manual progress'}
                     </span>
-                    <strong style={{ color: isCompleted ? '#10B981' : 'var(--primary-color)', fontSize: '0.95rem' }}>
+                    <strong style={{ color: isCompleted ? '#10B981' : 'var(--primary-color)', fontSize: '0.84rem' }}>
                       {effectiveProgress}%
                     </strong>
                   </div>
@@ -335,37 +329,19 @@ export function Goals() {
                   <ProgressBar
                     progress={effectiveProgress}
                     color={isCompleted ? '#10B981' : 'var(--primary-color)'}
-                    height={10}
+                    height={6}
                   />
-
-                  {/* Task Auto-Progress Stat Subtitle */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                    {hasLinkedTasks ? (
-                      <span>
-                        Auto progress: <strong>{completedLinkedCount} of {relatedTasks.length} tasks completed</strong>
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        No tasks linked yet • Add tasks below to auto-calculate progress
-                      </span>
-                    )}
-
-                    {isCompleted && (
-                      <span style={{ color: '#10B981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <Sparkles size={12} /> Goal Achieved!
-                      </span>
-                    )}
-                  </div>
                 </div>
 
                 {/* Collapsible Linked Tasks Checklist Section */}
                 <div
                   style={{
                     borderTop: '1px solid var(--border-color)',
-                    paddingTop: '12px',
+                    paddingTop: '6px',
+                    marginTop: '2px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '4px',
                   }}
                 >
                   {/* Small card task bar with arrow */}

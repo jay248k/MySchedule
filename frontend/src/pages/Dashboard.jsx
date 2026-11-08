@@ -1042,12 +1042,12 @@ export function Dashboard() {
         variants={cardVariants}
         className="card"
         style={{
-          padding: '22px 24px',
+          padding: '14px 18px',
           width: '100%',
-          borderRadius: '20px',
+          borderRadius: '16px',
           background: 'var(--card-bg)',
           border: '1.5px solid var(--border-color)',
-          boxShadow: 'var(--shadow-md)',
+          boxShadow: 'var(--shadow-sm)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -1066,27 +1066,27 @@ export function Dashboard() {
           }}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '14px', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px', position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '13px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
                 background: 'linear-gradient(135deg, #1769FF 0%, #38BDF8 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 16px rgba(23, 105, 255, 0.3)',
+                boxShadow: '0 3px 10px rgba(23, 105, 255, 0.25)',
                 color: '#ffffff',
                 flexShrink: 0,
               }}
             >
-              <CalendarDays size={22} strokeWidth={2.4} />
+              <CalendarDays size={18} strokeWidth={2.4} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h2 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                   Today's Schedule Sequence
                 </h2>
                 <span

@@ -308,12 +308,12 @@ export function DailyScheduleTimeline({
             const itemContent = (
               <>
                 {/* Continuous Seamless Timeline Rail */}
-                <div className="timeline-rail" style={{ width: '28px' }}>
+                <div className="timeline-rail" style={{ width: '26px' }}>
                   {/* Top connector segment */}
                   {!isFirst && (
                     <div
                       className={`timeline-line-segment top ${topSegmentClass}`}
-                      style={{ top: 0, height: '22px' }}
+                      style={{ top: 0, height: '16px' }}
                     />
                   )}
 
@@ -321,8 +321,8 @@ export function DailyScheduleTimeline({
                   <div
                     className={`timeline-node node-${itemState}`}
                     style={{
-                      width: '22px',
-                      height: '22px',
+                      width: '20px',
+                      height: '20px',
                       borderRadius: '50%',
                       border: '2px solid',
                       backgroundColor:
@@ -354,7 +354,7 @@ export function DailyScheduleTimeline({
                           ? '0 0 12px rgba(239, 68, 68, 0.6)'
                           : '0 2px 6px rgba(0, 0, 0, 0.3)',
                       cursor: readOnly ? 'default' : 'pointer',
-                      marginTop: '22px',
+                      marginTop: '14px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -380,23 +380,23 @@ export function DailyScheduleTimeline({
                     }
                   >
                     {itemState === 'completed' ? (
-                      <Check size={12} strokeWidth={3.2} color="#ffffff" />
+                      <Check size={11} strokeWidth={3.2} color="#ffffff" />
                     ) : itemState === 'in_progress' ? (
                       <span
                         style={{
-                          width: '7px',
-                          height: '7px',
+                          width: '6px',
+                          height: '6px',
                           borderRadius: '50%',
                           backgroundColor: '#ffffff',
                           boxShadow: '0 0 8px #ffffff',
                         }}
                       />
                     ) : itemState === 'overdue' ? (
-                      <AlertCircle size={12} strokeWidth={2.8} color="#ffffff" />
+                      <AlertCircle size={11} strokeWidth={2.8} color="#ffffff" />
                     ) : (
                       <span
                         className="timeline-node-dot"
-                        style={{ backgroundColor: '#94A3B8', width: '6px', height: '6px', borderRadius: '50%' }}
+                        style={{ backgroundColor: '#94A3B8', width: '5px', height: '5px', borderRadius: '50%' }}
                       />
                     )}
                   </div>
@@ -405,7 +405,7 @@ export function DailyScheduleTimeline({
                   {!isLast && (
                     <div
                       className={`timeline-line-segment bottom ${bottomSegmentClass}`}
-                      style={{ top: '40px', bottom: 0 }}
+                      style={{ top: '34px', bottom: 0 }}
                     />
                   )}
                 </div>
@@ -419,8 +419,8 @@ export function DailyScheduleTimeline({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 18px',
-                    borderRadius: '14px',
+                    padding: '8px 14px',
+                    borderRadius: '12px',
                     background:
                       itemState === 'in_progress'
                         ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.14) 0%, rgba(2, 132, 199, 0.05) 100%)'
@@ -453,8 +453,8 @@ export function DailyScheduleTimeline({
                     cursor: readOnly ? 'default' : 'pointer',
                     position: 'relative',
                     zIndex: openMenuId === item.id ? 100 : 'auto',
-                    gap: '14px',
-                    marginBottom: '10px',
+                    gap: '12px',
+                    marginBottom: '6px',
                   }}
                   onClick={() => {
                     if (!readOnly) {
@@ -470,18 +470,18 @@ export function DailyScheduleTimeline({
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '6px 12px',
-                      borderRadius: '10px',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
                       background: 'var(--page-bg)',
                       border: '1px solid var(--border-color)',
-                      minWidth: '82px',
+                      minWidth: '76px',
                       flexShrink: 0,
-                      gap: '2px',
+                      gap: '1px',
                     }}
                   >
                     <span
                       style={{
-                        fontSize: '0.84rem',
+                        fontSize: '0.8rem',
                         fontWeight: 800,
                         color: itemState === 'in_progress' ? '#0284C7' : 'var(--text-primary)',
                         letterSpacing: '0.02em',
@@ -492,7 +492,7 @@ export function DailyScheduleTimeline({
                     </span>
                     <span
                       style={{
-                        fontSize: '0.68rem',
+                        fontSize: '0.65rem',
                         fontWeight: 600,
                         color: 'var(--text-muted)',
                         lineHeight: 1.2,
@@ -545,7 +545,7 @@ export function DailyScheduleTimeline({
                       <h4
                         style={{
                           margin: 0,
-                          fontSize: '0.94rem',
+                          fontSize: '0.88rem',
                           fontWeight: 700,
                           color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)',
                           textDecoration: isCompleted ? 'line-through' : 'none',
@@ -562,7 +562,7 @@ export function DailyScheduleTimeline({
                     <p
                       style={{
                         margin: 0,
-                        fontSize: '0.78rem',
+                        fontSize: '0.74rem',
                         color: 'var(--text-secondary)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -579,16 +579,16 @@ export function DailyScheduleTimeline({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '7px',
+                      gap: '6px',
                       flexShrink: 0,
                     }}
                   >
                     {/* Category Capsule */}
                     <span
                       style={{
-                        fontSize: '0.72rem',
+                        fontSize: '0.68rem',
                         fontWeight: 700,
-                        padding: '3px 10px',
+                        padding: '2px 8px',
                         borderRadius: '9999px',
                         backgroundColor: `${category.color}20`,
                         color: category.color,
@@ -596,10 +596,10 @@ export function DailyScheduleTimeline({
                         whiteSpace: 'nowrap',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '5px',
+                        gap: '4px',
                       }}
                     >
-                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: category.color }} />
+                      <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: category.color }} />
                       {category.name}
                     </span>
 
@@ -607,9 +607,9 @@ export function DailyScheduleTimeline({
                     {!isEvent && item.priority && (
                       <span
                         style={{
-                          fontSize: '0.7rem',
+                          fontSize: '0.66rem',
                           fontWeight: 700,
-                          padding: '3px 9px',
+                          padding: '2px 7px',
                           borderRadius: '9999px',
                           backgroundColor:
                             item.priority.toLowerCase() === 'high'
@@ -634,13 +634,13 @@ export function DailyScheduleTimeline({
                           textTransform: 'capitalize',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '3px',
                         }}
                       >
                         <span
                           style={{
-                            width: '4px',
-                            height: '4px',
+                            width: '3.5px',
+                            height: '3.5px',
                             borderRadius: '50%',
                             background:
                               item.priority.toLowerCase() === 'high'
@@ -658,24 +658,24 @@ export function DailyScheduleTimeline({
                     {linkedGoal && (
                       <span
                         style={{
-                          fontSize: '0.7rem',
+                          fontSize: '0.66rem',
                           fontWeight: 600,
-                          padding: '3px 9px',
+                          padding: '2px 7px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(139, 92, 246, 0.15)',
                           color: '#A78BFA',
                           border: '1px solid rgba(139, 92, 246, 0.35)',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          maxWidth: '120px',
+                          gap: '3px',
+                          maxWidth: '110px',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                         }}
                         title={`Goal: ${linkedGoal.title}`}
                       >
-                        <Target size={10} />
+                        <Target size={9} />
                         {linkedGoal.title}
                       </span>
                     )}
@@ -688,9 +688,9 @@ export function DailyScheduleTimeline({
                       flexDirection: 'column',
                       alignItems: 'flex-end',
                       justifyContent: 'center',
-                      gap: '3px',
+                      gap: '2px',
                       flexShrink: 0,
-                      minWidth: '105px',
+                      minWidth: '92px',
                     }}
                   >
                     {itemState === 'completed' && (
@@ -698,13 +698,13 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 12px',
+                          gap: '4px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(16, 185, 129, 0.18)',
                           border: '1px solid rgba(16, 185, 129, 0.45)',
                           color: '#34D399',
-                          fontSize: '0.74rem',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
                         }}
                         onClick={(e) => {
@@ -715,7 +715,7 @@ export function DailyScheduleTimeline({
                         }}
                         title={readOnly ? '' : 'Click to mark as pending'}
                       >
-                        <Check size={12} strokeWidth={3} />
+                        <Check size={11} strokeWidth={3} />
                         Completed
                       </div>
                     )}
@@ -725,15 +725,15 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
-                          padding: '4px 12px',
+                          gap: '5px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(2, 132, 199, 0.25)',
                           border: '1.5px solid #38BDF8',
                           color: '#38BDF8',
-                          fontSize: '0.74rem',
+                          fontSize: '0.7rem',
                           fontWeight: 800,
-                          boxShadow: '0 0 12px rgba(56, 189, 248, 0.4)',
+                          boxShadow: '0 0 10px rgba(56, 189, 248, 0.4)',
                         }}
                         onClick={(e) => {
                           if (!readOnly && !isEvent) {
@@ -743,7 +743,7 @@ export function DailyScheduleTimeline({
                         }}
                         title={readOnly ? '' : 'Click to mark as complete'}
                       >
-                        <Radio size={12} className="pulse-glow" />
+                        <Radio size={11} className="pulse-glow" />
                         In Progress
                       </div>
                     )}
@@ -753,13 +753,13 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 12px',
+                          gap: '4px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(255, 255, 255, 0.05)',
                           border: '1px solid rgba(255, 255, 255, 0.12)',
                           color: 'rgba(255, 255, 255, 0.7)',
-                          fontSize: '0.74rem',
+                          fontSize: '0.7rem',
                           fontWeight: 600,
                         }}
                         onClick={(e) => {
@@ -770,7 +770,7 @@ export function DailyScheduleTimeline({
                         }}
                         title={readOnly ? '' : 'Click to mark as complete'}
                       >
-                        <Clock size={11} />
+                        <Clock size={10} />
                         Upcoming
                       </div>
                     )}
@@ -780,15 +780,15 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 12px',
+                          gap: '4px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(239, 68, 68, 0.22)',
                           border: '1px solid #EF4444',
                           color: '#EF4444',
-                          fontSize: '0.74rem',
+                          fontSize: '0.7rem',
                           fontWeight: 800,
-                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)',
+                          boxShadow: '0 0 8px rgba(239, 68, 68, 0.3)',
                         }}
                         onClick={(e) => {
                           if (!readOnly && !isEvent) {
@@ -798,7 +798,7 @@ export function DailyScheduleTimeline({
                         }}
                         title={readOnly ? '' : 'Click to mark as complete'}
                       >
-                        <AlertCircle size={12} strokeWidth={2.5} />
+                        <AlertCircle size={11} strokeWidth={2.5} />
                         Overdue
                       </div>
                     )}
@@ -808,13 +808,13 @@ export function DailyScheduleTimeline({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 12px',
+                          gap: '4px',
+                          padding: '3px 9px',
                           borderRadius: '9999px',
                           backgroundColor: 'rgba(139, 92, 246, 0.2)',
                           border: '1px solid rgba(139, 92, 246, 0.45)',
                           color: '#C4B5FD',
-                          fontSize: '0.74rem',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
                         }}
                       >

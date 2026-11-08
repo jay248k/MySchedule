@@ -2,6 +2,9 @@ import React, { useState, useMemo } from 'react';
 import {
   Palette,
   Sliders,
+  ArrowUp,
+  ArrowDown,
+  GripVertical,
   Bell,
   Database,
   Moon,
@@ -933,7 +936,173 @@ export function Settings() {
             </div>
           )}
 
+                    {/* ========================================================================= */}
+          {/* TAB: SIDEBAR MENU CUSTOMIZATION                                           */}
           {/* ========================================================================= */}
+          {activeTab === 'navigation' && (
+            <div className="card" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Layers size={22} color="var(--primary-color)" />
+                  <div>
+                    <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Sidebar Menu Customization</h2>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Reorder the sidebar navigation sequence to match your workflow. Changes save to your account.
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    handleUpdate('navigationOrder', [
+                      '/',
+                      '/today',
+                      '/work-tracker',
+                      '/knowledge',
+                      '/thoughts',
+                      '/red-flags',
+                      '/deviations',
+                      '/requests',
+                      '/monthly',
+                      '/calendar',
+                      '/categories',
+                      '/goals',
+                      '/reports',
+                      '/archive',
+                      '/settings',
+                    ]);
+                    showToast({
+                      type: 'info',
+                      title: 'Reset Navigation',
+                      message: 'Sidebar order restored to default layout.',
+                    });
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <RotateCcw size={14} /> Reset Default Order
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '640px' }}>
+                {(() => {
+                  const ALL_ITEMS = [
+                    { path: '/', label: 'Dashboard', color: '#3B82F6' },
+                    { path: '/today', label: "Today's Tasks", color: '#10B981' },
+                    { path: '/work-tracker', label: 'Work Tracker', color: '#06B6D4' },
+                    { path: '/knowledge', label: 'Knowledge Base & Lessons', color: '#F59E0B' },
+                    { path: '/thoughts', label: 'Thoughts & Motivation', color: '#EC4899' },
+                    { path: '/red-flags', label: 'Red Flags', color: '#EF4444' },
+                    { path: '/deviations', label: 'Mistakes & Deviations', color: '#F97316' },
+                    { path: '/requests', label: 'Work Requests', color: '#8B5CF6' },
+                    { path: '/monthly', label: 'Monthly Schedule', color: '#6366F1' },
+                    { path: '/calendar', label: 'Calendar', color: '#3B82F6' },
+                    { path: '/categories', label: 'Categories', color: '#10B981' },
+                    { path: '/goals', label: 'Goals', color: '#EC4899' },
+                    { path: '/reports', label: 'Reports', color: '#06B6D4' },
+                    { path: '/archive', label: 'Reports Archive', color: '#64748B' },
+                    { path: '/settings', label: 'Settings', color: '#94A3B8' },
+                  ];
+
+                  let currentOrder = settings?.navigationOrder;
+                  if (typeof currentOrder === 'string') {
+                    try { currentOrder = JSON.parse(currentOrder); } catch { currentOrder = null; }
+                  }
+                  if (!Array.isArray(currentOrder) || currentOrder.length === 0) {
+                    currentOrder = ALL_ITEMS.map((i) => i.path);
+                  }
+
+                  // Order items according to currentOrder
+                  const sorted = [...ALL_ITEMS].sort((a, b) => {
+                    const idxA = currentOrder.indexOf(a.path);
+                    const idxB = currentOrder.indexOf(b.path);
+                    return (idxA >= 0 ? idxA : 99) - (idxB >= 0 ? idxB : 99);
+                  });
+
+                  const moveItem = (index, direction) => {
+                    const newSorted = [...sorted];
+                    const targetIndex = index + direction;
+                    if (targetIndex < 0 || targetIndex >= newSorted.length) return;
+                    const temp = newSorted[index];
+                    newSorted[index] = newSorted[targetIndex];
+                    newSorted[targetIndex] = temp;
+                    const newPathOrder = newSorted.map((i) => i.path);
+                    handleUpdate('navigationOrder', newPathOrder);
+                  };
+
+                  return sorted.map((item, idx) => (
+                    <div
+                      key={item.path}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        background: 'var(--page-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
+                          #{idx + 1}
+                        </span>
+                        <div
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            background: item.color,
+                          }}
+                        />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {item.label}
+                        </span>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          ({item.path})
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          disabled={idx === 0}
+                          onClick={() => moveItem(idx, -1)}
+                          title="Move Up"
+                          style={{
+                            padding: '4px',
+                            opacity: idx === 0 ? 0.3 : 1,
+                            cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          <ArrowUp size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          disabled={idx === sorted.length - 1}
+                          onClick={() => moveItem(idx, 1)}
+                          title="Move Down"
+                          style={{
+                            padding: '4px',
+                            opacity: idx === sorted.length - 1 ? 0.3 : 1,
+                            cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          <ArrowDown size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
+
+{/* ========================================================================= */}
           {/* TAB 5: WORKSPACE & GENERAL SYSTEM                                         */}
           {/* ========================================================================= */}
           {activeTab === 'workspace' && (

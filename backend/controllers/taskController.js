@@ -32,7 +32,10 @@ exports.getAllTasks = async (req, res, next) => {
       where.userId = req.userId;
     }
 
-    const tasks = await Task.findAll({
+    const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
+    const offset = req.query.offset || req.query.skip ? parseInt(req.query.offset || req.query.skip, 10) : undefined;
+
+    const findOptions = {
       where,
       include: [
         { model: Category, as: 'category', attributes: ['id', 'name', 'color', 'icon'] },
@@ -42,9 +45,14 @@ exports.getAllTasks = async (req, res, next) => {
         ['date', 'ASC'],
         ['startTime', 'ASC'],
       ],
-    });
+      ...(limit !== undefined && !isNaN(limit) && { limit }),
+      ...(offset !== undefined && !isNaN(offset) && { offset }),
+    };
 
-    res.json({ success: true, count: tasks.length, data: tasks });
+    const tasks = await Task.findAll(findOptions);
+    const total = (limit !== undefined || offset !== undefined) ? await Task.count({ where }) : tasks.length;
+
+    res.json({ success: true, count: tasks.length, total, data: tasks });
   } catch (error) {
     next(error);
   }
