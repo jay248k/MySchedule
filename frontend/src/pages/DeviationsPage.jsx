@@ -35,6 +35,12 @@ const REASON_CATEGORIES = [
   { id: 'Other', label: '❓ Other Reason', color: '#64748B' },
 ];
 
+const cleanRootCause = (rc) => {
+  if (!rc) return '';
+  const parts = rc.split(';').map((s) => s.trim()).filter(Boolean);
+  return Array.from(new Set(parts)).join('; ');
+};
+
 export function DeviationsPage() {
   const {
     tasks = [],
@@ -524,7 +530,7 @@ export function DeviationsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 520px), 1fr))', gap: '14px' }}>
             {dateDeviations.map((dev, idx) => {
               const durM = Number(dev.durationMinutes) || 60;
               const h = Math.floor(durM / 60);
@@ -534,74 +540,93 @@ export function DeviationsPage() {
                 label: dev.reasonCategory || 'Deviation Event',
                 color: '#EF4444',
               };
+              const rootCauseClean = cleanRootCause(dev.rootCause);
 
               return (
                 <div
                   key={dev.id}
                   style={{
                     background: 'var(--card-bg)',
-                    border: '1px solid var(--border-color)',
-                    borderLeft: `3px solid ${categoryMatch.color || '#EF4444'}`,
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    boxShadow: 'var(--shadow-sm)',
+                    border: '1.5px solid var(--border-color)',
+                    borderRadius: '16px',
+                    padding: '16px 18px',
+                    boxShadow: 'var(--shadow-md, 0 4px 16px rgba(0,0,0,0.1))',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '12px',
                     position: 'relative',
-                    overflow: 'hidden',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
                   }}
                 >
-                  {/* Top Bar: Time Slot & Category Badges & Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      {/* Incident Badge */}
+                  {/* Top Bar: Incident Badge, Date/Time, Category & Action Icons */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {/* Incident Tag */}
                       <span
                         style={{
-                          fontSize: '0.64rem',
+                          fontSize: '0.68rem',
                           fontWeight: 800,
                           textTransform: 'uppercase',
-                          letterSpacing: '0.3px',
-                          padding: '1px 6px',
-                          borderRadius: '4px',
+                          letterSpacing: '0.4px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
                           background: 'rgba(239, 68, 68, 0.12)',
                           color: '#EF4444',
                           border: '1px solid rgba(239, 68, 68, 0.25)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
                         }}
                       >
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444', display: 'inline-block' }} />
                         INCIDENT #{idx + 1}
                       </span>
 
-                      {/* Date Pill */}
+                      {/* Date Tag */}
                       <span
-                        className="dev-date-pill"
                         style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
+                          background: 'var(--page-bg)',
                           border: '1px solid var(--border-color)',
                           color: 'var(--text-secondary)',
-                          fontSize: '0.74rem',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '2px 7px',
-                          borderRadius: '5px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
                         }}
                       >
-                        <Calendar size={11} />
+                        <Calendar size={11} color="var(--primary-color)" />
                         <span>{dev.date}</span>
                       </span>
 
-                      {/* Timeslot Pill */}
+                      {/* Time & Duration Pill */}
                       <span
                         style={{
-                          background: 'rgba(59, 130, 246, 0.12)',
-                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          border: '1px solid rgba(59, 130, 246, 0.25)',
                           color: '#60A5FA',
-                          fontSize: '0.74rem',
-                          fontWeight: 800,
-                          padding: '2px 7px',
-                          borderRadius: '5px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
@@ -609,152 +634,216 @@ export function DeviationsPage() {
                       >
                         <Clock size={11} />
                         <span>{dev.startTime} — {dev.endTime}</span>
-                        <span style={{ opacity: 0.85, fontWeight: 700 }}>• {durationLabel}</span>
+                        <span style={{ opacity: 0.75 }}>• {durationLabel}</span>
                       </span>
 
-                      {/* Category Badge */}
+                      {/* Category Chip */}
                       <span
                         style={{
-                          background: `${categoryMatch.color}18`,
-                          border: `1px solid ${categoryMatch.color}40`,
+                          background: `${categoryMatch.color}15`,
+                          border: `1px solid ${categoryMatch.color}35`,
                           color: categoryMatch.color,
-                          fontSize: '0.68rem',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '1px 7px',
-                          borderRadius: '999px',
+                          padding: '3px 9px',
+                          borderRadius: '6px',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '3px',
+                          gap: '4px',
                         }}
                       >
                         {categoryMatch.label}
                       </span>
                     </div>
 
-                    {/* Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {/* Action Buttons: Clean rounded buttons pinned on the right */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                       <button
                         type="button"
-                        className="btn-icon"
                         onClick={() => handleOpenEditModal(dev)}
                         title="Edit deviation details"
-                        style={{ width: '24px', height: '24px' }}
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          background: 'var(--page-bg)',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--primary-color)';
+                          e.currentTarget.style.color = 'var(--primary-color)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color)';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }}
                       >
-                        <Edit2 size={12} />
+                        <Edit2 size={13} />
                       </button>
                       <button
                         type="button"
-                        className="btn-icon"
                         onClick={() => deleteDeviation(dev.id)}
                         title="Delete log"
-                        style={{ width: '24px', height: '24px', color: '#EF4444' }}
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                          background: 'rgba(239, 68, 68, 0.08)',
+                          color: '#EF4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)';
+                          e.currentTarget.style.borderColor = '#EF4444';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                        }}
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Realistic Planned vs Actual Divergence Cards */}
+                  {/* Modern Divergence Flow: Planned Schedule ➔ Actual Deviation */}
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                      gap: '8px',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                      gap: '10px',
                     }}
                   >
-                    {/* What I Had To Do (PLANNED) */}
+                    {/* Planned Box */}
                     <div
                       style={{
                         background: 'rgba(59, 130, 246, 0.05)',
                         border: '1px solid rgba(59, 130, 246, 0.2)',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '2px',
+                        gap: '4px',
                       }}
                     >
                       <div
                         style={{
-                          fontSize: '0.64rem',
+                          fontSize: '0.66rem',
                           fontWeight: 800,
-                          color: 'var(--primary-color)',
+                          color: '#60A5FA',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '5px',
                         }}
                       >
-                        <Target size={11} />
-                        <span>Planned Schedule</span>
+                        <Target size={12} color="#38BDF8" />
+                        <span>Planned Commitment</span>
                       </div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35 }}>
                         {dev.plannedAction}
                       </div>
                     </div>
 
-                    {/* What I Actually Did (ACTUAL DEVIATION) */}
+                    {/* Actual Deviation Box */}
                     <div
                       style={{
                         background: 'rgba(245, 158, 11, 0.06)',
                         border: '1px solid rgba(245, 158, 11, 0.25)',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '2px',
+                        gap: '4px',
                       }}
                     >
                       <div
                         style={{
-                          fontSize: '0.64rem',
+                          fontSize: '0.66rem',
                           fontWeight: 800,
                           color: '#F59E0B',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '5px',
                         }}
                       >
-                        <AlertTriangle size={11} />
-                        <span>Actual Deviation</span>
+                        <AlertTriangle size={12} color="#F59E0B" />
+                        <span>Actual Activity (Mistake)</span>
                       </div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F59E0B', lineHeight: 1.35 }}>
                         {dev.actualAction}
                       </div>
                     </div>
                   </div>
 
-                  {/* Root Cause & Lesson Learned Footer Callout */}
-                  {(dev.rootCause || dev.lessonLearned) && (
+                  {/* Root Cause & Next-Time Prevention Rule */}
+                  {(rootCauseClean || dev.lessonLearned) && (
                     <div
                       style={{
                         background: 'var(--page-bg)',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
                         display: 'grid',
-                        gridTemplateColumns: dev.rootCause && dev.lessonLearned ? 'repeat(auto-fit, minmax(200px, 1fr))' : '1fr',
-                        gap: '6px',
-                        fontSize: '0.74rem',
+                        gridTemplateColumns: rootCauseClean && dev.lessonLearned ? 'repeat(auto-fit, minmax(210px, 1fr))' : '1fr',
+                        gap: '12px',
                       }}
                     >
-                      {dev.rootCause && (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.64rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '1px', textTransform: 'uppercase' }}>
-                            <HelpCircle size={11} color="var(--primary-color)" /> Root Cause Trigger:
+                      {rootCauseClean && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontSize: '0.66rem',
+                              fontWeight: 800,
+                              color: 'var(--text-muted)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            <HelpCircle size={12} color="#94A3B8" />
+                            <span>Root Cause Trigger</span>
                           </div>
-                          <span style={{ color: 'var(--text-secondary)', lineHeight: 1.3 }}>{dev.rootCause}</span>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4, fontWeight: 500 }}>
+                            {rootCauseClean}
+                          </span>
                         </div>
                       )}
+
                       {dev.lessonLearned && (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.64rem', fontWeight: 800, color: '#10B981', marginBottom: '1px', textTransform: 'uppercase' }}>
-                            <Lightbulb size={11} color="#10B981" /> Next-Time Prevention Rule:
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontSize: '0.66rem',
+                              fontWeight: 800,
+                              color: '#10B981',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            <Lightbulb size={12} color="#10B981" />
+                            <span>Next-Time Prevention Rule</span>
                           </div>
-                          <span style={{ color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.3 }}>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.4 }}>
                             {dev.lessonLearned}
                           </span>
                         </div>
