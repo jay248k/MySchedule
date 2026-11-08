@@ -4,8 +4,8 @@ const { Op } = require('sequelize');
 exports.getKnowledgeItems = async (req, res, next) => {
   try {
     const where = {};
-    if (req.userId) {
-      where.userId = req.userId;
+    if (req.userId && process.env.ISOLATE_USER_KNOWLEDGE === 'true') {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const { parentId, type, search } = req.query;

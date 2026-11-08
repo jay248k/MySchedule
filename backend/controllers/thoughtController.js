@@ -1,10 +1,11 @@
 const { Thought } = require('../models');
+const { Op } = require('sequelize');
 
 exports.getThoughts = async (req, res, next) => {
   try {
     const where = {};
-    if (req.userId) {
-      where.userId = req.userId;
+    if (req.userId && process.env.ISOLATE_USER_KNOWLEDGE === 'true') {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
     const { category, search } = req.query;
     if (category && category !== 'All') {

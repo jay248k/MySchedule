@@ -37,9 +37,8 @@ export function ThoughtsPage() {
     try {
       setLoading(true);
       const res = await api.getThoughts();
-      if (res?.data && Array.isArray(res.data)) {
-        setThoughts(res.data);
-      }
+      const thoughtsList = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      setThoughts(thoughtsList);
     } catch (err) {
       console.warn('Failed to load thoughts:', err);
     } finally {

@@ -60,9 +60,8 @@ export function KnowledgePage() {
     try {
       setLoading(true);
       const res = await api.getKnowledgeItems();
-      if (res?.data && Array.isArray(res.data)) {
-        setItems(res.data);
-      }
+      const itemsList = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      setItems(itemsList);
     } catch (err) {
       console.warn('Failed to load knowledge items:', err);
     } finally {
