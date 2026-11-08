@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { formatDate, getTodayDateString, isTaskOverdue } from '../../utils/dateUtils';
+import { formatDate, getTodayDateString, isTaskOverdue, isTaskInNotificationTimeframe } from '../../utils/dateUtils';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
 import CancelRemarksModal from '../requests/CancelRemarksModal';
 import RescheduleRequestModal from '../requests/RescheduleRequestModal';
@@ -100,11 +100,12 @@ export function Header() {
 
   const autoMissedTasks = useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return [];
+    const timeframe = settings?.notificationTimeframe || 'today';
     return tasks.filter((t) => {
       if (t.status === 'completed' || t.status === 'cancelled') return false;
-      return isTaskOverdue(t);
+      return isTaskOverdue(t) && isTaskInNotificationTimeframe(t, timeframe);
     });
-  }, [tasks]);
+  }, [tasks, settings]);
 
   const pendingRequests = (requests || []).filter((r) => r.status === 'pending');
   const unreadCount = notifications.filter((n) => !n.read).length;

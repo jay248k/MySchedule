@@ -95,6 +95,31 @@ export function isTaskOverdue(task) {
   return false;
 }
 
+/**
+ * Filter task notification by user's configured notification timeframe
+ * @param {Object} task
+ * @param {string} timeframe - 'today' | 'month' | 'year' | 'all'
+ */
+export function isTaskInNotificationTimeframe(task, timeframe = 'today') {
+  if (!task) return false;
+  const todayStr = getTodayDateString();
+  const taskDate = task.date;
+  if (!taskDate) return false;
+
+  if (timeframe === 'today') {
+    return taskDate === todayStr;
+  }
+  if (timeframe === 'month') {
+    const currentMonth = todayStr.substring(0, 7); // 'YYYY-MM'
+    return taskDate.startsWith(currentMonth);
+  }
+  if (timeframe === 'year') {
+    const currentYear = todayStr.substring(0, 4); // 'YYYY'
+    return taskDate.startsWith(currentYear);
+  }
+  return true; // 'all'
+}
+
 export function getMonthCalendarGrid(year, month, weekStartsOnSunday = true) {
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);

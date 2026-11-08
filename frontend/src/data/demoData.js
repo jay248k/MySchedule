@@ -484,6 +484,7 @@ export const initialSettings = {
   layoutComfort: 'comfortable', // 'comfortable' or 'compact'
   enableInAppNotifications: true,
   soundEffects: false,
+  notificationTimeframe: 'today', // 'today', 'month', 'year', 'all'
 };
 
 export const initialNotifications = [

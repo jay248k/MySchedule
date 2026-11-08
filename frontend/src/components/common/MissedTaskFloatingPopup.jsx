@@ -13,7 +13,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { isTaskOverdue, getTodayDateString } from '../../utils/dateUtils';
+import { isTaskOverdue, getTodayDateString, isTaskInNotificationTimeframe } from '../../utils/dateUtils';
 import CancelRemarksModal from '../requests/CancelRemarksModal';
 import RescheduleRequestModal from '../requests/RescheduleRequestModal';
 import AllMissedTasksModal from './AllMissedTasksModal';
@@ -22,6 +22,7 @@ export default function MissedTaskFloatingPopup() {
   const {
     tasks,
     requests,
+    settings,
     updateTask,
     toggleTaskComplete,
     completeWorkRequest,
@@ -68,9 +69,15 @@ export default function MissedTaskFloatingPopup() {
     }
 
     const taskItems = [];
+    const timeframe = settings?.notificationTimeframe || 'today';
     if (tasks && Array.isArray(tasks)) {
       tasks.forEach((t) => {
-        if (t.status !== 'completed' && t.status !== 'cancelled' && isTaskOverdue(t)) {
+        if (
+          t.status !== 'completed' &&
+          t.status !== 'cancelled' &&
+          isTaskOverdue(t) &&
+          isTaskInNotificationTimeframe(t, timeframe)
+        ) {
           taskItems.push({ ...t, isTask: true });
         }
       });
@@ -95,7 +102,7 @@ export default function MissedTaskFloatingPopup() {
     });
 
     return [...list, ...taskItems];
-  }, [tasks, requests, currentTime, workChains, activeWorkSession]);
+  }, [tasks, requests, currentTime, workChains, activeWorkSession, settings]);
 
   if (items.length === 0 || isDismissed) {
     return null;

@@ -229,8 +229,21 @@ export function AppProvider({ children }) {
       }
       if (settingsRes?.data) {
         const serverSettings = settingsRes.data;
-        dispatch(updateSettingsAction(serverSettings));
-        storageService.saveSettings(serverSettings);
+        let notifParsed = {};
+        if (serverSettings.notificationSettings) {
+          try {
+            notifParsed =
+              typeof serverSettings.notificationSettings === 'string'
+                ? JSON.parse(serverSettings.notificationSettings)
+                : serverSettings.notificationSettings;
+          } catch {}
+        }
+        const mergedSettings = { ...serverSettings, ...notifParsed };
+        if (!mergedSettings.notificationTimeframe) {
+          mergedSettings.notificationTimeframe = 'today';
+        }
+        dispatch(updateSettingsAction(mergedSettings));
+        storageService.saveSettings(mergedSettings);
       }
 
       // Synchronize Live Active Work Session with Mobile & Backend
@@ -1132,8 +1145,19 @@ export function AppProvider({ children }) {
           ? newSettingsOrUpdater(settings)
           : { ...settings, ...newSettingsOrUpdater };
       dispatch(updateSettingsAction(nextSettings));
-      // Sync to backend if accessible
-      api.updateSettings(nextSettings).catch(() => { });
+      storageService.saveSettings(nextSettings);
+      // Sync to backend if accessible, persisting notificationSettings
+      const notifObj = {
+        notificationTimeframe: nextSettings.notificationTimeframe || 'today',
+        enableInAppNotifications: nextSettings.enableInAppNotifications !== false,
+        enableStandupReminder: nextSettings.enableStandupReminder !== false,
+        enableCelebrationEffects: nextSettings.enableCelebrationEffects !== false,
+        enableOverdueAlerts: nextSettings.enableOverdueAlerts !== false,
+      };
+      api.updateSettings({
+        ...nextSettings,
+        notificationSettings: JSON.stringify(notifObj),
+      }).catch(() => { });
     },
     [dispatch, settings]
   );

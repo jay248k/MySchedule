@@ -797,7 +797,75 @@ export function Settings() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                {/* Notification Scope & Timeframe Setting */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--page-bg)',
+                    border: '1.5px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Clock size={16} color="var(--primary-color)" />
+                        Overdue & Missed Notification Timeframe
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Choose which overdue tasks trigger alerts, badges, and popups. Today only prevents past backlog spam.
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      {[
+                        { id: 'today', label: "Today's Only" },
+                        { id: 'month', label: 'This Month' },
+                        { id: 'year', label: 'This Year' },
+                        { id: 'all', label: 'All Historic' },
+                      ].map((tf) => {
+                        const isSelected = (settings.notificationTimeframe || 'today') === tf.id;
+                        return (
+                          <button
+                            key={tf.id}
+                            type="button"
+                            onClick={() => handleUpdate('notificationTimeframe', tf.id)}
+                            style={{
+                              padding: '6px 14px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.18s ease',
+                              background: isSelected ? 'var(--primary-color)' : 'transparent',
+                              color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
+                              boxShadow: isSelected ? '0 2px 6px rgba(23, 105, 255, 0.35)' : 'none',
+                            }}
+                          >
+                            {tf.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    💡 Active rule:{' '}
+                    <strong style={{ color: 'var(--primary-color)' }}>
+                      {(settings.notificationTimeframe || 'today') === 'today'
+                        ? "Today's scheduled tasks only (Recommended)"
+                        : ((settings.notificationTimeframe || 'today') === 'month'
+                        ? "Tasks from the current month"
+                        : ((settings.notificationTimeframe || 'today') === 'year'
+                        ? "Tasks from the entire current year"
+                        : "All historic overdue tasks"))}
+                    </strong>
+                  </div>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
