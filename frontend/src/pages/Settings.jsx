@@ -129,6 +129,7 @@ export function Settings() {
   // Tab definitions
   const TABS = [
     { id: 'appearance', label: 'Appearance & Themes', icon: Palette, desc: 'Color palettes, OLED, and styles' },
+    { id: 'navigation', label: 'Sidebar Navigation Order', icon: Layers, desc: 'Reorder menu sequence & links' },
     { id: 'scheduling', label: 'Scheduling & Calendar', icon: Sliders, desc: 'Work hours, calendar views, format' },
     { id: 'focus', label: 'Focus Mode & Audio', icon: Headphones, desc: 'Pomodoro timer and soundscapes' },
     { id: 'notifications', label: 'Notifications & Alerts', icon: Bell, desc: 'Reminders, standup notifications' },
