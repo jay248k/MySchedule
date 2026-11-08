@@ -2322,7 +2322,21 @@ body.calendar-fullpage-active .page-container,
 }
 
 .gcal-week-day-header-cell.is-selected {
-  background: var(--primary-light);
+  background: transparent;
+}
+
+.gcal-week-day-header-cell.is-selected .gcal-day-num-circle:not(.is-today-circle) {
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
+}
+
+.gcal-week-day-header-cell.is-today {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, transparent 100%);
+}
+
+.gcal-week-day-header-cell.is-today .gcal-day-name-label {
+  color: #38BDF8 !important;
+  font-weight: 800 !important;
 }
 
 .gcal-day-name-label {
@@ -2333,22 +2347,40 @@ body.calendar-fullpage-active .page-container,
 }
 
 .gcal-day-num-circle {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .gcal-day-num-circle.is-today-circle {
-  background: var(--primary-color) !important;
+  background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
+}
+
+.gcal-day-count-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  margin-top: 2px;
+}
+
+.gcal-week-day-header-cell.is-today .gcal-day-count-badge {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38BDF8;
+  border-color: rgba(56, 189, 248, 0.3);
+  font-weight: 700;
 }
 
 .gcal-week-day-header-cell:hover .gcal-day-num-circle:not(.is-today-circle) {
@@ -2445,7 +2477,7 @@ body.calendar-fullpage-active .page-container,
 }
 
 .gcal-week-day-column.is-today-column {
-  background: var(--primary-light);
+  background: rgba(56, 189, 248, 0.015);
 }
 
 .gcal-week-day-column:last-child {
