@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Play, Square, ExternalLink, Timer, Sparkles } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getTodayDateString } from '../../utils/dateUtils';
 
 export function WorkHoursClock({ tasks = [], selectedDate }) {
   const navigate = useNavigate();
@@ -31,7 +32,8 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
   const minuteDeg = minutes * 6 + seconds * 0.1;
   const hourDeg = (hours % 12) * 30 + minutes * 0.5;
 
-  const targetDate = selectedDate || time.toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
+  const targetDate = selectedDate || todayStr;
 
   // Calculate total tracked seconds from recorded sessions for this date
   const todaySessions = workSessions.filter((s) => s.date === targetDate);

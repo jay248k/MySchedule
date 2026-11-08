@@ -598,7 +598,7 @@ export function WorkTracker() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="worktracker-sessions-list">
               {/* If Chain nodes exist, render the chronological chain */}
               {todayChain?.chain?.length > 0 ? (
                 todayChain.chain.map((node, index) => {
@@ -611,53 +611,32 @@ export function WorkTracker() {
                   return (
                     <div
                       key={node.id || index}
-                      className="rounded-md p-2 flex items-center justify-between flex-wrap gap-2"
-                      style={{
-                        background: isWork ? 'rgba(16, 185, 129, 0.06)' : 'rgba(245, 158, 11, 0.08)',
-                        border: isWork ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
-                        borderLeft: isWork ? '4px solid #10B981' : '4px solid #F59E0B',
-                      }}
+                      className={`worktracker-session-card ${!isWork ? 'is-gap' : ''}`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                          style={{
-                            background: isWork ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                          }}
-                        >
-                          {isWork ? <Briefcase size={14} color="#10B981" /> : <Coffee size={14} color="#F59E0B" />}
+                      <div className="worktracker-session-left">
+                        <div className={`worktracker-session-icon ${!isWork ? 'is-gap' : ''}`}>
+                          {isWork ? <Briefcase size={15} color="#10B981" /> : <Coffee size={15} color="#F59E0B" />}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-extrabold text-primary">
+                        <div className="worktracker-session-details">
+                          <div className="worktracker-session-title-row">
+                            <span className="worktracker-session-title">
                               {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason}`}
                             </span>
-                            <span
-                              className="text-xs font-extrabold py-0.5 px-1.5 rounded-full uppercase"
-                              style={{
-                                background: isWork ? '#10B981' : '#F59E0B',
-                                color: isWork ? '#FFFFFF' : '#000000',
-                              }}
-                            >
-                              {isWork ? 'Work' : 'Gap'}
+                            <span className={`worktracker-session-badge ${isWork ? 'badge-green' : 'badge-amber'}`}>
+                              {isWork ? 'Work Segment' : 'Intermission'}
                             </span>
                           </div>
-                          <div className="text-xs text-secondary mt-0.5">
-                            {node.startTime} – {node.endTime}
+                          <div className="worktracker-session-meta">
+                            <span>{node.startTime} – {node.endTime}</span>
                             {!isWork && node.remarks && node.remarks !== node.reason && (
-                              <span className="text-amber-200 italic"> · "{node.remarks}"</span>
+                              <span className="worktracker-session-notes"> · "{node.remarks}"</span>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="text-xs font-extrabold bg-card py-0.5 px-2 rounded-md border border-color"
-                          style={{
-                            color: isWork ? '#10B981' : '#F59E0B',
-                          }}
-                        >
+                      <div className="worktracker-session-right">
+                        <span className={`worktracker-session-duration ${!isWork ? 'is-gap' : ''}`}>
                           {isWork ? durLabel : `⚡ ${node.durationLabel || durLabel}`}
                         </span>
                       </div>
@@ -677,47 +656,49 @@ export function WorkTracker() {
                   return (
                     <div
                       key={session.id}
-                      className="card rounded-md p-2 flex items-center justify-between flex-wrap gap-2"
+                      className="worktracker-session-card"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-blue-500/10 border border-blue-500/25 flex items-center justify-center shrink-0 text-sm">
+                      <div className="worktracker-session-left">
+                        <div className="worktracker-session-icon">
                           {icon}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-extrabold text-primary">
-                              {session.taskTitle || 'General Work Session'}
+                        <div className="worktracker-session-details">
+                          <div className="worktracker-session-title-row">
+                            <span className="worktracker-session-title">
+                              {session.taskTitle || 'General Focus Session'}
                             </span>
-                            <span className="bg-white/10 text-secondary text-xs font-bold py-0.5 px-1.5 rounded">
+                            <span className="worktracker-session-badge badge-green">
                               {session.stopReason || 'Finished Work'}
                             </span>
                           </div>
-                          <div className="text-xs text-secondary mt-0.5">
-                            {session.startTime} – {session.endTime}
-                            {session.notes && <span className="italic"> · "{session.notes}"</span>}
+                          <div className="worktracker-session-meta">
+                            <span>{session.startTime} – {session.endTime || 'Completed'}</span>
+                            {session.notes && <span className="worktracker-session-notes"> · "{session.notes}"</span>}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-extrabold text-blue-500">
+                      <div className="worktracker-session-right">
+                        <span className="worktracker-session-duration">
                           {durStr}
                         </span>
                         <button
                           type="button"
-                          className="btn-icon w-6 h-6"
+                          className="btn-icon"
                           onClick={() => setEditingSession(session)}
                           title="Edit remarks"
+                          style={{ padding: '4px' }}
                         >
-                          <Edit2 size={12} />
+                          <Edit2 size={13} />
                         </button>
                         <button
                           type="button"
-                          className="btn-icon w-6 h-6 text-red-500"
+                          className="btn-icon text-red-500"
                           onClick={() => deleteWorkSession(session.id)}
                           title="Delete session"
+                          style={{ padding: '4px' }}
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -727,34 +708,36 @@ export function WorkTracker() {
 
               {/* Active Running Session Segment in the Chain */}
               {isRunning && activeWorkSession?.date === activeDate && (
-                <div className="bg-emerald-500/10 border border-emerald-500 rounded-md p-2 flex items-center justify-between flex-wrap gap-2 animate-pulse">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-md bg-emerald-500 text-white flex items-center justify-center">
-                      <Timer size={15} />
+                <div className="worktracker-session-card is-active animate-pulse">
+                  <div className="worktracker-session-left">
+                    <div className="worktracker-session-icon" style={{ background: '#10B981', color: '#FFFFFF' }}>
+                      <Timer size={16} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-extrabold text-primary">
-                          {activeWorkSession.taskTitle || 'Live Work Segment'}
+                    <div className="worktracker-session-details">
+                      <div className="worktracker-session-title-row">
+                        <span className="worktracker-session-title">
+                          {activeWorkSession?.taskTitle || 'Live Work Segment'}
                         </span>
-                        <span className="bg-emerald-500 text-white text-xs font-extrabold py-0.5 px-1.5 rounded-full">
-                          RECORDING
+                        <span className="worktracker-session-badge badge-green">
+                          Recording
                         </span>
                       </div>
-                      <div className="text-xs text-secondary mt-0.5">
-                        Started at: {activeWorkSession.startTime} · Currently tracking
+                      <div className="worktracker-session-meta">
+                        <span>Started at {activeWorkSession?.startTime || 'now'}</span>
+                        <span>· Real-time focus tracking</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-base font-black text-emerald-500">
-                      {activeTimerDisplay}
+                  <div className="worktracker-session-right">
+                    <span className="worktracker-session-duration" style={{ fontSize: '0.9rem', color: '#10B981' }}>
+                      {activeElapsedMins}m {activeElapsedSecs}s
                     </span>
                     <button
                       type="button"
-                      className="btn btn-sm bg-red-500 text-white text-xs font-bold py-1 px-2.5 flex items-center gap-1 rounded"
+                      className="worktracker-btn-stop"
                       onClick={requestStopWorkSession}
+                      style={{ padding: '4px 10px', fontSize: '0.74rem' }}
                     >
                       <Square size={11} fill="#FFFFFF" /> Stop & Remarks
                     </button>
@@ -764,25 +747,36 @@ export function WorkTracker() {
 
               {/* If currently paused, render the active pause node in the chain */}
               {isPaused && (
-                <div className="bg-amber-500/10 border border-dashed border-amber-500 rounded-md p-2 flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">⏳</span>
-                    <div>
-                      <div className="text-xs font-extrabold text-amber-200">
-                        Current Gap: {todayChain.lastPauseReason || 'Pause'}
+                <div className="worktracker-session-card is-gap" style={{ borderStyle: 'dashed' }}>
+                  <div className="worktracker-session-left">
+                    <div className="worktracker-session-icon is-gap">
+                      <span>⏳</span>
+                    </div>
+                    <div className="worktracker-session-details">
+                      <div className="worktracker-session-title-row">
+                        <span className="worktracker-session-title" style={{ color: '#FDE68A' }}>
+                          Current Gap: {todayChain.lastPauseReason || 'Pause'}
+                        </span>
+                        <span className="worktracker-session-badge badge-amber">
+                          Paused
+                        </span>
                       </div>
-                      <div className="text-xs text-secondary">
-                        Paused since {todayChain.lastPausedTimeStr}. Gap calculates upon resuming.
+                      <div className="worktracker-session-meta">
+                        <span>Paused since {todayChain.lastPausedTimeStr}</span>
+                        <span>· Auto-calculates upon resuming</span>
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleStartSession}
-                    className="btn btn-primary text-xs py-1 px-3 font-extrabold flex items-center gap-1"
-                  >
-                    <Play size={12} fill="#FFFFFF" /> Resume Work
-                  </button>
+                  <div className="worktracker-session-right">
+                    <button
+                      type="button"
+                      onClick={handleStartSession}
+                      className="worktracker-btn-start"
+                      style={{ padding: '5px 12px', fontSize: '0.74rem' }}
+                    >
+                      <Play size={12} fill="#FFFFFF" /> Resume Work
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

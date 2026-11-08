@@ -355,6 +355,13 @@ export function AppProvider({ children }) {
             setActiveWorkSession((prev) => {
               if (prev && prev.isRunning) {
                 storageService.saveActiveWorkSession(null);
+                // When session stopped on mobile/cloud, immediately refresh work sessions list
+                api.getWorkSessions().then((sessRes) => {
+                  if (sessRes?.data && Array.isArray(sessRes.data)) {
+                    setWorkSessions(sessRes.data);
+                    storageService.saveWorkSessions(sessRes.data);
+                  }
+                }).catch(() => {});
                 return null;
               }
               return prev;
@@ -1244,6 +1251,10 @@ export function AppProvider({ children }) {
       return updated;
     });
 
+    const todaySessions = (workSessions || []).filter((s) => s.date === today);
+    const recordedTotalSeconds = todaySessions.reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
+    const baseSeconds = Math.max(recordedTotalSeconds, existingChain.accumulatedWorkSeconds || 0);
+
     const newActive = {
       isRunning: true,
       startTimestamp: nowTimestamp,
@@ -1251,7 +1262,7 @@ export function AppProvider({ children }) {
       date: today,
       taskId: task?.id || null,
       taskTitle: task?.title || '',
-      baseAccumulatedSeconds: existingChain.accumulatedWorkSeconds || 0,
+      baseAccumulatedSeconds: baseSeconds,
       status: 'running',
     };
     setActiveWorkSession(newActive);
@@ -1356,7 +1367,11 @@ export function AppProvider({ children }) {
       // Persist to backend
       try {
         const res = await api.createWorkSession(sessionPayload);
-        if (res?.data) {
+        const fresh = await api.getWorkSessions();
+        if (fresh?.data && Array.isArray(fresh.data)) {
+          setWorkSessions(fresh.data);
+          storageService.saveWorkSessions(fresh.data);
+        } else if (res?.data) {
           setWorkSessions((prev) =>
             prev.map((s) => (s.id === sessionPayload.id ? res.data : s))
           );
