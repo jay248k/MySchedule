@@ -23,6 +23,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
 import { CustomSelect } from '../components/common/CustomSelect';
+import '../styles/pages/deviations.css';
 
 const REASON_CATEGORIES = [
   { id: 'Social Media / Browsing', label: '📱 Social Media / Browsing', color: '#EF4444' },
@@ -100,23 +101,22 @@ export function DeviationsPage() {
     () => dateDeviations.reduce((acc, d) => acc + (Number(d.durationMinutes) || 0), 0),
     [dateDeviations]
   );
-
   const hoursLost = Math.floor(totalMinutesLost / 60);
   const minsLost = totalMinutesLost % 60;
 
-  const handleOpenAddModal = (presetTask = null) => {
+  const handleOpenAddModal = (task = null) => {
     setEditingId(null);
     setForm({
       date: activeDate,
-      startTime: presetTask?.startTime || '10:00',
-      endTime: presetTask?.endTime || '11:00',
-      plannedAction: presetTask ? presetTask.title : '',
+      startTime: task?.startTime || '10:00',
+      endTime: task?.endTime || '11:00',
+      plannedAction: task?.title || '',
       actualAction: '',
       reasonCategory: 'Social Media / Browsing',
       rootCause: '',
       lessonLearned: '',
       deviationType: 'unproductive',
-      taskId: presetTask?.id || '',
+      taskId: task?.id || '',
     });
     setIsModalOpen(true);
   };
@@ -140,10 +140,6 @@ export function DeviationsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.plannedAction.trim() || !form.actualAction.trim()) {
-      return;
-    }
-
     const payload = {
       ...form,
       durationMinutes: formDurationMinutes,
@@ -165,63 +161,30 @@ export function DeviationsPage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '24px' }}>
+    <div className="deviations-container">
       {/* Top Header Bar */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px',
-          paddingBottom: '8px',
-          borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
-        }}
-      >
+      <div className="deviations-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+          <div className="deviations-title-wrap">
+            <h1 className="deviations-title">
               Schedule Deviations & Mistakes Log
             </h1>
-            <span
-              style={{
-                background: 'rgba(239, 68, 68, 0.12)',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-                color: '#EF4444',
-                padding: '2px 8px',
-                borderRadius: '999px',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
+            <span className="deviations-badge-planned">
               PLANNED VS ACTUAL
             </span>
           </div>
-          <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <p className="deviations-subtitle">
             Record specific timeslots where you were supposed to do one task, but ended up doing something else instead.
           </p>
         </div>
 
         {/* Date Selector & Add Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="deviations-header-actions">
           {/* Day Stepper */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '2px 5px',
-            }}
-          >
+          <div className="deviations-day-stepper">
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '26px', height: '26px' }}
               onClick={() => {
                 const d = new Date(activeDate + 'T00:00:00');
                 d.setDate(d.getDate() - 1);
@@ -234,13 +197,12 @@ export function DeviationsPage() {
             >
               <ChevronLeft size={14} />
             </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0 6px', color: 'var(--text-primary)' }}>
+            <span className="deviations-stepper-label">
               {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
             </span>
             <button
               type="button"
               className="btn-icon"
-              style={{ width: '26px', height: '26px' }}
               onClick={() => {
                 const d = new Date(activeDate + 'T00:00:00');
                 d.setDate(d.getDate() + 1);
@@ -256,9 +218,8 @@ export function DeviationsPage() {
             {!isToday && (
               <button
                 type="button"
-                className="btn btn-ghost btn-xs"
+                className="btn btn-ghost btn-xs deviations-today-btn"
                 onClick={() => setSelectedDate(todayStr)}
-                style={{ marginLeft: '4px', fontSize: '0.7rem', padding: '2px 5px', color: 'var(--primary-color)' }}
               >
                 Today
               </button>
@@ -267,9 +228,8 @@ export function DeviationsPage() {
 
           <button
             type="button"
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm deviations-add-btn"
             onClick={() => handleOpenAddModal()}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '30px', fontSize: '0.78rem', padding: '0 10px' }}
           >
             <Plus size={14} />
             <span>Log Deviation</span>
@@ -278,202 +238,104 @@ export function DeviationsPage() {
       </div>
 
       {/* KPI Cards Strip */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-          gap: '8px',
-        }}
-      >
+      <div className="deviations-kpi-grid">
         {/* Card 1: Mistakes / Deviations */}
-        <div
-          style={{
-            background: 'var(--card-bg, #1a2234)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '3px solid #EF4444',
-            borderRadius: '8px',
-            padding: '7px 11px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            gap: '4px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+        <div className="deviations-kpi-card kpi-red">
+          <div className="deviations-kpi-header">
+            <span className="deviations-kpi-label">
               Mistakes / Deviations
             </span>
-            <div
-              style={{
-                width: '22px',
-                height: '22px',
-                borderRadius: '5px',
-                background: 'rgba(239, 68, 68, 0.14)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#EF4444',
-              }}
-            >
+            <div className="deviations-kpi-icon-wrap icon-red">
               <AlertCircle size={13} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div className="deviations-kpi-value-row">
+              <span className="deviations-kpi-val">
                 {dateDeviations.length}
               </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span className="deviations-kpi-unit">
                 {dateDeviations.length === 1 ? 'Event' : 'Events'}
               </span>
             </div>
-            <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div className="deviations-kpi-sub">
               Logged for {isToday ? 'today' : formattedDateTitle}
             </div>
           </div>
         </div>
 
         {/* Card 2: Total Diverted Time */}
-        <div
-          style={{
-            background: 'var(--card-bg, #1a2234)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '3px solid #F59E0B',
-            borderRadius: '8px',
-            padding: '7px 11px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            gap: '4px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+        <div className="deviations-kpi-card kpi-amber">
+          <div className="deviations-kpi-header">
+            <span className="deviations-kpi-label">
               Total Diverted Time
             </span>
-            <div
-              style={{
-                width: '22px',
-                height: '22px',
-                borderRadius: '5px',
-                background: 'rgba(245, 158, 11, 0.14)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#F59E0B',
-              }}
-            >
+            <div className="deviations-kpi-icon-wrap icon-amber">
               <Clock size={13} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div className="deviations-kpi-value-row">
+              <span className="deviations-kpi-val">
                 {hoursLost > 0 ? `${hoursLost}h ${minsLost}m` : `${minsLost}`}
               </span>
               {hoursLost === 0 && (
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                <span className="deviations-kpi-unit">
                   mins
                 </span>
               )}
             </div>
-            <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div className="deviations-kpi-sub">
               Time spent away from plan
             </div>
           </div>
         </div>
 
         {/* Card 3: Scheduled Tasks Today */}
-        <div
-          style={{
-            background: 'var(--card-bg, #1a2234)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '3px solid #3B82F6',
-            borderRadius: '8px',
-            padding: '7px 11px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            gap: '4px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+        <div className="deviations-kpi-card kpi-blue">
+          <div className="deviations-kpi-header">
+            <span className="deviations-kpi-label">
               Scheduled Tasks
             </span>
-            <div
-              style={{
-                width: '22px',
-                height: '22px',
-                borderRadius: '5px',
-                background: 'rgba(59, 130, 246, 0.14)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#3B82F6',
-              }}
-            >
+            <div className="deviations-kpi-icon-wrap icon-blue">
               <Target size={13} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div className="deviations-kpi-value-row">
+              <span className="deviations-kpi-val">
                 {dateTasks.length}
               </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span className="deviations-kpi-unit">
                 Planned
               </span>
             </div>
-            <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div className="deviations-kpi-sub">
               Tasks available on schedule
             </div>
           </div>
         </div>
 
         {/* Card 4: Lessons Recorded */}
-        <div
-          style={{
-            background: 'var(--card-bg, #1a2234)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-            borderLeft: '3px solid #10B981',
-            borderRadius: '8px',
-            padding: '7px 11px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            gap: '4px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+        <div className="deviations-kpi-card kpi-green">
+          <div className="deviations-kpi-header">
+            <span className="deviations-kpi-label">
               Lessons Recorded
             </span>
-            <div
-              style={{
-                width: '22px',
-                height: '22px',
-                borderRadius: '5px',
-                background: 'rgba(16, 185, 129, 0.14)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#10B981',
-              }}
-            >
+            <div className="deviations-kpi-icon-wrap icon-green">
               <Sparkles size={13} />
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div className="deviations-kpi-value-row">
+              <span className="deviations-kpi-val">
                 {dateDeviations.filter((d) => Boolean(d.lessonLearned)).length}
               </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              <span className="deviations-kpi-unit">
                 Lessons
               </span>
             </div>
-            <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div className="deviations-kpi-sub">
               Insights to prevent repeats
             </div>
           </div>
@@ -481,56 +343,34 @@ export function DeviationsPage() {
       </div>
 
       {/* Main List of Deviations */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+      <div className="deviations-list-section">
+        <div className="flex justify-between items-center">
+          <h2 className="deviations-list-title">
             Logged Deviations for {isToday ? 'Today' : formattedDateTitle} ({dateDeviations.length})
           </h2>
         </div>
 
         {dateDeviations.length === 0 ? (
-          <div
-            style={{
-              background: 'var(--card-bg)',
-              border: '1px dashed var(--border-color)',
-              borderRadius: '10px',
-              padding: '24px 16px',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-            }}
-          >
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.12)',
-                color: '#10B981',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 8px',
-              }}
-            >
+          <div className="deviations-empty-card">
+            <div className="deviations-empty-icon">
               <CheckCircle2 size={18} />
             </div>
-            <div style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div className="deviations-empty-heading">
               No Schedule Deviations Logged for This Day!
             </div>
-            <p style={{ fontSize: '0.78rem', maxWidth: '380px', margin: '4px auto 12px', color: 'var(--text-secondary)' }}>
+            <p className="deviations-empty-text">
               If you had a timeslot where you were supposed to work on something, but did something else instead, record it here to track habits and lessons learned.
             </p>
             <button
               type="button"
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-sm deviations-add-btn"
               onClick={() => handleOpenAddModal()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', height: '28px', fontSize: '0.78rem', padding: '0 12px' }}
             >
               <Plus size={13} /> Log First Deviation
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 520px), 1fr))', gap: '14px' }}>
+          <div className="deviations-cards-grid">
             {dateDeviations.map((dev, idx) => {
               const durM = Number(dev.durationMinutes) || 60;
               const h = Math.floor(durM / 60);
@@ -543,95 +383,24 @@ export function DeviationsPage() {
               const rootCauseClean = cleanRootCause(dev.rootCause);
 
               return (
-                <div
-                  key={dev.id}
-                  style={{
-                    background: 'var(--card-bg)',
-                    border: '1.5px solid var(--border-color)',
-                    borderRadius: '16px',
-                    padding: '16px 18px',
-                    boxShadow: 'var(--shadow-md, 0 4px 16px rgba(0,0,0,0.1))',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    position: 'relative',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                  }}
-                >
+                <div key={dev.id} className="deviation-card">
                   {/* Top Bar: Incident Badge, Date/Time, Category & Action Icons */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '10px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        flexWrap: 'wrap',
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
+                  <div className="deviation-top-bar">
+                    <div className="deviation-tags-wrap">
                       {/* Incident Tag */}
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 800,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.4px',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          background: 'rgba(239, 68, 68, 0.12)',
-                          color: '#EF4444',
-                          border: '1px solid rgba(239, 68, 68, 0.25)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                        }}
-                      >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444', display: 'inline-block' }} />
+                      <span className="deviation-incident-tag">
+                        <span className="deviation-incident-dot" />
                         INCIDENT #{idx + 1}
                       </span>
 
                       {/* Date Tag */}
-                      <span
-                        style={{
-                          background: 'var(--page-bg)',
-                          border: '1px solid var(--border-color)',
-                          color: 'var(--text-secondary)',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
+                      <span className="deviation-date-tag">
                         <Calendar size={11} color="var(--primary-color)" />
                         <span>{dev.date}</span>
                       </span>
 
                       {/* Time & Duration Pill */}
-                      <span
-                        style={{
-                          background: 'rgba(59, 130, 246, 0.1)',
-                          border: '1px solid rgba(59, 130, 246, 0.25)',
-                          color: '#60A5FA',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
+                      <span className="deviation-time-tag">
                         <Clock size={11} />
                         <span>{dev.startTime} — {dev.endTime}</span>
                         <span style={{ opacity: 0.75 }}>• {durationLabel}</span>
@@ -639,50 +408,24 @@ export function DeviationsPage() {
 
                       {/* Category Chip */}
                       <span
+                        className="deviation-category-chip"
                         style={{
                           background: `${categoryMatch.color}15`,
                           border: `1px solid ${categoryMatch.color}35`,
                           color: categoryMatch.color,
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 9px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
                         }}
                       >
                         {categoryMatch.label}
                       </span>
                     </div>
 
-                    {/* Action Buttons: Clean rounded buttons pinned on the right */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    {/* Action Buttons */}
+                    <div className="deviation-actions">
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(dev)}
                         title="Edit deviation details"
-                        style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          background: 'var(--page-bg)',
-                          color: 'var(--text-secondary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--primary-color)';
-                          e.currentTarget.style.color = 'var(--primary-color)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--border-color)';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                        }}
+                        className="deviation-btn-edit"
                       >
                         <Edit2 size={13} />
                       </button>
@@ -690,27 +433,7 @@ export function DeviationsPage() {
                         type="button"
                         onClick={() => deleteDeviation(dev.id)}
                         title="Delete log"
-                        style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(239, 68, 68, 0.25)',
-                          background: 'rgba(239, 68, 68, 0.08)',
-                          color: '#EF4444',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)';
-                          e.currentTarget.style.borderColor = '#EF4444';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
-                        }}
+                        className="deviation-btn-delete"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -718,73 +441,25 @@ export function DeviationsPage() {
                   </div>
 
                   {/* Modern Divergence Flow: Planned Schedule ➔ Actual Deviation */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                      gap: '10px',
-                    }}
-                  >
+                  <div className="deviation-flow-grid">
                     {/* Planned Box */}
-                    <div
-                      style={{
-                        background: 'rgba(59, 130, 246, 0.05)',
-                        border: '1px solid rgba(59, 130, 246, 0.2)',
-                        borderRadius: '10px',
-                        padding: '10px 14px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '0.66rem',
-                          fontWeight: 800,
-                          color: '#60A5FA',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                        }}
-                      >
+                    <div className="deviation-planned-box">
+                      <div className="deviation-box-label-blue">
                         <Target size={12} color="#38BDF8" />
                         <span>Planned Commitment</span>
                       </div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                      <div className="deviation-planned-text">
                         {dev.plannedAction}
                       </div>
                     </div>
 
                     {/* Actual Deviation Box */}
-                    <div
-                      style={{
-                        background: 'rgba(245, 158, 11, 0.06)',
-                        border: '1px solid rgba(245, 158, 11, 0.25)',
-                        borderRadius: '10px',
-                        padding: '10px 14px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '0.66rem',
-                          fontWeight: 800,
-                          color: '#F59E0B',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                        }}
-                      >
+                    <div className="deviation-actual-box">
+                      <div className="deviation-box-label-amber">
                         <AlertTriangle size={12} color="#F59E0B" />
                         <span>Actual Activity (Mistake)</span>
                       </div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F59E0B', lineHeight: 1.35 }}>
+                      <div className="deviation-actual-text">
                         {dev.actualAction}
                       </div>
                     </div>
@@ -793,57 +468,30 @@ export function DeviationsPage() {
                   {/* Root Cause & Next-Time Prevention Rule */}
                   {(rootCauseClean || dev.lessonLearned) && (
                     <div
+                      className="deviation-insights-box"
                       style={{
-                        background: 'var(--page-bg)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '10px',
-                        padding: '10px 14px',
-                        display: 'grid',
                         gridTemplateColumns: rootCauseClean && dev.lessonLearned ? 'repeat(auto-fit, minmax(210px, 1fr))' : '1fr',
-                        gap: '12px',
                       }}
                     >
                       {rootCauseClean && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              fontSize: '0.66rem',
-                              fontWeight: 800,
-                              color: 'var(--text-muted)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.04em',
-                            }}
-                          >
+                        <div className="deviation-insight-col">
+                          <div className="deviation-insight-label-gray">
                             <HelpCircle size={12} color="#94A3B8" />
                             <span>Root Cause Trigger</span>
                           </div>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4, fontWeight: 500 }}>
+                          <span className="deviation-insight-val-gray">
                             {rootCauseClean}
                           </span>
                         </div>
                       )}
 
                       {dev.lessonLearned && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              fontSize: '0.66rem',
-                              fontWeight: 800,
-                              color: '#10B981',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.04em',
-                            }}
-                          >
+                        <div className="deviation-insight-col">
+                          <div className="deviation-insight-label-green">
                             <Lightbulb size={12} color="#10B981" />
                             <span>Next-Time Prevention Rule</span>
                           </div>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.4 }}>
+                          <span className="deviation-insight-val-green">
                             {dev.lessonLearned}
                           </span>
                         </div>
@@ -860,67 +508,23 @@ export function DeviationsPage() {
       {/* Modal: Add or Edit Deviation */}
       {isModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1000,
-            backgroundColor: 'rgba(0,0,0,0.72)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            animation: 'fadeIn 0.2s ease-out',
-          }}
+          className="deviation-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsModalOpen(false);
           }}
         >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '580px',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '18px',
-              boxShadow: 'var(--shadow-xl)',
-              overflow: 'hidden',
-              maxHeight: '92vh',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
+          <div className="deviation-modal-dialog">
             {/* Header */}
-            <div
-              style={{
-                padding: '18px 24px',
-                borderBottom: '1px solid var(--border-color)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    color: '#EF4444',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
+            <div className="deviation-modal-header">
+              <div className="deviation-modal-title-wrap">
+                <div className="deviation-modal-icon-badge">
                   <AlertTriangle size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  <h3 className="deviation-modal-title">
                     {editingId ? 'Edit Deviation Log' : 'Log Schedule Mistake / Deviation'}
                   </h3>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  <div className="deviation-modal-subtitle">
                     Write what you had to do vs what you actually did in this timeslot
                   </div>
                 </div>
@@ -936,22 +540,12 @@ export function DeviationsPage() {
             </div>
 
             {/* Modal Body Form */}
-            <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <form onSubmit={handleSubmit} className="deviation-modal-form">
               {/* Date & Time Slot Grid with Dynamic Duration */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '14px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+              <div className="deviation-form-section">
+                <div className="deviation-time-grid">
                   <div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                    <label className="deviation-label-with-icon">
                       <Calendar size={13} color="var(--primary-color)" />
                       Date
                     </label>
@@ -965,7 +559,7 @@ export function DeviationsPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                    <label className="deviation-label-with-icon">
                       <Clock size={13} color="var(--primary-color)" />
                       Start Time
                     </label>
@@ -979,7 +573,7 @@ export function DeviationsPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                    <label className="deviation-label-with-icon">
                       <Clock size={13} color="var(--primary-color)" />
                       End Time
                     </label>
@@ -994,11 +588,11 @@ export function DeviationsPage() {
                 </div>
 
                 {/* Duration indicator pill */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#EF4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="deviation-duration-pill">
+                  <span className="deviation-duration-label">
                     <AlertCircle size={14} /> Total Diverted Timeslot:
                   </span>
-                  <span style={{ fontSize: '0.82rem', color: '#F87171', fontWeight: 800 }}>
+                  <span className="deviation-duration-val">
                     {Math.floor(formDurationMinutes / 60) > 0 ? `${Math.floor(formDurationMinutes / 60)}h ` : ''}{formDurationMinutes % 60}m ({formDurationMinutes} mins)
                   </span>
                 </div>
@@ -1006,7 +600,7 @@ export function DeviationsPage() {
                 {/* Quick Pick From Scheduled Tasks with Searchable CustomSelect */}
                 {dateTasks.length > 0 && !editingId && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    <label className="block text-xs font-bold text-muted mb-1">
                       Quick Pick From Scheduled Tasks:
                     </label>
                     <CustomSelect
@@ -1045,20 +639,10 @@ export function DeviationsPage() {
               </div>
 
               {/* Comparative Section: Planned vs Actual Mistake */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+              <div className="deviation-compare-grid">
                 {/* 1. Planned Task Card */}
-                <div
-                  style={{
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%)',
-                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                  }}
-                >
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#60A5FA' }}>
+                <div className="deviation-compare-planned">
+                  <label className="flex items-center gap-2 text-xs font-extrabold text-blue-400">
                     <Target size={15} />
                     <span>What I Was Supposed To Do (Planned):</span>
                   </label>
@@ -1066,35 +650,18 @@ export function DeviationsPage() {
                     type="text"
                     placeholder="Enter planned task commitment..."
                     className="form-input"
-                    style={{
-                      width: '100%',
-                      background: 'var(--card-bg)',
-                      borderColor: 'rgba(59, 130, 246, 0.35)',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                    }}
                     value={form.plannedAction}
                     onChange={(e) => setForm({ ...form, plannedAction: e.target.value })}
                     required
                   />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  <span className="text-xs text-muted">
                     Original planned schedule commitment
                   </span>
                 </div>
 
                 {/* 2. What I Actually Did (The Mistake) */}
-                <div
-                  style={{
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%)',
-                    border: '1px solid rgba(245, 158, 11, 0.25)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                  }}
-                >
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#F59E0B' }}>
+                <div className="deviation-compare-actual">
+                  <label className="flex items-center gap-2 text-xs font-extrabold text-amber-500">
                     <AlertTriangle size={15} />
                     <span>What I Actually Did Instead (The Mistake):</span>
                   </label>
@@ -1102,19 +669,12 @@ export function DeviationsPage() {
                     type="text"
                     placeholder="Enter what was done instead..."
                     className="form-input"
-                    style={{
-                      width: '100%',
-                      background: 'var(--card-bg)',
-                      borderColor: 'rgba(245, 158, 11, 0.35)',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                    }}
                     value={form.actualAction}
                     onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
                     required
                   />
                   {/* Quick distraction chips */}
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '2px' }}>
+                  <div className="deviation-distraction-chips">
                     {[
                       '📱 Social Media / Instagram',
                       '📺 YouTube Videos',
@@ -1126,15 +686,7 @@ export function DeviationsPage() {
                         key={dist}
                         type="button"
                         onClick={() => setForm({ ...form, actualAction: dist })}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          border: '1px solid var(--border-color)',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                        }}
+                        className="deviation-distraction-chip"
                       >
                         {dist}
                       </button>
@@ -1144,29 +696,19 @@ export function DeviationsPage() {
               </div>
 
               {/* Root Cause & Common Friction Preset Chips */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '14px',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="deviation-rootcause-section">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-primary flex items-center gap-1">
                     <HelpCircle size={14} color="var(--primary-color)" />
                     Why Did This Happen? (Root Cause):
                   </label>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  <span className="text-xs text-muted">
                     Click a preset chip or write custom
                   </span>
                 </div>
 
                 {/* Preset Chips */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <div className="deviation-chips-wrap">
                   {REASON_CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
@@ -1177,17 +719,7 @@ export function DeviationsPage() {
                           : cat.id;
                         setForm({ ...form, rootCause: newCause });
                       }}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '999px',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'background 0.15s ease',
-                      }}
+                      className="deviation-preset-chip"
                     >
                       {cat.label}
                     </button>
@@ -1200,23 +732,12 @@ export function DeviationsPage() {
                   placeholder="Detail the root friction or mental trigger (e.g. felt bored, task too overwhelming)..."
                   value={form.rootCause}
                   onChange={(e) => setForm({ ...form, rootCause: e.target.value })}
-                  style={{ width: '100%', fontSize: '0.84rem' }}
                 />
               </div>
 
               {/* Actionable Lesson Learned */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '14px',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 800, color: '#10B981' }}>
+              <div className="deviation-lesson-section">
+                <label className="flex items-center gap-2 text-xs font-extrabold text-emerald-500">
                   <Lightbulb size={16} />
                   <span>How Will I Avoid This Next Time? (Actionable Lesson):</span>
                 </label>
@@ -1226,20 +747,11 @@ export function DeviationsPage() {
                   placeholder="Enter preventive rule or corrective step..."
                   value={form.lessonLearned}
                   onChange={(e) => setForm({ ...form, lessonLearned: e.target.value })}
-                  style={{ width: '100%', fontSize: '0.84rem', borderColor: 'rgba(16, 185, 129, 0.4)' }}
                 />
               </div>
 
               {/* Footer Actions */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: '10px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
-                }}
-              >
+              <div className="deviation-modal-footer">
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -1249,13 +761,7 @@ export function DeviationsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                    borderColor: '#DC2626',
-                    boxShadow: '0 4px 14px rgba(239, 68, 68, 0.35)',
-                    fontWeight: 700,
-                  }}
+                  className="btn btn-primary deviation-submit-btn"
                 >
                   {editingId ? 'Update Deviation Log' : 'Save Deviation Log'}
                 </button>

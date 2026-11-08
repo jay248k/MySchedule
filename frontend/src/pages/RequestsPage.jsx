@@ -19,6 +19,7 @@ import {
 import SubmitRequestModal from '../components/requests/SubmitRequestModal';
 import CancelRemarksModal from '../components/requests/CancelRemarksModal';
 import RescheduleRequestModal from '../components/requests/RescheduleRequestModal';
+import '../styles/pages/requests.css';
 
 export default function RequestsPage() {
   const { requests, completeWorkRequest, rescheduleWorkRequest, cancelWorkRequest, deleteWorkRequest } = useApp();
@@ -72,39 +73,19 @@ export default function RequestsPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+    <div className="requests-page-container">
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
+      <div className="requests-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
-                background: 'rgba(23, 105, 255, 0.15)',
-                color: 'var(--accent-primary, #1769FF)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+          <div className="flex items-center gap-2">
+            <div className="requests-header-icon-box">
               <FileText size={22} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              <h1 className="requests-header-title">
                 Work & Missed Work Requests
               </h1>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <p className="requests-header-sub">
                 Complete records of all past and current requests with mandatory reasons and action audit logs
               </p>
             </div>
@@ -113,59 +94,26 @@ export default function RequestsPage() {
 
         <button
           onClick={() => setIsSubmitModalOpen(true)}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '10px',
-            border: 'none',
-            background: 'var(--accent-primary, #1769FF)',
-            color: '#FFFFFF',
-            fontSize: '0.88rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
+          className="requests-btn-submit"
         >
           <PlusCircle size={18} /> Submit Missed Work Request
         </button>
       </div>
 
-      {/* KPI Cards */}
       {/* KPI Cards (All 5 in One Line & Compact Design) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-          gap: '10px',
-          marginBottom: '18px',
-        }}
-      >
+      <div className="requests-kpi-grid">
         {/* Total */}
         <div
           onClick={() => setActiveTab('all')}
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: activeTab === 'all' ? '1.5px solid var(--accent-primary, #1769FF)' : '1px solid var(--border-color)',
-            borderTop: activeTab === 'all' ? '3px solid var(--accent-primary, #1769FF)' : '3px solid transparent',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: activeTab === 'all' ? '0 4px 12px rgba(23, 105, 255, 0.12)' : 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
+          className={`requests-kpi-card card ${activeTab === 'all' ? 'is-active-all' : ''}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="requests-kpi-title-row">
+            <span className="requests-kpi-label text-secondary">
               Total Requests
             </span>
-            <FileText size={13} color="var(--accent-primary, #1769FF)" style={{ flexShrink: 0 }} />
+            <FileText size={13} color="var(--accent-primary, #1769FF)" className="shrink-0" />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px', lineHeight: 1.15 }}>
+          <div className="requests-kpi-value text-primary">
             {allRequests.length}
           </div>
         </div>
@@ -173,28 +121,15 @@ export default function RequestsPage() {
         {/* Pending */}
         <div
           onClick={() => setActiveTab('pending')}
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: activeTab === 'pending' ? '1.5px solid #F59E0B' : '1px solid var(--border-color)',
-            borderTop: activeTab === 'pending' ? '3px solid #F59E0B' : '3px solid transparent',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: activeTab === 'pending' ? '0 4px 12px rgba(245, 158, 11, 0.12)' : 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
+          className={`requests-kpi-card card ${activeTab === 'pending' ? 'is-active-pending' : ''}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="requests-kpi-title-row">
+            <span className="requests-kpi-label text-amber-500">
               Pending Action
             </span>
-            <Clock size={13} color="#F59E0B" style={{ flexShrink: 0 }} />
+            <Clock size={13} color="#F59E0B" className="shrink-0" />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#F59E0B', marginTop: '2px', lineHeight: 1.15 }}>
+          <div className="requests-kpi-value text-amber-500">
             {pendingCount}
           </div>
         </div>
@@ -202,28 +137,15 @@ export default function RequestsPage() {
         {/* Completed */}
         <div
           onClick={() => setActiveTab('completed')}
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: activeTab === 'completed' ? '1.5px solid #10B981' : '1px solid var(--border-color)',
-            borderTop: activeTab === 'completed' ? '3px solid #10B981' : '3px solid transparent',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: activeTab === 'completed' ? '0 4px 12px rgba(16, 185, 129, 0.12)' : 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
+          className={`requests-kpi-card card ${activeTab === 'completed' ? 'is-active-completed' : ''}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="requests-kpi-title-row">
+            <span className="requests-kpi-label text-emerald-500">
               Completed
             </span>
-            <CheckCircle2 size={13} color="#10B981" style={{ flexShrink: 0 }} />
+            <CheckCircle2 size={13} color="#10B981" className="shrink-0" />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#10B981', marginTop: '2px', lineHeight: 1.15 }}>
+          <div className="requests-kpi-value text-emerald-500">
             {completedCount}
           </div>
         </div>
@@ -231,28 +153,15 @@ export default function RequestsPage() {
         {/* Rescheduled */}
         <div
           onClick={() => setActiveTab('rescheduled')}
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: activeTab === 'rescheduled' ? '1.5px solid #3B82F6' : '1px solid var(--border-color)',
-            borderTop: activeTab === 'rescheduled' ? '3px solid #3B82F6' : '3px solid transparent',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: activeTab === 'rescheduled' ? '0 4px 12px rgba(59, 130, 246, 0.12)' : 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
+          className={`requests-kpi-card card ${activeTab === 'rescheduled' ? 'is-active-rescheduled' : ''}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="requests-kpi-title-row">
+            <span className="requests-kpi-label text-blue-500">
               Rescheduled
             </span>
-            <RotateCcw size={13} color="#3B82F6" style={{ flexShrink: 0 }} />
+            <RotateCcw size={13} color="#3B82F6" className="shrink-0" />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#3B82F6', marginTop: '2px', lineHeight: 1.15 }}>
+          <div className="requests-kpi-value text-blue-500">
             {rescheduledCount}
           </div>
         </div>
@@ -260,52 +169,24 @@ export default function RequestsPage() {
         {/* Cancelled */}
         <div
           onClick={() => setActiveTab('cancelled')}
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: activeTab === 'cancelled' ? '1.5px solid #EF4444' : '1px solid var(--border-color)',
-            borderTop: activeTab === 'cancelled' ? '3px solid #EF4444' : '3px solid transparent',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: activeTab === 'cancelled' ? '0 4px 12px rgba(239, 68, 68, 0.12)' : 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
+          className={`requests-kpi-card card ${activeTab === 'cancelled' ? 'is-active-cancelled' : ''}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="requests-kpi-title-row">
+            <span className="requests-kpi-label text-red-500">
               Cancelled
             </span>
-            <AlertCircle size={13} color="#EF4444" style={{ flexShrink: 0 }} />
+            <AlertCircle size={13} color="#EF4444" className="shrink-0" />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#EF4444', marginTop: '2px', lineHeight: 1.15 }}>
+          <div className="requests-kpi-value text-red-500">
             {cancelledCount}
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '14px',
-          padding: '14px 18px',
-          marginBottom: '20px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '14px',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
+      <div className="requests-filter-bar card">
         {/* Status Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="flex flex-wrap gap-2">
           {[
             { id: 'all', label: `All (${allRequests.length})` },
             { id: 'pending', label: `Pending (${pendingCount})` },
@@ -316,16 +197,7 @@ export default function RequestsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '7px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === tab.id ? 'var(--accent-primary, #1769FF)' : 'var(--page-bg)',
-                color: activeTab === tab.id ? '#FFFFFF' : 'var(--text-secondary)',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className={`requests-filter-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
             >
               {tab.label}
             </button>
@@ -333,73 +205,39 @@ export default function RequestsPage() {
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', minWidth: '260px' }}>
+        <div className="requests-search-box">
           <Search size={15} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by title, reason, remarks, date..."
-            style={{
-              width: '100%',
-              padding: '8px 12px 8px 34px',
-              borderRadius: '8px',
-              background: 'var(--page-bg)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-primary)',
-              fontSize: '0.84rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            className="requests-search-input"
           />
         </div>
       </div>
 
       {/* Requests Grid: Compact multi-column grid, no full-width stretching or empty dead spaces */}
       <div
+        className="requests-grid"
         style={{
-          display: 'grid',
           gridTemplateColumns: filteredRequests.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(360px, 1fr))',
-          gap: '12px',
         }}
       >
         {filteredRequests.length === 0 ? (
-          <div
-            className="card"
-            style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '40px 20px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <CheckCircle2 size={40} color="#10B981" style={{ margin: '0 auto 12px auto' }} />
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+          <div className="card p-8 text-center shadow-sm">
+            <CheckCircle2 size={40} color="#10B981" className="mx-auto mb-3" />
+            <h3 className="m-0 mb-1 text-base text-primary font-extrabold">
               No requests matching your criteria
             </h3>
-            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+            <p className="m-0 text-sm text-secondary">
               {activeTab === 'pending'
                 ? 'All work requests have been resolved!'
                 : 'No missed work request records found.'}
             </p>
             <button
               onClick={() => setIsSubmitModalOpen(true)}
-              style={{
-                marginTop: '14px',
-                padding: '7px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                background: 'var(--accent-primary, #1769FF)',
-                color: '#FFFFFF',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
+              className="btn btn-primary btn-sm mt-3 inline-flex items-center gap-1"
             >
               <PlusCircle size={14} /> Submit New Request
             </button>
@@ -414,53 +252,19 @@ export default function RequestsPage() {
             return (
               <div
                 key={req.id}
-                className="card"
-                style={{
-                  background: 'var(--card-bg)',
-                  border: isPending
-                    ? '1.5px solid rgba(245, 158, 11, 0.45)'
-                    : '1px solid var(--border-color)',
-                  borderLeft: isPending
-                    ? '4px solid #F59E0B'
-                    : isCompleted
-                    ? '4px solid #10B981'
-                    : isCancelled
-                    ? '4px solid #EF4444'
-                    : '4px solid #3B82F6',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'all 0.15s ease',
-                }}
+                className={`requests-card-item card ${
+                  isPending ? 'status-pending' : isCompleted ? 'status-completed' : isCancelled ? 'status-cancelled' : 'status-rescheduled'
+                }`}
               >
                 {/* Header: Title & Status Badge & Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: '0.94rem',
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                      title={req.title}
-                    >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <h3 className="m-0 text-sm font-extrabold text-primary truncate" title={req.title}>
                       {req.title}
                     </h3>
                     <span
+                      className="text-xs font-extrabold px-1.5 py-0.5 rounded uppercase shrink-0"
                       style={{
-                        fontSize: '0.66rem',
-                        fontWeight: 800,
-                        padding: '1px 6px',
-                        borderRadius: '4px',
-                        textTransform: 'uppercase',
-                        flexShrink: 0,
                         background: isPending
                           ? 'rgba(245, 158, 11, 0.15)'
                           : isCompleted
@@ -485,14 +289,7 @@ export default function RequestsPage() {
                     <button
                       onClick={() => deleteWorkRequest(req.id)}
                       title="Delete request"
-                      style={{
-                        padding: '2px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        opacity: 0.6,
-                      }}
+                      className="btn-icon p-1 text-secondary opacity-60 hover:opacity-100"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -500,13 +297,13 @@ export default function RequestsPage() {
                 </div>
 
                 {/* Inline Metadata (Date & Time) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <div className="flex items-center gap-2 text-xs text-secondary">
+                  <span className="inline-flex items-center gap-1">
                     <Calendar size={12} color="var(--primary-color)" />
                     <strong>{req.date}</strong>
                   </span>
                   {(req.startTime || req.endTime) && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="inline-flex items-center gap-1">
                       <Clock size={12} color="#38BDF8" />
                       <span>{req.startTime}{req.endTime ? ` - ${req.endTime}` : ''}</span>
                     </span>
@@ -515,17 +312,8 @@ export default function RequestsPage() {
 
                 {/* Compact Reason Snippet */}
                 {req.reason && (
-                  <div
-                    style={{
-                      background: 'var(--page-bg)',
-                      borderRadius: '6px',
-                      padding: '6px 10px',
-                      fontSize: '0.78rem',
-                      color: 'var(--text-primary)',
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Reason: </span>
+                  <div className="requests-card-reason">
+                    <span className="font-bold text-secondary text-xs">Reason: </span>
                     {req.reason}
                   </div>
                 )}
@@ -533,16 +321,14 @@ export default function RequestsPage() {
                 {/* Audit remarks if any */}
                 {req.actionRemarks && (
                   <div
+                    className="requests-card-audit"
                     style={{
-                      fontSize: '0.74rem',
                       color: isCancelled ? '#EF4444' : isCompleted ? '#10B981' : '#3B82F6',
-                      fontWeight: 600,
-                      padding: '2px 0',
                     }}
                   >
                     Audit: {req.actionRemarks}
                     {req.rescheduledDate && (
-                      <span style={{ color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                      <span className="text-secondary ml-1">
                         (Rescheduled: {req.rescheduledDate})
                       </span>
                     )}
@@ -551,64 +337,25 @@ export default function RequestsPage() {
 
                 {/* Action Buttons for Pending Requests */}
                 {isPending && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 0.9fr', gap: '6px', marginTop: '4px' }}>
+                  <div className="requests-action-btn-row">
                     <button
                       onClick={() => handleMarkComplete(req.id)}
                       title="Complete"
-                      style={{
-                        padding: '5px 8px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: '#10B981',
-                        color: '#FFFFFF',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                      }}
+                      className="requests-btn-complete"
                     >
                       <Check size={12} strokeWidth={2.5} /> Completed
                     </button>
                     <button
                       onClick={() => setReschedulingRequest(req)}
                       title="Reschedule"
-                      style={{
-                        padding: '5px 8px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: '#3B82F6',
-                        color: '#FFFFFF',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                      }}
+                      className="requests-btn-resched"
                     >
                       <Calendar size={12} /> Reschedule
                     </button>
                     <button
                       onClick={() => setCancellingRequest(req)}
                       title="Cancel"
-                      style={{
-                        padding: '5px 8px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: '#EF4444',
-                        color: '#FFFFFF',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                      }}
+                      className="requests-btn-cancel"
                     >
                       <X size={12} strokeWidth={2.5} /> Cancel
                     </button>

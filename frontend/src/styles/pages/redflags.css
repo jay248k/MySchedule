@@ -1,0 +1,155 @@
+/* ==========================================================================
+   RED FLAGS & LAG ANALYTICS PAGE STYLES
+   ========================================================================== */
+
+.redflag-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header */
+.redflag-header-card {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.redflag-title-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.redflag-header-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 4px 0 0 0;
+}
+
+.redflag-header-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.redflag-tabs-wrap {
+  display: flex;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+/* Health Ribbon Grid */
+.redflag-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.redflag-kpi-card {
+  padding: 10px 14px;
+}
+
+.redflag-kpi-card.kpi-red {
+  border-left: 3px solid #EF4444;
+}
+
+.redflag-kpi-card.kpi-green {
+  border-left: 3px solid #10B981;
+}
+
+.redflag-kpi-card.kpi-blue {
+  border-left: 3px solid #3B82F6;
+}
+
+.redflag-kpi-card.kpi-purple {
+  border-left: 3px solid #8B5CF6;
+}
+
+.redflag-kpi-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.redflag-kpi-val {
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin-top: 2px;
+}
+
+.redflag-kpi-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Active Flags Grid */
+.redflag-active-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.redflag-card-item {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-left: 4px solid #EF4444;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.05);
+}
+
+.redflag-avatar-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.redflag-reason-box {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.redflag-recovered-card {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-left: 4px solid #10B981;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}

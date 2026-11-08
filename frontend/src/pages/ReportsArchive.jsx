@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
+import '../styles/pages/reports-archive.css';
 
 const MOOD_METADATA = {
   fire: { label: 'High Velocity', emoji: '🔥', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.28)' },
@@ -111,30 +112,19 @@ export function ReportsArchive() {
   };
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+    <div className="page-container archive-container">
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="archive-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'rgba(var(--primary-rgb, 16, 185, 129), 0.12)',
-                color: 'var(--primary-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+          <div className="flex items-center gap-2.5">
+            <div className="archive-header-icon-box">
               <Archive size={20} />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h1 className="archive-header-title">
                 Work Reports Archive
               </h1>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <p className="archive-header-sub">
                 Historical log of submitted daily standup notes, logged hours, and task accomplishments
               </p>
             </div>
@@ -142,7 +132,7 @@ export function ReportsArchive() {
         </div>
 
         {/* Header Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="archive-header-actions">
           <button
             type="button"
             className="btn btn-ghost btn-sm"
@@ -164,58 +154,58 @@ export function ReportsArchive() {
       </div>
 
       {/* KPI Stats Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="archive-kpi-grid">
+        <div className="card archive-kpi-card">
+          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
             <FileText size={20} />
           </div>
           <div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div className="archive-kpi-label">
               Total Reports
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div className="archive-kpi-val">
               {totalReportsCount}
             </div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card archive-kpi-card">
+          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
             <Clock size={20} />
           </div>
           <div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div className="archive-kpi-label">
               Logged Work Hours
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div className="archive-kpi-val">
               {totalLoggedHours.toFixed(1)} hrs
             </div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card archive-kpi-card">
+          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' }}>
             <Flame size={20} />
           </div>
           <div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div className="archive-kpi-label">
               High Velocity Days
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div className="archive-kpi-val">
               {highVelocityCount} days
             </div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card archive-kpi-card">
+          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6' }}>
             <TrendingUp size={20} />
           </div>
           <div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div className="archive-kpi-label">
               Avg Daily Hours
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div className="archive-kpi-val">
               {avgHoursPerReport} hrs/day
             </div>
           </div>
@@ -223,61 +213,24 @@ export function ReportsArchive() {
       </div>
 
       {/* Main Archive Explorer Card */}
-      <div className="card" style={{ padding: '24px 28px' }}>
+      <div className="card archive-explorer-card">
         {/* Top Controls: Search, View Switcher, Filter */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '14px',
-            marginBottom: '20px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid var(--border-color)',
-          }}
-        >
+        <div className="archive-controls-bar">
           {/* Search Input */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'var(--page-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '6px 12px',
-              flex: '1 1 260px',
-              maxWidth: '380px',
-            }}
-          >
+          <div className="archive-search-box">
             <Search size={14} color="var(--text-muted)" />
             <input
               type="text"
               placeholder="Search accomplishments, dates, or keywords..."
               value={archiveSearch}
               onChange={(e) => setArchiveSearch(e.target.value)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '0.84rem',
-                width: '100%',
-              }}
+              className="archive-search-input"
             />
             {archiveSearch && (
               <button
                 type="button"
                 onClick={() => setArchiveSearch('')}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  padding: 0,
-                }}
+                className="btn-icon text-xs text-muted p-0"
               >
                 ✕
               </button>
@@ -285,8 +238,8 @@ export function ReportsArchive() {
           </div>
 
           {/* Velocity Mood Filter Pills */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, marginRight: '4px' }}>
+          <div className="archive-velocity-pills">
+            <span className="text-xs text-muted font-semibold mr-1">
               Velocity:
             </span>
             {[
@@ -300,15 +253,11 @@ export function ReportsArchive() {
                 key={f.id}
                 type="button"
                 onClick={() => setArchiveMoodFilter(f.id)}
-                className="badge"
+                className="badge text-xs px-2.5 py-1 cursor-pointer transition-all"
                 style={{
                   background: archiveMoodFilter === f.id ? 'var(--primary-color)' : 'var(--card-hover)',
                   color: archiveMoodFilter === f.id ? '#ffffff' : 'var(--text-secondary)',
                   border: archiveMoodFilter === f.id ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                  cursor: 'pointer',
-                  fontSize: '0.74rem',
-                  padding: '4px 10px',
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {f.label}
@@ -347,23 +296,13 @@ export function ReportsArchive() {
 
         {/* Empty State */}
         {dailyReports.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '60px 20px',
-              color: 'var(--text-muted)',
-              fontSize: '0.95rem',
-              background: 'var(--page-bg)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px dashed var(--border-color)',
-            }}
-          >
-            <Archive size={36} style={{ opacity: 0.35, marginBottom: '12px' }} />
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+          <div className="text-center py-14 px-5 text-muted bg-page rounded-md border border-dashed border-color">
+            <Archive size={36} className="opacity-35 mx-auto mb-3" />
+            <div className="text-base font-bold text-primary mb-1">
               No daily work reports saved yet
             </div>
             <div>Submit and save your first daily work report in the editor to build your archive.</div>
-            <div style={{ marginTop: '16px' }}>
+            <div className="mt-4">
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
@@ -374,19 +313,9 @@ export function ReportsArchive() {
             </div>
           </div>
         ) : filteredReports.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '40px 20px',
-              color: 'var(--text-muted)',
-              fontSize: '0.9rem',
-              background: 'var(--page-bg)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px dashed var(--border-color)',
-            }}
-          >
+          <div className="text-center py-10 px-5 text-muted bg-page rounded-md border border-dashed border-color text-sm">
             No reports match the current search filter "{archiveSearch || archiveMoodFilter}".
-            <div style={{ marginTop: '12px' }}>
+            <div className="mt-3">
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
@@ -403,13 +332,7 @@ export function ReportsArchive() {
           <>
             {/* VIEW 1: CARDS VIEW (COMPACT) */}
             {archiveView === 'cards' && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-                  gap: '10px',
-                }}
-              >
+              <div className="archive-cards-grid">
                 {filteredReports.map((report) => {
                   const formattedDate = formatDate(report.date, {
                     weekday: 'short',
@@ -427,52 +350,33 @@ export function ReportsArchive() {
                   return (
                     <div
                       key={report.id || report.date}
-                      className="history-report-card"
+                      className="history-report-card archive-history-card"
                       style={{
-                        padding: '10px 14px',
                         borderTop: `3px solid ${moodMeta.color}`,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
                       }}
                     >
                       {/* Header */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'space-between',
-                          gap: '6px',
-                          borderBottom: '1px solid var(--border-color)',
-                          paddingBottom: '6px',
-                        }}
-                      >
+                      <div className="archive-card-header">
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <div className="flex items-center gap-1.5">
                             <Calendar size={13} color="var(--primary-color)" />
-                            <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                            <strong className="text-sm text-primary">
                               {formattedDate}
                             </strong>
                           </div>
                           {report.date === todayStr && (
-                            <span
-                              className="badge badge-success"
-                              style={{ fontSize: '0.64rem', padding: '1px 5px', marginTop: '2px' }}
-                            >
+                            <span className="badge badge-success text-xs px-1.5 py-0.5 mt-0.5">
                               Today
                             </span>
                           )}
                         </div>
 
                         <span
-                          className="badge"
+                          className="badge text-xs px-1.5 py-0.5 shrink-0"
                           style={{
                             background: moodMeta.bg,
                             color: moodMeta.color,
                             border: `1px solid ${moodMeta.border}`,
-                            fontSize: '0.68rem',
-                            padding: '1px 6px',
-                            flexShrink: 0,
                           }}
                         >
                           {moodMeta.emoji} {moodMeta.label}
@@ -480,22 +384,14 @@ export function ReportsArchive() {
                       </div>
 
                       {/* Stats */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          fontSize: '0.74rem',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <div className="archive-card-stats">
+                        <span className="inline-flex items-center gap-1">
                           <Clock size={11} color="var(--primary-color)" />
                           <strong>Logged:</strong> {report.hoursLogged || '7.0'} hrs
                         </span>
 
                         {bullets.length > 0 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="inline-flex items-center gap-1">
                             <CheckCircle2 size={11} color="#10B981" />
                             {bullets.length} done
                           </span>
@@ -504,30 +400,10 @@ export function ReportsArchive() {
 
                       {/* Accomplishments Clean List */}
                       {bullets.length > 0 && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px',
-                            background: 'var(--page-bg)',
-                            padding: '6px 10px',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid var(--border-color)',
-                          }}
-                        >
+                        <div className="archive-card-bullets">
                           {displayedBullets.map((bullet, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '5px',
-                                fontSize: '0.76rem',
-                                color: 'var(--text-primary)',
-                                lineHeight: '1.35',
-                              }}
-                            >
-                              <span style={{ color: '#10B981', flexShrink: 0 }}>•</span>
+                            <div key={idx} className="archive-bullet-item">
+                              <span className="text-emerald-500 shrink-0">•</span>
                               <span>{bullet}</span>
                             </div>
                           ))}
@@ -536,16 +412,7 @@ export function ReportsArchive() {
                             <button
                               type="button"
                               onClick={() => toggleExpandReport(report.id || report.date)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--primary-color)',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                padding: '2px 0 0',
-                                textAlign: 'left',
-                              }}
+                              className="text-xs text-primary font-bold cursor-pointer pt-0.5 text-left bg-transparent border-none"
                             >
                               {isExpanded ? '▲ Show Less' : `▼ +${bullets.length - 3} more accomplishments`}
                             </button>
@@ -555,41 +422,19 @@ export function ReportsArchive() {
 
                       {/* Blockers alert tag if present */}
                       {report.blockers && report.blockers !== 'None.' && report.blockers !== 'None' && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '0.75rem',
-                            color: '#EF4444',
-                            background: 'rgba(239, 68, 68, 0.08)',
-                            padding: '5px 10px',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                          }}
-                        >
-                          <AlertTriangle size={12} color="#EF4444" style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="flex items-center gap-1.5 text-xs text-red-500 bg-red-500/10 p-1.5 rounded border border-red-500/20">
+                          <AlertTriangle size={12} color="#EF4444" className="shrink-0" />
+                          <span className="truncate">
                             {report.blockers}
                           </span>
                         </div>
                       )}
 
                       {/* Footer Actions */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginTop: 'auto',
-                          paddingTop: '8px',
-                          borderTop: '1px solid var(--border-color)',
-                        }}
-                      >
+                      <div className="archive-card-footer">
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
-                          style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+                          className="btn btn-ghost btn-sm text-xs py-1 px-2.5"
                           onClick={() => navigate(`/reports?date=${report.date}`)}
                         >
                           <ArrowRight size={13} /> Inspect / Edit Day
@@ -597,8 +442,7 @@ export function ReportsArchive() {
 
                         <button
                           type="button"
-                          className="btn-icon"
-                          style={{ color: 'var(--text-muted)' }}
+                          className="btn-icon text-muted"
                           title="Delete report"
                           onClick={() => deleteDailyReport(report.id)}
                         >
@@ -622,7 +466,7 @@ export function ReportsArchive() {
                       <th>Hours</th>
                       <th>Key Accomplishments</th>
                       <th>Blockers & Plan</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
+                      <th className="text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -640,100 +484,76 @@ export function ReportsArchive() {
 
                       return (
                         <tr key={report.id || report.date}>
-                          <td style={{ whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <strong style={{ fontSize: '0.88rem' }}>{formattedDate}</strong>
+                          <td className="whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <strong className="text-sm">{formattedDate}</strong>
                               {report.date === todayStr && (
-                                <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '1px 5px' }}>
+                                <span className="badge badge-success text-xs px-1.5 py-0.5">
                                   Today
                                 </span>
                               )}
                             </div>
                           </td>
 
-                          <td style={{ whiteSpace: 'nowrap' }}>
+                          <td className="whitespace-nowrap">
                             <span
-                              className="badge"
+                              className="badge text-xs py-0.5 px-2"
                               style={{
                                 background: moodMeta.bg,
                                 color: moodMeta.color,
                                 border: `1px solid ${moodMeta.border}`,
-                                fontSize: '0.74rem',
-                                padding: '2px 8px',
                               }}
                             >
                               {moodMeta.emoji} {moodMeta.label}
                             </span>
                           </td>
 
-                          <td style={{ whiteSpace: 'nowrap' }}>
-                            <span
-                              className="badge badge-neutral"
-                              style={{ fontSize: '0.76rem', gap: '4px', border: '1px solid var(--border-color)' }}
-                            >
+                          <td className="whitespace-nowrap">
+                            <span className="badge badge-neutral text-xs gap-1 border border-color">
                               <Clock size={11} color="var(--primary-color)" />
                               {report.hoursLogged || '7.0'} hrs
                             </span>
                           </td>
 
                           <td style={{ maxWidth: '420px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div className="flex flex-col gap-0.5">
                               {bullets.slice(0, 2).map((b, i) => (
-                                <div
-                                  key={i}
-                                  style={{
-                                    fontSize: '0.78rem',
-                                    color: 'var(--text-primary)',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                  }}
-                                >
-                                  <span style={{ color: '#10B981' }}>•</span> {b}
+                                <div key={i} className="text-xs text-primary truncate">
+                                  <span className="text-emerald-500">•</span> {b}
                                 </div>
                               ))}
                               {bullets.length > 2 && (
-                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                <span className="text-xs text-muted">
                                   +{bullets.length - 2} more...
                                 </span>
                               )}
                             </div>
                           </td>
 
-                          <td style={{ whiteSpace: 'nowrap' }}>
+                          <td className="whitespace-nowrap">
                             {hasBlocker ? (
-                              <span
-                                className="badge"
-                                style={{
-                                  background: 'rgba(239, 68, 68, 0.1)',
-                                  color: '#EF4444',
-                                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                                  fontSize: '0.72rem',
-                                }}
-                              >
+                              <span className="badge text-xs bg-red-500/10 text-red-500 border border-red-500/25">
                                 ⚠️ Blocker
                               </span>
                             ) : (
-                              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                              <span className="text-xs text-muted">
                                 ✓ Clear
                               </span>
                             )}
                           </td>
 
-                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <td className="text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5">
                               <button
                                 type="button"
-                                className="btn btn-ghost btn-sm"
-                                style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                                className="btn btn-ghost btn-sm text-xs py-1 px-2"
                                 onClick={() => navigate(`/reports?date=${report.date}`)}
                               >
                                 <ArrowRight size={12} /> Inspect
                               </button>
                               <button
                                 type="button"
-                                className="btn-icon"
-                                style={{ width: '28px', height: '28px', color: 'var(--text-muted)' }}
+                                className="btn-icon w-7 h-7 text-muted"
                                 onClick={() => deleteDailyReport(report.id)}
                                 title="Delete Report"
                               >
@@ -781,40 +601,28 @@ export function ReportsArchive() {
                           borderLeft: `4px solid ${moodMeta.color}`,
                         }}
                       >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            flexWrap: 'wrap',
-                            gap: '8px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <strong style={{ fontSize: '0.96rem', color: 'var(--text-primary)' }}>
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-sm text-primary">
                               {formattedDate}
                             </strong>
                             {report.date === todayStr && (
-                              <span className="badge badge-success" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                              <span className="badge badge-success text-xs px-1.5 py-0.5">
                                 Today
                               </span>
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span
-                              className="badge badge-neutral"
-                              style={{ fontSize: '0.74rem', border: '1px solid var(--border-color)' }}
-                            >
+                          <div className="flex items-center gap-2">
+                            <span className="badge badge-neutral text-xs border border-color">
                               <Clock size={11} color="var(--primary-color)" /> {report.hoursLogged || '7.0'} hrs
                             </span>
                             <span
-                              className="badge"
+                              className="badge text-xs"
                               style={{
                                 background: moodMeta.bg,
                                 color: moodMeta.color,
                                 border: `1px solid ${moodMeta.border}`,
-                                fontSize: '0.74rem',
                               }}
                             >
                               {moodMeta.emoji} {moodMeta.label}
@@ -823,29 +631,10 @@ export function ReportsArchive() {
                         </div>
 
                         {bullets.length > 0 && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '6px',
-                              background: 'var(--page-bg)',
-                              padding: '10px 14px',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid var(--border-color)',
-                            }}
-                          >
+                          <div className="flex flex-col gap-1.5 bg-page p-2.5 rounded-md border border-color">
                             {bullets.map((b, i) => (
-                              <div
-                                key={i}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '6px',
-                                  fontSize: '0.82rem',
-                                  color: 'var(--text-primary)',
-                                }}
-                              >
-                                <span style={{ color: '#10B981', marginTop: '2px' }}>•</span>
+                              <div key={i} className="flex items-start gap-1.5 text-xs text-primary">
+                                <span className="text-emerald-500 mt-0.5">•</span>
                                 <span>{b}</span>
                               </div>
                             ))}
@@ -853,23 +642,15 @@ export function ReportsArchive() {
                         )}
 
                         {report.tomorrowPlan && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          <div className="text-xs text-secondary">
                             <strong>Next Priorities:</strong> {report.tomorrowPlan.replace(/\n/g, ' ')}
                           </div>
                         )}
 
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            paddingTop: '4px',
-                          }}
-                        >
+                        <div className="flex items-center justify-between pt-1">
                           <button
                             type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{ fontSize: '0.76rem', padding: '4px 10px' }}
+                            className="btn btn-ghost btn-sm text-xs py-1 px-2.5"
                             onClick={() => navigate(`/reports?date=${report.date}`)}
                           >
                             <ArrowRight size={12} /> Inspect in Daily Editor
@@ -877,8 +658,7 @@ export function ReportsArchive() {
 
                           <button
                             type="button"
-                            className="btn-icon"
-                            style={{ color: 'var(--text-muted)' }}
+                            className="btn-icon text-muted"
                             onClick={() => deleteDailyReport(report.id)}
                             title="Delete Report"
                           >
@@ -897,3 +677,4 @@ export function ReportsArchive() {
     </div>
   );
 }
+export default ReportsArchive;

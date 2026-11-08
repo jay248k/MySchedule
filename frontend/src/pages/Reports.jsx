@@ -569,9 +569,8 @@ export function Reports() {
       width: '110px',
       render: (val) => (
         <span
-          className={`badge ${
-            val === 'HIGH' ? 'badge-danger' : val === 'MEDIUM' ? 'badge-warning' : 'badge-primary'
-          }`}
+          className={`badge ${val === 'HIGH' ? 'badge-danger' : val === 'MEDIUM' ? 'badge-warning' : 'badge-primary'
+            }`}
           style={{ fontSize: '0.75rem' }}
         >
           {val}

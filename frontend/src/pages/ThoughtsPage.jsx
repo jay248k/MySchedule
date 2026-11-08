@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
+import '../styles/pages/thoughts.css';
 
 export function ThoughtsPage() {
   const { showToast } = useApp();
@@ -161,95 +162,38 @@ export function ThoughtsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
+    <div className="thoughts-page-container">
       {/* Header Banner */}
-      <div
-        className="card"
-        style={{
-          background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)',
-          border: '1.5px solid rgba(37, 99, 235, 0.25)',
-          borderRadius: '16px',
-          padding: '24px 28px',
-          marginBottom: '24px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-        }}
-      >
+      <div className="thoughts-banner-card card">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span
-              style={{
-                background: 'rgba(37, 99, 235, 0.2)',
-                color: 'var(--primary-color)',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-              }}
-            >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="thoughts-banner-tag">
               Mindset & Inspiration
             </span>
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 className="thoughts-banner-title">
             <Lightbulb size={24} color="#F59E0B" /> Thoughts & Motivation Hub
           </h1>
-          <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+          <p className="thoughts-banner-sub">
             Store, curate, and reflect on wisdom, quotes, and motivational notes synchronized across web and mobile.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            fontSize: '0.9rem',
-            fontWeight: 800,
-            borderRadius: '10px',
-          }}
+          className="btn btn-primary thoughts-btn-add"
         >
           <Plus size={16} /> Add Thought
         </button>
       </div>
 
       {/* Filter & Search Bar */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          padding: '14px 18px',
-          marginBottom: '20px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-        }}
-      >
+      <div className="thoughts-filter-bar card">
         {/* Categories */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <div className="flex flex-wrap gap-1">
           <button
             onClick={() => setSelectedCategory('all')}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              background: selectedCategory === 'all' ? 'var(--primary-color)' : 'var(--page-bg)',
-              color: selectedCategory === 'all' ? '#FFFFFF' : 'var(--text-secondary)',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
+            className={`thoughts-category-btn ${selectedCategory === 'all' ? 'active' : ''}`}
           >
             All ({thoughts.length})
           </button>
@@ -257,17 +201,7 @@ export function ThoughtsPage() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: selectedCategory === cat ? 'var(--primary-color)' : 'var(--page-bg)',
-                color: selectedCategory === cat ? '#FFFFFF' : 'var(--text-secondary)',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
+              className={`thoughts-category-btn ${selectedCategory === cat ? 'active' : ''}`}
             >
               {cat}
             </button>
@@ -275,183 +209,88 @@ export function ThoughtsPage() {
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', width: '260px' }}>
-          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+        <div className="thoughts-search-wrap">
+          <Search size={14} color="var(--text-muted)" className="thoughts-search-icon" />
           <input
             type="text"
             placeholder="Search thoughts, quotes, tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '7px 10px 7px 32px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--page-bg)',
-              color: 'var(--text-primary)',
-              fontSize: '0.84rem',
-              outline: 'none',
-            }}
+            className="thoughts-search-input"
           />
         </div>
       </div>
 
       {/* Grid of Thoughts */}
       {loading ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <Sparkles size={28} color="var(--primary-color)" style={{ margin: '0 auto 10px', animation: 'spin 2s linear infinite' }} />
+        <div className="thoughts-loading">
+          <Sparkles size={28} color="var(--primary-color)" className="mx-auto mb-2 animate-spin" />
           <div>Loading saved thoughts from database...</div>
         </div>
       ) : filteredThoughts.length === 0 ? (
-        <div
-          className="card"
-          style={{
-            background: 'var(--card-bg)',
-            border: '1px dashed var(--border-color)',
-            borderRadius: '14px',
-            padding: '50px 20px',
-            textAlign: 'center',
-          }}
-        >
-          <Quote size={40} color="var(--primary-color)" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-          <h3 style={{ margin: '0 0 6px', color: 'var(--text-primary)' }}>No thoughts found</h3>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        <div className="thoughts-empty-card card">
+          <Quote size={40} color="var(--primary-color)" className="thoughts-empty-icon" />
+          <h3 className="thoughts-empty-title">No thoughts found</h3>
+          <p className="thoughts-empty-desc">
             Paste good thoughts, motivational quotes, or key reflections to save them to your database.
           </p>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="btn btn-primary btn-sm"
-            style={{ marginTop: '16px' }}
+            className="btn btn-primary btn-sm mt-4"
           >
             <Plus size={14} /> Add First Thought
           </button>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '16px',
-          }}
-        >
+        <div className="thoughts-grid">
           {filteredThoughts.map((item) => (
             <div
               key={item.id}
-              className="card"
-              style={{
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '14px',
-                padding: '16px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '14px',
-                boxShadow: 'var(--shadow-sm)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
+              className={`thought-card card ${item.isPinned ? 'is-pinned' : ''}`}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      padding: '2px 8px',
-                      borderRadius: '5px',
-                      background: 'rgba(37, 99, 235, 0.12)',
-                      color: 'var(--primary-color)',
-                      border: '1px solid rgba(37, 99, 235, 0.25)',
-                    }}
-                  >
+                <div className="thought-card-header">
+                  <span className="thought-category-badge">
                     {item.category || 'General'}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div className="thought-card-actions">
                     <button
                       onClick={() => handleTogglePin(item)}
                       title={item.isPinned ? 'Unpin' : 'Pin to top'}
-                      style={{
-                        background: item.isPinned ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
-                        padding: '4px',
-                        borderRadius: '4px',
-                      }}
+                      className={`thought-action-btn thought-btn-pin ${item.isPinned ? 'pinned' : ''}`}
                     >
                       <Pin size={14} fill={item.isPinned ? '#F59E0B' : 'none'} />
                     </button>
                     <button
                       onClick={() => handleCopy(`"${item.text}" — ${item.author}`, item.id)}
                       title="Copy quote"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: copiedId === item.id ? '#10B981' : 'var(--text-muted)',
-                        padding: '4px',
-                      }}
+                      className={`thought-action-btn thought-btn-copy ${copiedId === item.id ? 'copied' : ''}`}
                     >
                       {copiedId === item.id ? <Check size={14} /> : <Copy size={14} />}
                     </button>
                     <button
                       onClick={() => handleDeleteThought(item.id)}
                       title="Delete thought"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#EF4444',
-                        padding: '4px',
-                        opacity: 0.6,
-                      }}
+                      className="thought-action-btn thought-btn-delete"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    fontSize: '0.98rem',
-                    color: 'var(--text-primary)',
-                    lineHeight: '1.55',
-                    fontStyle: 'italic',
-                    position: 'relative',
-                  }}
-                >
+                <div className="thought-body-quote">
                   "{item.text}"
                 </div>
 
-                <div
-                  style={{
-                    marginTop: '10px',
-                    fontSize: '0.84rem',
-                    fontWeight: 700,
-                    color: 'var(--text-secondary)',
-                    textAlign: 'right',
-                  }}
-                >
+                <div className="thought-author-row">
                   — {item.author || 'Anonymous'}
                 </div>
               </div>
 
               {item.tags && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+                <div className="thought-tags-wrap">
                   {item.tags.split(',').map((tag, i) => (
-                    <span
-                      key={i}
-                      style={{
-                        fontSize: '0.68rem',
-                        color: 'var(--text-muted)',
-                        background: 'var(--page-bg)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-color)',
-                      }}
-                    >
+                    <span key={i} className="thought-tag-pill">
                       #{tag.trim()}
                     </span>
                   ))}
@@ -465,38 +304,20 @@ export function ThoughtsPage() {
       {/* Add Thought Modal */}
       {isAddModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.65)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-          }}
+          className="thought-modal-overlay"
           onClick={() => setIsAddModalOpen(false)}
         >
           <div
-            className="card"
-            style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: 'var(--shadow-lg)',
-            }}
+            className="thought-modal-card card"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 className="thought-modal-title">
               <Lightbulb size={20} color="#F59E0B" /> Save Thought or Motivation
             </h2>
 
-            <form onSubmit={handleCreateThought} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateThought} className="flex flex-col gap-3">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                <label className="block text-xs font-bold text-secondary mb-1">
                   Thought / Quote / Wisdom Text *
                 </label>
                 <textarea
@@ -505,24 +326,13 @@ export function ThoughtsPage() {
                   placeholder="Paste or write inspirational thought, lesson, or reminder..."
                   value={thoughtText}
                   onChange={(e) => setThoughtText(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--page-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                  }}
+                  className="thought-form-textarea"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="thought-modal-grid-2col">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  <label className="block text-xs font-bold text-secondary mb-1">
                     Author / Source
                   </label>
                   <input
@@ -530,38 +340,18 @@ export function ThoughtsPage() {
                     placeholder="Enter author or source..."
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--page-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
+                    className="form-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  <label className="block text-xs font-bold text-secondary mb-1">
                     Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--page-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
+                    className="form-input"
                   >
                     <option value="Motivation">Motivation</option>
                     <option value="Discipline">Discipline</option>
@@ -574,7 +364,7 @@ export function ThoughtsPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                <label className="block text-xs font-bold text-secondary mb-1">
                   Tags (comma separated)
                 </label>
                 <input
@@ -582,21 +372,11 @@ export function ThoughtsPage() {
                   placeholder="focus, habits, daily"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--page-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
+                  className="form-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+              <div className="flex justify-end gap-2 mt-2">
                 <button
                   type="button"
                   className="btn btn-ghost"
@@ -620,4 +400,3 @@ export function ThoughtsPage() {
   );
 }
 export default ThoughtsPage;
-

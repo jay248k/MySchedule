@@ -1,0 +1,239 @@
+/* ==========================================================================
+   WORK TRACKER & SESSION LOGS PAGE STYLES
+   ========================================================================== */
+
+.worktracker-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+/* Header */
+.worktracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.worktracker-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.worktracker-recording-pill {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10B981;
+  color: #10B981;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.worktracker-recording-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 6px #10B981;
+}
+
+.worktracker-sub {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.worktracker-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* KPI Grid */
+.worktracker-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.worktracker-kpi-card {
+  background: var(--card-bg, #1a2234);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.worktracker-kpi-card.kpi-green {
+  border-left: 3px solid #10B981;
+}
+
+.worktracker-kpi-card.kpi-blue {
+  border-left: 3px solid #3B82F6;
+}
+
+.worktracker-kpi-card.kpi-purple {
+  border-left: 3px solid #8B5CF6;
+}
+
+.worktracker-kpi-card.kpi-amber {
+  border-left: 3px solid #F59E0B;
+}
+
+.worktracker-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.worktracker-kpi-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.worktracker-kpi-icon-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.worktracker-kpi-val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.worktracker-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Paused Banner */
+.worktracker-paused-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+}
+
+.worktracker-paused-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid #F59E0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Live Card */
+.worktracker-live-card {
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.worktracker-live-card.is-running {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--card-bg) 100%);
+  border: 1.5px solid #10B981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+}
+
+.worktracker-live-card.is-paused {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--card-bg) 100%);
+  border: 1.5px solid #F59E0B;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+}
+
+.worktracker-live-card.is-idle {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.worktracker-led-readout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.worktracker-led-digits {
+  font-family: monospace, "Courier New", Courier;
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  line-height: 1;
+}
+
+.worktracker-btn-start {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+.worktracker-btn-stop {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+}

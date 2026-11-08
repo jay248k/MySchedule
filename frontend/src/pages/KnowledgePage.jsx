@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
+import '../styles/pages/knowledge.css';
 
 export function KnowledgePage() {
   const { showToast } = useApp();
@@ -148,11 +149,12 @@ export function KnowledgePage() {
     if (index === -1) {
       setCurrentFolder(null);
       setBreadcrumbs([]);
-    } else {
-      const target = breadcrumbs[index];
-      setCurrentFolder(target);
-      setBreadcrumbs((prev) => prev.slice(0, index + 1));
+      setActiveItem(null);
+      return;
     }
+    const target = breadcrumbs[index];
+    setCurrentFolder(target);
+    setBreadcrumbs((prev) => prev.slice(0, index + 1));
     setActiveItem(null);
   };
 
@@ -164,29 +166,39 @@ export function KnowledgePage() {
       setItems((prev) =>
         prev.map((it) => (it.id === item.id ? { ...it, isPinned: nextPin } : it))
       );
+      if (activeItem?.id === item.id) {
+        setActiveItem((prev) => ({ ...prev, isPinned: nextPin }));
+      }
       showToast({
         type: 'success',
-        title: nextPin ? 'Pinned to Top' : 'Unpinned',
-        message: nextPin ? `"${item.title}" is now pinned.` : `"${item.title}" unpinned.`,
+        title: nextPin ? 'Item Pinned' : 'Item Unpinned',
+        message: nextPin ? 'Pinned to top of list.' : 'Unpinned from top.',
       });
     } catch (err) {
-      showToast({ type: 'danger', title: 'Error', message: 'Could not update pin status.' });
+      showToast({ type: 'danger', title: 'Error', message: 'Could not toggle pin.' });
     }
   };
 
-  const handleSetNextLesson = async (currentLessonId, nextId) => {
+  const handleSetNextLesson = async (currentLessonId, nextLessonId) => {
     try {
-      await api.updateKnowledgeItem(currentLessonId, { nextLessonId: nextId || null });
+      await api.updateKnowledgeItem(currentLessonId, {
+        nextLessonId: nextLessonId || null,
+      });
       setItems((prev) =>
-        prev.map((it) => (it.id === currentLessonId ? { ...it, nextLessonId: nextId || null } : it))
+        prev.map((it) =>
+          it.id === currentLessonId ? { ...it, nextLessonId: nextLessonId || null } : it
+        )
       );
+      if (activeItem?.id === currentLessonId) {
+        setActiveItem((prev) => ({ ...prev, nextLessonId: nextLessonId || null }));
+      }
       showToast({
         type: 'success',
-        title: 'Lesson Chain Updated',
-        message: 'Chain link saved in database.',
+        title: 'Lesson Chained',
+        message: 'Sequential progression updated successfully.',
       });
     } catch (err) {
-      showToast({ type: 'danger', title: 'Error', message: 'Could not update chain link.' });
+      showToast({ type: 'danger', title: 'Error', message: 'Failed to update lesson chain.' });
     }
   };
 
@@ -196,29 +208,28 @@ export function KnowledgePage() {
 
     try {
       setSubmitting(true);
-      let contentToSave = createContent;
-      if (modalMode === 'table') {
-        contentToSave = JSON.stringify(tableData);
-      }
-
       const payload = {
         title: createTitle.trim(),
         type: modalMode,
         parentId: currentFolder ? currentFolder.id : null,
-        content: contentToSave,
         tags: createTags.trim() || null,
         isPinned: createIsPinned,
-        nextLessonId: modalMode === 'lesson' && createNextLessonId ? createNextLessonId : null,
-        icon: modalMode === 'folder' ? 'Folder' : modalMode === 'table' ? 'Table' : 'FileText',
       };
+
+      if (modalMode === 'lesson') {
+        payload.content = createContent;
+        if (createNextLessonId) payload.nextLessonId = createNextLessonId;
+      } else if (modalMode === 'table') {
+        payload.content = JSON.stringify(tableData);
+      }
 
       const res = await api.createKnowledgeItem(payload);
       if (res?.data) {
-        setItems((prev) => [...prev, res.data]);
+        setItems((prev) => [res.data, ...prev]);
         showToast({
           type: 'success',
           title: 'Created Successfully',
-          message: `${modalMode.toUpperCase()} saved to knowledge base.`,
+          message: `${payload.title} created in database.`,
         });
         setModalMode(null);
         setCreateTitle('');
@@ -230,8 +241,8 @@ export function KnowledgePage() {
     } catch (err) {
       showToast({
         type: 'danger',
-        title: 'Error',
-        message: err.message || 'Failed to create item.',
+        title: 'Creation Failed',
+        message: err.message || 'Error creating knowledge item.',
       });
     } finally {
       setSubmitting(false);
@@ -242,64 +253,58 @@ export function KnowledgePage() {
     if (e) e.stopPropagation();
     try {
       await api.deleteKnowledgeItem(id);
-      setItems((prev) => prev.filter((it) => it.id !== id && it.parentId !== id));
+      setItems((prev) => prev.filter((it) => it.id !== id));
       if (activeItem?.id === id) setActiveItem(null);
       showToast({
         type: 'info',
-        title: 'Deleted',
+        title: 'Item Deleted',
         message: 'Item removed from database.',
       });
     } catch (err) {
-      showToast({
-        type: 'danger',
-        title: 'Error',
-        message: 'Could not delete item.',
-      });
+      showToast({ type: 'danger', title: 'Error', message: 'Could not delete item.' });
     }
   };
 
-  // Excel/CSV Table upload parser
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
+    reader.onload = (evt) => {
+      const text = evt.target?.result;
       if (typeof text === 'string') {
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        const lines = text.split('\n').filter((l) => l.trim().length > 0);
         if (lines.length > 0) {
-          const headers = lines[0].split(',').map((h) => h.replace(/^["']|["']$/g, '').trim());
-          const rows = lines.slice(1).map((line) => {
-            return line.split(',').map((cell) => cell.replace(/^["']|["']$/g, '').trim());
-          });
+          const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+          const rows = lines.slice(1).map((line) =>
+            line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
+          );
           setTableData({ headers, rows });
-          if (!createTitle) {
-            setCreateTitle(file.name.replace(/\.[^/.]+$/, ''));
-          }
+          showToast({
+            type: 'success',
+            title: 'File Parsed',
+            message: `Loaded ${rows.length} rows into structured table preview.`,
+          });
         }
       }
     };
     reader.readAsText(file);
   };
 
-  // Render Table Viewer
   const renderTableContent = (tData) => {
     try {
       const parsed = typeof tData === 'string' ? JSON.parse(tData) : tData;
-      const headers = parsed.headers || [];
-      const rows = parsed.rows || [];
+      const headers = parsed?.headers || [];
+      const rows = parsed?.rows || [];
 
       return (
-        <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
-            <thead>
-              <tr style={{ background: 'var(--page-bg)', borderBottom: '2px solid var(--border-color)' }}>
-                <th style={{ padding: '10px 14px', width: '50px', fontWeight: 800, color: 'var(--text-muted)' }}>#</th>
+        <div className="knowledge-table-wrapper">
+          <table className="knowledge-table-element">
+            <thead className="knowledge-table-head">
+              <tr>
+                <th style={{ width: '40px', padding: '10px 14px' }}>#</th>
                 {headers.map((h, i) => (
-                  <th key={i} style={{ padding: '10px 14px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {h}
-                  </th>
+                  <th key={i}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -312,11 +317,11 @@ export function KnowledgePage() {
                     background: rIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  <td style={{ padding: '10px 14px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  <td className="knowledge-table-cell-idx">
                     {rIdx + 1}
                   </td>
                   {row.map((cell, cIdx) => (
-                    <td key={cIdx} style={{ padding: '10px 14px', color: 'var(--text-primary)' }}>
+                    <td key={cIdx} className="knowledge-table-cell">
                       {cell}
                     </td>
                   ))}
@@ -332,49 +337,25 @@ export function KnowledgePage() {
   };
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '20px 16px' }}>
+    <div className="knowledge-container">
       {/* Banner */}
-      <div
-        className="card"
-        style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%)',
-          border: '1.5px solid rgba(16, 185, 129, 0.25)',
-          borderRadius: '16px',
-          padding: '20px 24px',
-          marginBottom: '16px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-        }}
-      >
+      <div className="knowledge-banner-card card">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span
-              style={{
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#10B981',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-              }}
-            >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="knowledge-badge-emerald">
               Lessons & Knowledge Management
             </span>
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 className="knowledge-banner-title">
             <BookOpen size={22} color="#10B981" /> Knowledge Base & Lessons
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          <p className="knowledge-banner-subtitle">
             Explorer folder view, sequential lesson chaining, text notes, and Excel tables.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="knowledge-banner-actions">
           <button
             onClick={() => {
               setModalMode('folder');
@@ -383,8 +364,7 @@ export function KnowledgePage() {
               setCreateTags('');
               setCreateIsPinned(false);
             }}
-            className="btn btn-ghost"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
+            className="btn btn-ghost knowledge-banner-btn-ghost"
           >
             <Folder size={15} color="#F59E0B" /> New Folder
           </button>
@@ -397,8 +377,7 @@ export function KnowledgePage() {
               setCreateIsPinned(false);
               setCreateNextLessonId('');
             }}
-            className="btn btn-ghost"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
+            className="btn btn-ghost knowledge-banner-btn-ghost"
           >
             <FileText size={15} color="#3B82F6" /> New Lesson
           </button>
@@ -410,8 +389,7 @@ export function KnowledgePage() {
               setCreateTags('');
               setCreateIsPinned(false);
             }}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}
+            className="btn btn-primary knowledge-banner-btn-primary"
           >
             <TableIcon size={15} /> New Table / Excel
           </button>
@@ -419,35 +397,14 @@ export function KnowledgePage() {
       </div>
 
       {/* Navigation Breadcrumbs, View Switcher & Search Bar */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          padding: '10px 16px',
-          marginBottom: '16px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-        }}
-      >
+      <div className="knowledge-nav-bar card">
         {/* Breadcrumb Path */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <div className="knowledge-breadcrumb-path">
           <button
             onClick={() => handleNavigateBreadcrumb(-1)}
+            className="knowledge-breadcrumb-root-btn"
             style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
               color: breadcrumbs.length === 0 ? 'var(--primary-color)' : 'var(--text-secondary)',
-              fontWeight: 800,
-              fontSize: '0.86rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
             }}
           >
             <Layers size={14} /> Root Base
@@ -457,13 +414,9 @@ export function KnowledgePage() {
               <ChevronRight size={14} color="var(--text-muted)" />
               <button
                 onClick={() => handleNavigateBreadcrumb(idx)}
+                className="knowledge-breadcrumb-btn"
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
                   color: idx === breadcrumbs.length - 1 ? 'var(--primary-color)' : 'var(--text-secondary)',
-                  fontWeight: 800,
-                  fontSize: '0.86rem',
                 }}
               >
                 {b.title}
@@ -473,99 +426,52 @@ export function KnowledgePage() {
         </div>
 
         {/* View Mode Switcher: PC Grid / Detailed Cards / Chain View */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', background: 'var(--page-bg)', borderRadius: '8px', padding: '3px', border: '1px solid var(--border-color)' }}>
+        <div className="knowledge-view-switcher">
+          <div className="knowledge-view-pill-group">
             <button
               onClick={() => setViewMode('pc-grid')}
               title="PC Desktop & Folder Explorer View"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: viewMode === 'pc-grid' ? 'var(--primary-color)' : 'transparent',
-                color: viewMode === 'pc-grid' ? '#FFFFFF' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className={`knowledge-view-btn ${viewMode === 'pc-grid' ? 'active' : ''}`}
             >
               <LayoutGrid size={13} /> PC Explorer
             </button>
             <button
               onClick={() => setViewMode('cards')}
               title="Detailed Card List View"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: viewMode === 'cards' ? 'var(--primary-color)' : 'transparent',
-                color: viewMode === 'cards' ? '#FFFFFF' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className={`knowledge-view-btn ${viewMode === 'cards' ? 'active' : ''}`}
             >
               <List size={13} /> Cards
             </button>
             <button
               onClick={() => setViewMode('chain')}
               title="Sequential Lesson Chain View"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: viewMode === 'chain' ? 'var(--primary-color)' : 'transparent',
-                color: viewMode === 'chain' ? '#FFFFFF' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className={`knowledge-view-btn ${viewMode === 'chain' ? 'active' : ''}`}
             >
               <GitBranch size={13} /> Chain View
             </button>
           </div>
 
           {/* Search Box */}
-          <div style={{ position: 'relative', width: '220px' }}>
-            <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '9px' }} />
+          <div className="knowledge-search-wrap">
+            <Search size={14} color="var(--text-muted)" className="knowledge-search-icon" />
             <input
               type="text"
               placeholder="Search knowledge..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '6px 10px 6px 30px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--page-bg)',
-                color: 'var(--text-primary)',
-                fontSize: '0.82rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              className="knowledge-search-input"
             />
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div style={{ display: 'grid', gridTemplateColumns: activeItem ? '1fr 1.3fr' : '1fr', gap: '16px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className={`knowledge-main-grid ${activeItem ? 'with-preview' : 'no-preview'}`}>
+        <div className="knowledge-left-pane">
           {currentFolder && (
             <button
               onClick={() => handleNavigateBreadcrumb(breadcrumbs.length - 2)}
-              className="btn btn-ghost btn-sm"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start', fontSize: '0.8rem' }}
+              className="btn btn-ghost btn-sm knowledge-btn-back"
             >
               <ArrowLeft size={14} /> Back
             </button>
@@ -573,66 +479,33 @@ export function KnowledgePage() {
 
           {/* Empty State */}
           {currentItems.length === 0 ? (
-            <div
-              className="card"
-              style={{
-                background: 'var(--card-bg)',
-                border: '1px dashed var(--border-color)',
-                borderRadius: '14px',
-                padding: '40px 20px',
-                textAlign: 'center',
-              }}
-            >
-              <Folder size={36} color="var(--primary-color)" style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-              <h3 style={{ margin: '0 0 6px', color: 'var(--text-primary)', fontSize: '1rem' }}>
+            <div className="knowledge-empty-card card">
+              <Folder size={36} color="var(--primary-color)" className="knowledge-empty-icon" />
+              <h3 className="knowledge-empty-title">
                 Folder is empty
               </h3>
-              <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <p className="knowledge-empty-desc">
                 Get started by creating a folder, lesson, or structured table.
               </p>
-              <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+              <div className="flex flex-wrap gap-2 justify-center">
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="btn btn-primary btn-sm"
                   onClick={() => setModalMode('folder')}
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '0.8rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    borderRadius: '8px',
-                  }}
                 >
                   <Plus size={14} /> New Folder
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => setModalMode('lesson')}
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '0.8rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    borderRadius: '8px',
-                  }}
                 >
                   <BookOpen size={14} /> New Lesson
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => setModalMode('table')}
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '0.8rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    borderRadius: '8px',
-                  }}
                 >
                   <TableIcon size={14} /> New Table
                 </button>
@@ -642,13 +515,7 @@ export function KnowledgePage() {
             /* ========================================================================= */
             /* VIEW 1: PC EXPLORER TILES (Short icon with filename underneath)           */
             /* ========================================================================= */
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-                gap: '12px',
-              }}
-            >
+            <div className="knowledge-pc-grid">
               {currentItems.map((item) => {
                 const isFolder = item.type === 'folder';
                 const isTable = item.type === 'table';
@@ -665,39 +532,14 @@ export function KnowledgePage() {
                         setActiveItem(item);
                       }
                     }}
-                    style={{
-                      background: isSelected
-                        ? 'rgba(37, 99, 235, 0.15)'
-                        : 'var(--card-bg)',
-                      border: isSelected
-                        ? '1.5px solid var(--primary-color)'
-                        : item.isPinned
-                        ? '1.5px solid rgba(245, 158, 11, 0.5)'
-                        : '1px solid var(--border-color)',
-                      borderRadius: '12px',
-                      padding: '12px 8px 10px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'all 0.15s ease',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
+                    className={`knowledge-pc-tile ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
                   >
                     {/* Pin Badge / Button */}
                     <button
                       onClick={(e) => handleTogglePin(item, e)}
                       title={item.isPinned ? 'Pinned to top' : 'Click to pin'}
+                      className="knowledge-tile-pin-btn"
                       style={{
-                        position: 'absolute',
-                        top: '5px',
-                        right: '5px',
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '2px',
                         color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
                         opacity: item.isPinned ? 1 : 0.4,
                       }}
@@ -706,22 +548,7 @@ export function KnowledgePage() {
                     </button>
 
                     {/* Icon Container (Folder, Document, Spreadsheet) */}
-                    <div
-                      style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '12px',
-                        background: isFolder
-                          ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(217, 119, 6, 0.12) 100%)'
-                          : isTable
-                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)'
-                          : 'linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0.12) 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '8px',
-                      }}
-                    >
+                    <div className={`knowledge-tile-icon-box ${item.type}`}>
                       {isFolder ? (
                         <Folder size={26} color="#F59E0B" fill="#F59E0B" fillOpacity={0.25} />
                       ) : isTable ? (
@@ -732,27 +559,12 @@ export function KnowledgePage() {
                     </div>
 
                     {/* File / Folder Name Underneath */}
-                    <div
-                      title={item.title}
-                      style={{
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        lineHeight: '1.2',
-                        maxHeight: '2.4em',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        wordBreak: 'break-word',
-                      }}
-                    >
+                    <div title={item.title} className="knowledge-tile-name">
                       {item.title}
                     </div>
 
                     {/* Mini Type Tag */}
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    <span className="knowledge-tile-type-tag">
                       {isFolder ? 'Folder' : isTable ? 'Table' : 'Lesson'}
                     </span>
                   </div>
@@ -763,49 +575,32 @@ export function KnowledgePage() {
             /* ========================================================================= */
             /* VIEW 2: LESSON CHAIN VIEW (Props ➔ State ➔ Hooks Flow)                    */
             /* ========================================================================= */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div className="knowledge-chain-container">
+              <div className="text-xs text-secondary font-semibold">
                 🔗 Sequential Chain View: lessons linked together in ordered curriculum flow.
               </div>
 
               {chainSequence.map((chain, chainIdx) => (
-                <div
-                  key={chainIdx}
-                  style={{
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                  }}
-                >
-                  <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--primary-color)', textTransform: 'uppercase', marginBottom: '10px' }}>
+                <div key={chainIdx} className="knowledge-chain-card">
+                  <div className="knowledge-chain-heading">
                     Chain Sequence #{chainIdx + 1} ({chain.length} linked {chain.length === 1 ? 'lesson' : 'lessons'})
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="knowledge-chain-nodes">
                     {chain.map((lesson, idx) => (
                       <React.Fragment key={lesson.id}>
                         <div
                           onClick={() => setActiveItem(lesson)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: activeItem?.id === lesson.id ? 'rgba(37, 99, 235, 0.2)' : 'var(--page-bg)',
-                            border: activeItem?.id === lesson.id ? '1.5px solid var(--primary-color)' : '1px solid var(--border-color)',
-                            borderRadius: '8px',
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                          }}
+                          className={`knowledge-chain-node ${activeItem?.id === lesson.id ? 'is-active' : ''}`}
                         >
                           <FileText size={15} color="#3B82F6" />
-                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          <span className="text-xs font-bold text-primary">
                             {lesson.title}
                           </span>
                         </div>
 
                         {idx < chain.length - 1 && (
-                          <div style={{ display: 'flex', alignItems: 'center', color: '#10B981' }}>
+                          <div className="flex items-center text-emerald-500">
                             <ArrowRight size={18} strokeWidth={2.5} />
                           </div>
                         )}
@@ -820,10 +615,9 @@ export function KnowledgePage() {
             /* VIEW 3: DETAILED CARDS VIEW                                               */
             /* ========================================================================= */
             <div
+              className="knowledge-cards-list"
               style={{
-                display: 'grid',
                 gridTemplateColumns: activeItem ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '12px',
               }}
             >
               {currentItems.map((item) => {
@@ -842,64 +636,39 @@ export function KnowledgePage() {
                         setActiveItem(item);
                       }
                     }}
-                    className="card"
-                    style={{
-                      background: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'var(--card-bg)',
-                      border: isSelected
-                        ? '1.5px solid var(--primary-color)'
-                        : item.isPinned
-                        ? '1.5px solid rgba(245, 158, 11, 0.5)'
-                        : '1px solid var(--border-color)',
-                      borderRadius: '12px',
-                      padding: '12px 14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '10px',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
+                    className={`knowledge-item-card card ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
+                        className="knowledge-card-avatar"
                         style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
                           background: isFolder
                             ? 'rgba(245, 158, 11, 0.15)'
                             : isTable
                             ? 'rgba(16, 185, 129, 0.15)'
                             : 'rgba(59, 130, 246, 0.15)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
                         }}
                       >
                         {isFolder ? <Folder size={18} color="#F59E0B" /> : isTable ? <TableIcon size={18} color="#10B981" /> : <FileText size={18} color="#3B82F6" />}
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div className="min-w-0">
+                        <div className="text-sm font-extrabold text-primary truncate">
                           {item.title}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        <div className="text-xs text-secondary mt-0.5">
                           {isFolder ? 'Folder' : isTable ? 'Data Table' : 'Text Lesson'}
                           {item.tags && ` • ${item.tags}`}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => handleTogglePin(item, e)}
                         title={item.isPinned ? 'Unpin' : 'Pin to top'}
+                        className="btn-icon p-1"
                         style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
                           color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
-                          padding: '4px',
                         }}
                       >
                         <Pin size={13} fill={item.isPinned ? '#F59E0B' : 'none'} />
@@ -907,14 +676,7 @@ export function KnowledgePage() {
                       <button
                         onClick={(e) => handleDeleteItem(item.id, e)}
                         title="Delete item"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#EF4444',
-                          opacity: 0.6,
-                          padding: '4px',
-                        }}
+                        className="btn-icon p-1 text-red-500 opacity-60 hover:opacity-100"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -928,36 +690,17 @@ export function KnowledgePage() {
 
         {/* Right: Active Item Viewer (Lesson or Table) */}
         {activeItem && (
-          <div
-            className="card"
-            style={{
-              background: 'var(--card-bg)',
-              border: '1.5px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '20px',
-              boxShadow: 'var(--shadow-md)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+          <div className="knowledge-preview-pane card">
+            <div className="knowledge-preview-header">
               <div>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    color: activeItem.type === 'table' ? '#10B981' : '#3B82F6',
-                  }}
-                >
+                <span className={`knowledge-preview-type-badge ${activeItem.type}`}>
                   {activeItem.type === 'table' ? 'Structured Data Table' : 'Knowledge Lesson'}
                 </span>
-                <h2 style={{ margin: '4px 0 0', fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                <h2 className="m-0 text-base font-extrabold text-primary mt-1">
                   {activeItem.title}
                 </h2>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => handleTogglePin(activeItem)}
                   className="btn btn-ghost btn-sm"
@@ -973,34 +716,15 @@ export function KnowledgePage() {
 
             {/* Optional Lesson Chaining Selector */}
             {activeItem.type === 'lesson' && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'var(--page-bg)',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  flexWrap: 'wrap',
-                }}
-              >
+              <div className="knowledge-chain-picker">
                 <LinkIcon size={14} color="#10B981" />
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                <span className="text-xs font-bold text-secondary">
                   Chain to next lesson:
                 </span>
                 <select
                   value={activeItem.nextLessonId || ''}
                   onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.8rem',
-                    outline: 'none',
-                  }}
+                  className="form-input text-xs py-1 px-2"
                 >
                   <option value="">(None - End of chain)</option>
                   {lessonsInFolder
@@ -1018,20 +742,7 @@ export function KnowledgePage() {
             {activeItem.type === 'table' ? (
               renderTableContent(activeItem.content)
             ) : (
-              <div
-                style={{
-                  fontSize: '0.9rem',
-                  lineHeight: '1.65',
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'pre-wrap',
-                  background: 'var(--page-bg)',
-                  padding: '16px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
-                  maxHeight: '450px',
-                  overflowY: 'auto',
-                }}
-              >
+              <div className="knowledge-lesson-notes-content">
                 {activeItem.content || 'No content notes written for this lesson.'}
               </div>
             )}
@@ -1042,34 +753,17 @@ export function KnowledgePage() {
       {/* Creation Modal */}
       {modalMode && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.65)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-          }}
+          className="modal-overlay"
           onClick={() => setModalMode(null)}
         >
           <div
-            className="card"
+            className="card p-6 w-full max-h-[90vh] overflow-y-auto"
             style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '24px',
-              width: '100%',
               maxWidth: modalMode === 'table' ? '650px' : '520px',
-              boxShadow: 'var(--shadow-lg)',
-              maxHeight: '90vh',
-              overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 className="m-0 mb-4 text-lg font-extrabold text-primary flex items-center gap-2">
               {modalMode === 'folder' ? (
                 <>
                   <Folder size={20} color="#F59E0B" /> Create Folder
@@ -1085,9 +779,9 @@ export function KnowledgePage() {
               )}
             </h2>
 
-            <form onSubmit={handleCreateItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateItem} className="flex flex-col gap-3">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                <label className="block text-xs font-bold text-secondary mb-1">
                   {modalMode === 'folder' ? 'Folder Name *' : modalMode === 'table' ? 'Table Name *' : 'Lesson Title *'}
                 </label>
                 <input
@@ -1102,24 +796,14 @@ export function KnowledgePage() {
                   }
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--page-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.88rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
+                  className="form-input"
                 />
               </div>
 
               {modalMode === 'lesson' && (
                 <>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                    <label className="block text-xs font-bold text-secondary mb-1">
                       Lesson Content / Notes *
                     </label>
                     <textarea
@@ -1128,41 +812,20 @@ export function KnowledgePage() {
                       placeholder="Lesson content"
                       value={createContent}
                       onChange={(e) => setCreateContent(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)',
-                        background: 'var(--page-bg)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.88rem',
-                        outline: 'none',
-                        resize: 'vertical',
-                        boxSizing: 'border-box',
-                      }}
+                      className="form-textarea"
                     />
                   </div>
 
                   {/* Optional Lesson Chaining */}
                   {lessonsInFolder.length > 0 && (
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                      <label className="block text-xs font-bold text-secondary mb-1">
                         Chain to Next Lesson (Optional)
                       </label>
                       <select
                         value={createNextLessonId}
                         onChange={(e) => setCreateNextLessonId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border-color)',
-                          background: 'var(--page-bg)',
-                          color: 'var(--text-primary)',
-                          fontSize: '0.85rem',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
+                        className="form-input"
                       >
                         <option value="">(None - Not chained)</option>
                         {lessonsInFolder.map((l) => (
@@ -1178,16 +841,13 @@ export function KnowledgePage() {
 
               {modalMode === 'table' && (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-secondary">
                       Table Preview & Columns
                     </label>
-                    <label
-                      className="btn btn-ghost btn-sm"
-                      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                    >
+                    <label className="btn btn-ghost btn-sm cursor-pointer inline-flex items-center gap-1">
                       <Upload size={13} /> Import CSV/Excel
-                      <input type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display: 'none' }} />
+                      <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
                     </label>
                   </div>
                   {renderTableContent(tableData)}
@@ -1195,7 +855,7 @@ export function KnowledgePage() {
               )}
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                <label className="block text-xs font-bold text-secondary mb-1">
                   Tags
                 </label>
                 <input
@@ -1203,33 +863,23 @@ export function KnowledgePage() {
                   placeholder="Tags (comma-separated)"
                   value={createTags}
                   onChange={(e) => setCreateTags(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--page-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
+                  className="form-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <div className="flex items-center gap-2 mt-1">
                 <input
                   type="checkbox"
                   id="pinCheckbox"
                   checked={createIsPinned}
                   onChange={(e) => setCreateIsPinned(e.target.checked)}
                 />
-                <label htmlFor="pinCheckbox" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <label htmlFor="pinCheckbox" className="text-xs font-semibold text-primary cursor-pointer">
                   Pin this item to top of folder
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
+              <div className="flex justify-end gap-2 mt-3">
                 <button type="button" className="btn btn-ghost" onClick={() => setModalMode(null)}>
                   Cancel
                 </button>

@@ -1,6 +1,14 @@
 @import './styles/variables.css';
 @import './styles/global.css';
 @import './styles/layout.css';
+@import './styles/pages/deviations.css';
+@import './styles/pages/thoughts.css';
+@import './styles/pages/knowledge.css';
+@import './styles/pages/requests.css';
+@import './styles/pages/goals.css';
+@import './styles/pages/reports-archive.css';
+@import './styles/pages/redflags.css';
+@import './styles/pages/worktracker.css';
 
 html, body {
   background-color: var(--page-bg);
