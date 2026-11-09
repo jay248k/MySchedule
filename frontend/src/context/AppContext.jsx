@@ -115,8 +115,14 @@ export function AppProvider({ children }) {
       return Number(activeWorkSession.baseAccumulatedSeconds) || 0;
     }
 
-    return (Number(activeWorkSession.baseAccumulatedSeconds) || 0) + elapsedSinceStart;
-  }, [activeWorkSession, masterTimerTicker]);
+    const todayRecorded = (workSessions || [])
+      .filter((s) => s.date === sessionDate)
+      .reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
+
+    const base = Math.max(Number(activeWorkSession.baseAccumulatedSeconds) || 0, todayRecorded);
+
+    return base + elapsedSinceStart;
+  }, [activeWorkSession, masterTimerTicker, workSessions]);
 
   // Purge any legacy static data stored in Chrome localStorage on mount
   useEffect(() => {
@@ -266,12 +272,25 @@ export function AppProvider({ children }) {
                 : serverSettings.notificationSettings;
           } catch {}
         }
-        const mergedSettings = { ...serverSettings, ...notifParsed };
+        // Preserve active local theme if user has selected one in this browser (e.g. OLED)
+        const currentSavedTheme = storageService.getTheme() || settings?.theme;
+        const effectiveTheme = currentSavedTheme || serverSettings.theme || 'dark';
+
+        const mergedSettings = {
+          ...serverSettings,
+          ...notifParsed,
+          theme: effectiveTheme,
+        };
         if (!mergedSettings.notificationTimeframe) {
           mergedSettings.notificationTimeframe = 'today';
         }
         dispatch(updateSettingsAction(mergedSettings));
         storageService.saveSettings(mergedSettings);
+
+        // Keep backend database in sync if server had a different theme
+        if (serverSettings.theme !== effectiveTheme) {
+          api.updateSettings({ ...mergedSettings, theme: effectiveTheme }).catch(() => {});
+        }
       }
 
       // Synchronize Live Active Work Session with Mobile & Backend
@@ -1140,7 +1159,7 @@ export function AppProvider({ children }) {
   const clearAllData = useCallback(() => {
     requestConfirm({
       title: 'Clear All Stored Data',
-      message: 'This will completely clear all tasks, events, goals, and settings from browser LocalStorage.',
+      message: 'This will completely clear all tasks, events, goals, and settings from cookies and in-memory cache.',
       confirmText: 'Clear Everything',
       isDanger: true,
       onConfirm: () => {
@@ -1182,6 +1201,13 @@ export function AppProvider({ children }) {
           : { ...settings, ...newSettingsOrUpdater };
       dispatch(updateSettingsAction(nextSettings));
       storageService.saveSettings(nextSettings);
+      if (nextSettings.theme) {
+        applyThemeToDocument({
+          theme: nextSettings.theme,
+          colorCombinationId: nextSettings.colorCombinationId || 'electric-sapphire',
+          accentColor: nextSettings.accentColor || '#1769FF',
+        });
+      }
       // Sync to backend if accessible, persisting notificationSettings
       const notifObj = {
         notificationTimeframe: nextSettings.notificationTimeframe || 'today',
@@ -1251,9 +1277,16 @@ export function AppProvider({ children }) {
       return updated;
     });
 
-    const todaySessions = (workSessions || []).filter((s) => s.date === today);
+    const currentSessions = (workSessions && workSessions.length > 0)
+      ? workSessions
+      : (storageService.getWorkSessions() || []);
+    const todaySessions = currentSessions.filter((s) => s.date === today);
     const recordedTotalSeconds = todaySessions.reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
-    const baseSeconds = Math.max(recordedTotalSeconds, existingChain.accumulatedWorkSeconds || 0);
+    const baseSeconds = Math.max(
+      recordedTotalSeconds,
+      Number(existingChain.accumulatedWorkSeconds) || 0,
+      Number(activeWorkSession?.baseAccumulatedSeconds) || 0
+    );
 
     const newActive = {
       isRunning: true,
@@ -1274,7 +1307,7 @@ export function AppProvider({ children }) {
       title: existingChain.status === 'paused' ? 'Work Resumed' : 'Work Timer Started',
       message: task?.title ? `Focusing on: "${task.title}"` : 'Live session timer is tracking.',
     });
-  }, [workChains, showToast]);
+  }, [workChains, workSessions, activeWorkSession, showToast]);
 
   const requestStopWorkSession = useCallback(() => {
     setIsStopModalOpen(true);

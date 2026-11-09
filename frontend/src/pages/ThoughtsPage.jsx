@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Lightbulb,
   Plus,
@@ -19,6 +20,7 @@ import '../styles/pages/thoughts.css';
 
 export function ThoughtsPage() {
   const { showToast } = useApp();
+  const [searchParams] = useSearchParams();
   const [thoughts, setThoughts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +51,29 @@ export function ThoughtsPage() {
   useEffect(() => {
     fetchThoughts();
   }, []);
+
+  // Handle deep-link from Global Search (?thought=<id>)
+  useEffect(() => {
+    if (!thoughts || thoughts.length === 0) return;
+    const targetId = searchParams.get('thought');
+    if (!targetId) return;
+
+    const found = thoughts.find((t) => String(t.id) === String(targetId));
+    if (found) {
+      setSelectedCategory('all');
+      setSearchQuery('');
+      setTimeout(() => {
+        const el = document.getElementById(`thought-card-${found.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('thought-highlight-pulse');
+          setTimeout(() => {
+            el.classList.remove('thought-highlight-pulse');
+          }, 2400);
+        }
+      }, 180);
+    }
+  }, [thoughts, searchParams]);
 
   const categories = useMemo(() => {
     const set = new Set(['Motivation', 'Discipline', 'Mindset', 'Productivity', 'Wisdom']);
@@ -245,6 +270,7 @@ export function ThoughtsPage() {
           {filteredThoughts.map((item) => (
             <div
               key={item.id}
+              id={`thought-card-${item.id}`}
               className={`thought-card card ${item.isPinned ? 'is-pinned' : ''}`}
             >
               <div>

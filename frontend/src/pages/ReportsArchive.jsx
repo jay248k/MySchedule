@@ -53,6 +53,7 @@ export function ReportsArchive() {
   const [archiveSearch, setArchiveSearch] = useState('');
   const [archiveMoodFilter, setArchiveMoodFilter] = useState('all');
   const [expandedReportIds, setExpandedReportIds] = useState(new Set());
+  const [showKPIs, setShowKPIs] = useState(true);
 
   const toggleExpandReport = (id) => {
     setExpandedReportIds((prev) => {
@@ -136,6 +137,15 @@ export function ReportsArchive() {
           <button
             type="button"
             className="btn btn-ghost btn-sm"
+            onClick={() => setShowKPIs(!showKPIs)}
+            title={showKPIs ? 'Hide summary statistics' : 'Show summary statistics'}
+          >
+            <TrendingUp size={14} /> {showKPIs ? 'Hide Stats' : 'Show Stats'}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
             onClick={handleExportJSON}
             title="Download full archive as JSON"
           >
@@ -153,64 +163,66 @@ export function ReportsArchive() {
         </div>
       </div>
 
-      {/* KPI Stats Bar */}
-      <div className="archive-kpi-grid">
-        <div className="card archive-kpi-card">
-          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
-            <FileText size={20} />
-          </div>
-          <div>
-            <div className="archive-kpi-label">
-              Total Reports
+      {/* KPI Stats Bar (Collapsible & Compact) */}
+      {showKPIs && (
+        <div className="archive-kpi-grid">
+          <div className="card archive-kpi-card">
+            <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
+              <FileText size={15} />
             </div>
-            <div className="archive-kpi-val">
-              {totalReportsCount}
+            <div>
+              <div className="archive-kpi-label">
+                Total Reports
+              </div>
+              <div className="archive-kpi-val">
+                {totalReportsCount}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card archive-kpi-card">
-          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
-            <Clock size={20} />
-          </div>
-          <div>
-            <div className="archive-kpi-label">
-              Logged Work Hours
+          <div className="card archive-kpi-card">
+            <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
+              <Clock size={15} />
             </div>
-            <div className="archive-kpi-val">
-              {totalLoggedHours.toFixed(1)} hrs
+            <div>
+              <div className="archive-kpi-label">
+                Logged Work Hours
+              </div>
+              <div className="archive-kpi-val">
+                {totalLoggedHours.toFixed(1)} hrs
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card archive-kpi-card">
-          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' }}>
-            <Flame size={20} />
-          </div>
-          <div>
-            <div className="archive-kpi-label">
-              High Velocity Days
+          <div className="card archive-kpi-card">
+            <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' }}>
+              <Flame size={15} />
             </div>
-            <div className="archive-kpi-val">
-              {highVelocityCount} days
+            <div>
+              <div className="archive-kpi-label">
+                High Velocity Days
+              </div>
+              <div className="archive-kpi-val">
+                {highVelocityCount} days
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card archive-kpi-card">
-          <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6' }}>
-            <TrendingUp size={20} />
-          </div>
-          <div>
-            <div className="archive-kpi-label">
-              Avg Daily Hours
+          <div className="card archive-kpi-card">
+            <div className="archive-kpi-icon-wrap" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6' }}>
+              <TrendingUp size={15} />
             </div>
-            <div className="archive-kpi-val">
-              {avgHoursPerReport} hrs/day
+            <div>
+              <div className="archive-kpi-label">
+                Avg Daily Hours
+              </div>
+              <div className="archive-kpi-val">
+                {avgHoursPerReport} hrs/day
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Archive Explorer Card */}
       <div className="card archive-explorer-card">
@@ -350,10 +362,7 @@ export function ReportsArchive() {
                   return (
                     <div
                       key={report.id || report.date}
-                      className="history-report-card archive-history-card"
-                      style={{
-                        borderTop: `3px solid ${moodMeta.color}`,
-                      }}
+                      className="archive-history-card"
                     >
                       {/* Header */}
                       <div className="archive-card-header">
@@ -596,9 +605,9 @@ export function ReportsArchive() {
                       </div>
 
                       <div
-                        className="history-report-card"
+                        className="archive-history-card"
                         style={{
-                          borderLeft: `4px solid ${moodMeta.color}`,
+                          borderLeft: "2px solid var(--primary-color)",
                         }}
                       >
                         <div className="flex items-center justify-between flex-wrap gap-2">

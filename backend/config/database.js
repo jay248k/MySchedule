@@ -1,9 +1,44 @@
 const { Sequelize } = require('sequelize');
+const dns = require('dns');
 require('dotenv').config();
 
-const connectionString =
+// Resilient DNS fallback: If local Wi-Fi / ISP router DNS refuses Neon hostname lookup (ENOTFOUND / EREFUSED),
+// automatically fallback to public DNS resolvers (Google 8.8.8.8, Cloudflare 1.1.1.1)
+if (!global.__neonDnsFallbackApplied) {
+  global.__neonDnsFallbackApplied = true;
+  const originalLookup = dns.lookup;
+  dns.lookup = function (hostname, options, callback) {
+    if (typeof options === 'function') {
+      callback = options;
+      options = {};
+    }
+    originalLookup(hostname, options, (err, address, family) => {
+      if (err && (err.code === 'ENOTFOUND' || err.code === 'EREFUSED' || err.code === 'EAI_AGAIN')) {
+        const resolver = new dns.Resolver();
+        resolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+        resolver.resolve4(hostname, (resErr, addresses) => {
+          if (!resErr && addresses && addresses.length > 0) {
+            if (options && options.all) {
+              return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
+            }
+            return callback(null, addresses[0], 4);
+          }
+          callback(err, address, family);
+        });
+        return;
+      }
+      callback(err, address, family);
+    });
+  };
+}
+
+let connectionString =
   process.env.DATABASE_URL ||
-  'postgresql://neondb_owner:npg_gjp3UbVuT0rQ@ep-little-heart-b5fmqxzj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+  'postgresql://neondb_owner:npg_gjp3UbVuT0rQ@ep-little-heart-b5fmqxzj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require';
+
+if (connectionString.includes('sslmode=require')) {
+  connectionString = connectionString.replace('sslmode=require', 'sslmode=verify-full');
+}
 
 const sequelize = new Sequelize(connectionString, {
   dialect: 'postgres',

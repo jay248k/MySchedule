@@ -145,6 +145,7 @@ export function Reports() {
   const [archiveSearch, setArchiveSearch] = useState('');
   const [archiveMoodFilter, setArchiveMoodFilter] = useState('all');
   const [expandedReportIds, setExpandedReportIds] = useState(new Set());
+  const [showDailyMetrics, setShowDailyMetrics] = useState(true);
 
   const toggleExpandReport = (id) => {
     setExpandedReportIds((prev) => {
@@ -464,11 +465,16 @@ export function Reports() {
   // SUB-REPORTS DATA & CONFIGURATIONS (Excel-Style Reports)
   // =========================================================================
 
-  // Range presets: Today, Month, Last 6 Months, Year (default)
-  const currentYear = new Date().getFullYear();
-  const [reportDatePreset, setReportDatePreset] = useState('year');
-  const [reportFromDate, setReportFromDate] = useState(currentYear + '-01-01');
-  const [reportToDate, setReportToDate] = useState(currentYear + '-12-31');
+  // Range presets: Today, Month (default), Last 6 Months, Year
+  const nowInit = new Date();
+  const currentYear = nowInit.getFullYear();
+  const currentMonthStr = String(nowInit.getMonth() + 1).padStart(2, '0');
+  const defaultMonthStart = `${currentYear}-${currentMonthStr}-01`;
+  const defaultMonthEnd = `${currentYear}-${currentMonthStr}-${String(new Date(currentYear, nowInit.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+
+  const [reportDatePreset, setReportDatePreset] = useState('month');
+  const [reportFromDate, setReportFromDate] = useState(defaultMonthStart);
+  const [reportToDate, setReportToDate] = useState(defaultMonthEnd);
 
   const handleApplyPreset = (presetId) => {
     setReportDatePreset(presetId);
@@ -478,9 +484,12 @@ export function Reports() {
       setReportFromDate(today);
       setReportToDate(today);
     } else if (presetId === 'month') {
-      const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
-      setReportFromDate(monthStart);
-      setReportToDate(today);
+      const year = now.getFullYear();
+      const mStr = String(now.getMonth() + 1).padStart(2, '0');
+      const start = `${year}-${mStr}-01`;
+      const end = `${year}-${mStr}-${String(new Date(year, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+      setReportFromDate(start);
+      setReportToDate(end);
     } else if (presetId === '6months') {
       const sixAgo = new Date(now);
       sixAgo.setMonth(now.getMonth() - 6);
@@ -685,11 +694,11 @@ export function Reports() {
 
   // 3. Missed / Overdue Tasks Report Data
   const missedTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    return dateRangeTasks.filter((t) => {
       const eff = getEffectiveStatus(t);
       return eff === 'overdue' || (!t.completed && t.date && t.date < todayStr);
     });
-  }, [tasks, todayStr]);
+  }, [dateRangeTasks, todayStr]);
 
   const missedTableData = useMemo(() => {
     return missedTasks.map((t) => {
@@ -1183,73 +1192,50 @@ export function Reports() {
   ], []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
-      {/* 1. Header with Mode Tabs */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* 1. Header with Mode Tabs (Compact Header Bar) */}
       <div
         className="card"
         style={{
-          padding: '24px 28px',
+          padding: '8px 14px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '18px',
+          gap: '8px',
         }}
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="badge badge-primary" style={{ padding: '4px 10px' }}>
-              <FileSpreadsheet size={13} />
-              Reporting & Diagnostics
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Excel-Style Reports, Document Downloads & Red Flag Diagnostics
-            </span>
-          </div>
-          <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="badge badge-primary" style={{ padding: '2px 8px', fontSize: '0.72rem' }}>
+            <FileSpreadsheet size={12} />
+            Reports Hub
+          </span>
+          <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Work Reporting & Export Hub
           </h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Generate spreadsheet-style reports with instant Excel (.xlsx), Word (.doc), and PDF downloads.
-          </p>
         </div>
 
-        {/* Date Range Selector & Presets */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            padding: '10px 16px',
-            marginBottom: '16px',
-            flexWrap: 'wrap',
-            gap: '12px',
-            width: '100%',
-          }}
-        >
-          {/* Quick Presets */}
+        {/* Date Range Selector & Presets (Only displayed for range tabs) */}
+        {activeTab !== 'today-report' && activeTab !== 'tracker-logs' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px' }}>
-              DATE FILTER:
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
+              RANGE:
             </span>
             {[
               { id: 'today', label: 'Today' },
               { id: 'month', label: 'This Month' },
-              { id: '6months', label: 'Last 6 Months' },
-              { id: 'year', label: 'Year (' + currentYear + ')' },
+              { id: '6months', label: '6 Mos' },
+              { id: 'year', label: String(currentYear) },
             ].map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => handleApplyPreset(p.id)}
                 style={{
-                  padding: '5px 12px',
-                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  borderRadius: '5px',
                   border: 'none',
-                  fontSize: '0.78rem',
+                  fontSize: '0.74rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   background: reportDatePreset === p.id ? 'var(--primary-color)' : 'var(--page-bg)',
@@ -1259,12 +1245,8 @@ export function Reports() {
                 {p.label}
               </button>
             ))}
-          </div>
 
-          {/* From - To Date Pickers */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>From:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
               <input
                 type="date"
                 value={reportFromDate}
@@ -1273,19 +1255,16 @@ export function Reports() {
                   setReportDatePreset('custom');
                 }}
                 style={{
-                  padding: '5px 8px',
-                  borderRadius: '6px',
+                  padding: '3px 6px',
+                  borderRadius: '5px',
                   border: '1px solid var(--border-color)',
                   background: 'var(--page-bg)',
                   color: 'var(--text-primary)',
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   outline: 'none',
                 }}
               />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>To:</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>–</span>
               <input
                 type="date"
                 value={reportToDate}
@@ -1294,22 +1273,21 @@ export function Reports() {
                   setReportDatePreset('custom');
                 }}
                 style={{
-                  padding: '5px 8px',
-                  borderRadius: '6px',
+                  padding: '3px 6px',
+                  borderRadius: '5px',
                   border: '1px solid var(--border-color)',
                   background: 'var(--page-bg)',
                   color: 'var(--text-primary)',
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   outline: 'none',
                 }}
               />
             </div>
-
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10B981', marginLeft: '6px' }}>
-              ({dateRangeTasks.length} in range)
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10B981' }}>
+              ({dateRangeTasks.length})
             </span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -1524,14 +1502,23 @@ export function Reports() {
             </div>
 
             {/* Right: Primary Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-no-print"
+                onClick={() => setShowDailyMetrics(!showDailyMetrics)}
+                title={showDailyMetrics ? 'Hide summary metric cards' : 'Show summary metric cards'}
+              >
+                <TrendingUp size={14} /> {showDailyMetrics ? 'Hide Metrics' : 'Metrics'}
+              </button>
+
               <button
                 type="button"
                 className="btn btn-ghost btn-sm btn-no-print"
                 onClick={handleCopyStandup}
                 title="Copy formatted standup markdown for Slack / Teams"
               >
-                <Copy size={15} /> Copy Standup
+                <Copy size={14} /> Copy Standup
               </button>
 
               <button
@@ -1540,7 +1527,7 @@ export function Reports() {
                 onClick={() => window.print()}
                 title="Print daily report"
               >
-                <Printer size={15} /> Print
+                <Printer size={14} /> Print
               </button>
 
               <button
@@ -1548,108 +1535,112 @@ export function Reports() {
                 className="btn btn-primary btn-sm btn-no-print"
                 onClick={handleSaveReport}
               >
-                <Save size={15} /> Save Daily Report
+                <Save size={14} /> Save Daily Report
               </button>
             </div>
           </div>
 
-          {/* Quick Real-Time Metrics for Selected Day */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '16px',
-            }}
-          >
-            <div className="card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Scheduled Tasks
+          {/* Quick Real-Time Metrics for Selected Day (Ultra-Compact & Collapsible) */}
+          {showDailyMetrics && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gap: '8px',
+              }}
+            >
+              <div className="card" style={{ padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Scheduled Tasks
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, marginTop: '1px', lineHeight: 1.1 }}>
+                  {selectedDayStats.total}
+                </div>
+                <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  Planned for this date
+                </div>
               </div>
-              <div style={{ fontSize: '1.65rem', fontWeight: 800, marginTop: '4px' }}>
-                {selectedDayStats.total}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Planned for this date
-              </div>
-            </div>
 
-            <div className="card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Tasks Completed
+              <div className="card" style={{ padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Tasks Completed
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--success)', marginTop: '1px', lineHeight: 1.1 }}>
+                  {selectedDayStats.completed}
+                </div>
+                <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {selectedDayStats.pending} pending · {selectedDayStats.overdue} overdue
+                </div>
               </div>
-              <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>
-                {selectedDayStats.completed}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                {selectedDayStats.pending} pending / {selectedDayStats.overdue} overdue
-              </div>
-            </div>
 
-            <div className="card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Day Completion Rate
+              <div className="card" style={{ padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Day Completion Rate
+                </div>
+                <div
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 900,
+                    color: 'var(--primary-color)',
+                    marginTop: '1px',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {selectedDayStats.percentage}%
+                </div>
+                <div style={{ marginTop: '3px' }}>
+                  <ProgressBar progress={selectedDayStats.percentage} color="var(--primary-color)" />
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: '1.65rem',
-                  fontWeight: 800,
-                  color: 'var(--primary-color)',
-                  marginTop: '4px',
-                }}
-              >
-                {selectedDayStats.percentage}%
-              </div>
-              <div style={{ marginTop: '6px' }}>
-                <ProgressBar progress={selectedDayStats.percentage} color="var(--primary-color)" />
-              </div>
-            </div>
 
-            <div className="card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Work Hours Logged
+              <div className="card" style={{ padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Work Hours Logged
+                </div>
+                <div
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 900,
+                    color: 'var(--text-primary)',
+                    marginTop: '1px',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {hoursLogged} hrs
+                </div>
+                <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {completedHours}h done of {plannedHours}h
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: '1.65rem',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  marginTop: '4px',
-                }}
-              >
-                {hoursLogged} hrs
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                {completedHours} hrs completed of {plannedHours} planned
-              </div>
-            </div>
 
-            <div className="card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Productivity Velocity
-              </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '6px' }}>
-                {mood === 'fire' && <span style={{ color: '#F97316' }}>🔥 High Velocity</span>}
-                {mood === 'rocket' && <span style={{ color: '#1769FF' }}>🚀 On Track</span>}
-                {mood === 'coffee' && <span style={{ color: '#F59E0B' }}>☕ Steady Pace</span>}
-                {mood === 'blocked' && <span style={{ color: '#EF4444' }}>⚠️ Blocked</span>}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Self-assessed momentum
+              <div className="card" style={{ padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Productivity Velocity
+                </div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 900, marginTop: '2px', lineHeight: 1.15 }}>
+                  {mood === 'fire' && <span style={{ color: '#F97316' }}>🔥 High Velocity</span>}
+                  {mood === 'rocket' && <span style={{ color: '#1769FF' }}>🚀 On Track</span>}
+                  {mood === 'coffee' && <span style={{ color: '#F59E0B' }}>☕ Steady Pace</span>}
+                  {mood === 'blocked' && <span style={{ color: '#EF4444' }}>⚠️ Blocked</span>}
+                </div>
+                <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  Self-assessed momentum
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* 2-Column Main Workspace */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '10px' }}>
             {/* Left Column: Day Tasks & Real-Time Schedule Checklist (5 Cols) */}
             <div style={{ gridColumn: 'span 5' }} className="report-chart-col">
               <div
                 className="card"
                 style={{
-                  padding: '22px',
+                  padding: '10px 14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
+                  gap: '10px',
                   height: '100%',
                 }}
               >
@@ -1853,14 +1844,14 @@ export function Reports() {
               <div
                 className="card"
                 style={{
-                  padding: '24px 22px',
+                  padding: '12px 14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '18px',
+                  gap: '10px',
                   background: 'var(--card-bg)',
-                  border: '1.5px solid var(--border-color)',
-                  boxShadow: 'var(--shadow-md)',
-                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: 'var(--shadow-sm)',
+                  borderRadius: 'var(--radius-md)',
                 }}
               >
                 {/* 1. Header with Status & Top Quick Actions */}
@@ -1870,17 +1861,17 @@ export function Reports() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     borderBottom: '1px solid var(--border-color)',
-                    paddingBottom: '16px',
+                    paddingBottom: '8px',
                     flexWrap: 'wrap',
-                    gap: '12px',
+                    gap: '8px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                       style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
                         background: 'rgba(23, 105, 255, 0.12)',
                         color: 'var(--primary-color)',
                         display: 'flex',
@@ -1889,13 +1880,13 @@ export function Reports() {
                         border: '1px solid rgba(23, 105, 255, 0.25)',
                       }}
                     >
-                      <FileText size={18} />
+                      <FileText size={15} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Daily Work Report & Standup
                       </h3>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
                         Enter your daily work summary note and reporting details
                       </div>
                     </div>

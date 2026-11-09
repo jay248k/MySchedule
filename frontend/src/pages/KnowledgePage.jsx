@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Folder,
   FileText,
@@ -23,6 +24,7 @@ import {
   LayoutGrid,
   List,
   GitBranch,
+  X,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -30,6 +32,7 @@ import '../styles/pages/knowledge.css';
 
 export function KnowledgePage() {
   const { showToast } = useApp();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentFolder, setCurrentFolder] = useState(null); // null = root
@@ -56,6 +59,16 @@ export function KnowledgePage() {
     ],
   });
 
+  // Edit Modal State
+  const [editModalItem, setEditModalItem] = useState(null); // item object being edited
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editIsPinned, setEditIsPinned] = useState(false);
+  const [editNextLessonId, setEditNextLessonId] = useState('');
+  const [editTableData, setEditTableData] = useState({ headers: ['Column 1'], rows: [['']] });
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   const fetchItems = async () => {
     try {
       setLoading(true);
@@ -72,6 +85,78 @@ export function KnowledgePage() {
   useEffect(() => {
     fetchItems();
   }, []);
+
+  // Deep linking from Global Search (?folder=<id> or ?item=<id> / ?lesson=<id>)
+  useEffect(() => {
+    if (!items || items.length === 0) return;
+    const folderId = searchParams.get('folder');
+    const itemId = searchParams.get('item') || searchParams.get('lesson');
+
+    if (folderId) {
+      const folder = items.find((it) => String(it.id) === String(folderId));
+      if (folder) {
+        // Build breadcrumb trail back to root
+        const trail = [folder];
+        let curr = folder;
+        while (curr.parentId) {
+          const parent = items.find((it) => String(it.id) === String(curr.parentId));
+          if (parent) {
+            trail.unshift(parent);
+            curr = parent;
+          } else {
+            break;
+          }
+        }
+        setCurrentFolder(folder);
+        setBreadcrumbs(trail);
+        setActiveItem(null);
+      }
+    } else if (itemId) {
+      const item = items.find((it) => String(it.id) === String(itemId));
+      if (item) {
+        if (item.type === 'folder') {
+          const trail = [item];
+          let curr = item;
+          while (curr.parentId) {
+            const parent = items.find((it) => String(it.id) === String(curr.parentId));
+            if (parent) {
+              trail.unshift(parent);
+              curr = parent;
+            } else {
+              break;
+            }
+          }
+          setCurrentFolder(item);
+          setBreadcrumbs(trail);
+          setActiveItem(null);
+        } else {
+          // If item is inside a folder, open that folder and select active item preview
+          if (item.parentId) {
+            const parent = items.find((it) => String(it.id) === String(item.parentId));
+            if (parent) {
+              const trail = [parent];
+              let curr = parent;
+              while (curr.parentId) {
+                const p = items.find((it) => String(it.id) === String(curr.parentId));
+                if (p) {
+                  trail.unshift(p);
+                  curr = p;
+                } else {
+                  break;
+                }
+              }
+              setCurrentFolder(parent);
+              setBreadcrumbs(trail);
+            }
+          } else {
+            setCurrentFolder(null);
+            setBreadcrumbs([]);
+          }
+          setActiveItem(item);
+        }
+      }
+    }
+  }, [items, searchParams]);
 
   // Filter items in the current folder, sorting pinned items first
   const currentItems = useMemo(() => {
@@ -205,62 +290,264 @@ export function KnowledgePage() {
     e.preventDefault();
     if (!createTitle.trim()) return;
 
+    const itemTitle = createTitle.trim();
+    const itemType = modalMode;
+    const tempId = `temp-know-${Date.now()}`;
+
+    // Clean table data if creating table
+    let formattedContent = createContent;
+    if (itemType === 'table') {
+      const cleanHeaders = tableData.headers.map((h, i) => (h && h.trim()) || `Col ${i + 1}`);
+      const cleanRows = tableData.rows.map((row) =>
+        cleanHeaders.map((_, cI) => (row[cI] !== undefined ? String(row[cI]) : ''))
+      );
+      formattedContent = JSON.stringify({ headers: cleanHeaders, rows: cleanRows });
+    }
+
+    const payload = {
+      title: itemTitle,
+      type: itemType,
+      parentId: currentFolder ? currentFolder.id : null,
+      content: formattedContent,
+      tags: createTags.trim() || null,
+      isPinned: Boolean(createIsPinned),
+      nextLessonId: itemType === 'lesson' && createNextLessonId ? createNextLessonId : null,
+    };
+
+    // ⚡ Optimistic UI: Immediately display item in view without waiting for network roundtrip
+    const optimisticItem = {
+      id: tempId,
+      ...payload,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setItems((prev) => [optimisticItem, ...prev]);
+    setModalMode(null);
+    setCreateTitle('');
+    setCreateContent('');
+    setCreateTags('');
+    setCreateIsPinned(false);
+    setCreateNextLessonId('');
+
+    showToast({
+      type: 'success',
+      title: 'Created Successfully',
+      message: `${itemTitle} added.`,
+    });
+
     try {
       setSubmitting(true);
-      const payload = {
-        title: createTitle.trim(),
-        type: modalMode,
-        parentId: currentFolder ? currentFolder.id : null,
-        tags: createTags.trim() || null,
-        isPinned: createIsPinned,
-      };
-
-      if (modalMode === 'lesson') {
-        payload.content = createContent;
-        if (createNextLessonId) payload.nextLessonId = createNextLessonId;
-      } else if (modalMode === 'table') {
-        payload.content = JSON.stringify(tableData);
-      }
-
       const res = await api.createKnowledgeItem(payload);
-      if (res?.data) {
-        setItems((prev) => [res.data, ...prev]);
-        showToast({
-          type: 'success',
-          title: 'Created Successfully',
-          message: `${payload.title} created in database.`,
-        });
-        setModalMode(null);
-        setCreateTitle('');
-        setCreateContent('');
-        setCreateTags('');
-        setCreateIsPinned(false);
-        setCreateNextLessonId('');
+      const serverItem = res?.data || res;
+      if (serverItem && serverItem.id) {
+        setItems((prev) => prev.map((it) => (it.id === tempId ? serverItem : it)));
       }
     } catch (err) {
+      // Rollback on failure
+      setItems((prev) => prev.filter((it) => it.id !== tempId));
       showToast({
         type: 'danger',
         title: 'Creation Failed',
-        message: err.message || 'Error creating knowledge item.',
+        message: err.message || 'Error saving item to database.',
       });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleOpenEditModal = (item) => {
+    if (!item) return;
+    setEditModalItem(item);
+    setEditTitle(item.title || '');
+    setEditTags(item.tags || '');
+    setEditIsPinned(Boolean(item.isPinned));
+
+    if (item.type === 'lesson') {
+      setEditContent(item.content || '');
+      setEditNextLessonId(item.nextLessonId || '');
+    } else if (item.type === 'table') {
+      try {
+        const parsed = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+        if (parsed && Array.isArray(parsed.headers) && Array.isArray(parsed.rows)) {
+          setEditTableData(parsed);
+        } else {
+          setEditTableData({ headers: ['Column 1'], rows: [['']] });
+        }
+      } catch {
+        setEditTableData({ headers: ['Column 1'], rows: [['']] });
+      }
+    }
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editModalItem || !editTitle.trim()) return;
+
+    const targetId = editModalItem.id;
+    const targetType = editModalItem.type;
+    const updatedTitle = editTitle.trim();
+
+    let formattedContent = editContent;
+    if (targetType === 'table') {
+      const cleanHeaders = editTableData.headers.map((h, i) => (h && h.trim()) || `Col ${i + 1}`);
+      const cleanRows = editTableData.rows.map((row) =>
+        cleanHeaders.map((_, cI) => (row[cI] !== undefined ? String(row[cI]) : ''))
+      );
+      formattedContent = JSON.stringify({ headers: cleanHeaders, rows: cleanRows });
+    }
+
+    const payload = {
+      title: updatedTitle,
+      tags: editTags.trim() || null,
+      isPinned: Boolean(editIsPinned),
+      ...(targetType === 'lesson' && {
+        content: formattedContent,
+        nextLessonId: editNextLessonId || null,
+      }),
+      ...(targetType === 'table' && {
+        content: formattedContent,
+      }),
+    };
+
+    // ⚡ Optimistic UI update
+    setItems((prev) =>
+      prev.map((it) => (it.id === targetId ? { ...it, ...payload } : it))
+    );
+    if (activeItem?.id === targetId) {
+      setActiveItem((prev) => ({ ...prev, ...payload }));
+    }
+
+    setEditModalItem(null);
+    showToast({
+      type: 'success',
+      title: 'Changes Saved',
+      message: `${updatedTitle} updated successfully.`,
+    });
+
+    try {
+      setEditSubmitting(true);
+      await api.updateKnowledgeItem(targetId, payload);
+    } catch (err) {
+      showToast({
+        type: 'danger',
+        title: 'Update Error',
+        message: err.message || 'Failed to update item.',
+      });
+      fetchItems();
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
   const handleDeleteItem = async (id, e) => {
     if (e) e.stopPropagation();
+    const itemToDelete = items.find((it) => it.id === id);
+    const itemName = itemToDelete?.title || 'Item';
+
+    // Optimistic removal
+    setItems((prev) => prev.filter((it) => it.id !== id));
+    if (activeItem?.id === id) setActiveItem(null);
+
+    showToast({
+      type: 'info',
+      title: 'Item Deleted',
+      message: `${itemName} removed.`,
+    });
+
     try {
       await api.deleteKnowledgeItem(id);
-      setItems((prev) => prev.filter((it) => it.id !== id));
-      if (activeItem?.id === id) setActiveItem(null);
-      showToast({
-        type: 'info',
-        title: 'Item Deleted',
-        message: 'Item removed from database.',
-      });
     } catch (err) {
+      // Rollback
+      if (itemToDelete) {
+        setItems((prev) => [itemToDelete, ...prev]);
+      }
       showToast({ type: 'danger', title: 'Error', message: 'Could not delete item.' });
+    }
+  };
+
+  const handleAddColumn = () => {
+    const colName = `Column ${tableData.headers.length + 1}`;
+    setTableData((prev) => ({
+      headers: [...prev.headers, colName],
+      rows: prev.rows.map((row) => [...row, '']),
+    }));
+  };
+
+  const handleDeleteColumn = (colIdx) => {
+    if (tableData.headers.length <= 1) return;
+    setTableData((prev) => ({
+      headers: prev.headers.filter((_, i) => i !== colIdx),
+      rows: prev.rows.map((row) => row.filter((_, i) => i !== colIdx)),
+    }));
+  };
+
+  const handleHeaderChange = (colIdx, val) => {
+    setTableData((prev) => {
+      const newHeaders = [...prev.headers];
+      newHeaders[colIdx] = val;
+      return { ...prev, headers: newHeaders };
+    });
+  };
+
+  const handleAddRow = () => {
+    setTableData((prev) => ({
+      ...prev,
+      rows: [...prev.rows, new Array(prev.headers.length).fill('')],
+    }));
+  };
+
+  const handleDeleteRow = (rowIdx) => {
+    if (tableData.rows.length <= 1) return;
+    setTableData((prev) => ({
+      ...prev,
+      rows: prev.rows.filter((_, i) => i !== rowIdx),
+    }));
+  };
+
+  const handleCellChange = (rowIdx, colIdx, val) => {
+    setTableData((prev) => {
+      const newRows = prev.rows.map((r, rI) => {
+        if (rI !== rowIdx) return r;
+        const newR = [...r];
+        newR[colIdx] = val;
+        return newR;
+      });
+      return { ...prev, rows: newRows };
+    });
+  };
+
+  const handleResetTable = () => {
+    setTableData({
+      headers: ['Step', 'Topic', 'Description', 'Status'],
+      rows: [
+        ['1', 'Setup & Environment', 'Initialize repository and install dependencies', 'Done'],
+        ['2', 'Core Architecture', 'Design models, routes, and database schema', 'In Progress'],
+      ],
+    });
+  };
+
+  const handleDownloadCSV = (title, tableContent) => {
+    try {
+      const parsed = typeof tableContent === 'string' ? JSON.parse(tableContent) : tableContent;
+      const headers = parsed?.headers || [];
+      const rows = parsed?.rows || [];
+      const csvLines = [
+        headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
+        ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+      ];
+      const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${title || 'table'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast({ type: 'success', title: 'Exported', message: 'Table exported to CSV file.' });
+    } catch (e) {
+      showToast({ type: 'danger', title: 'Export Error', message: 'Could not export table to CSV.' });
     }
   };
 
@@ -272,7 +559,7 @@ export function KnowledgePage() {
     reader.onload = (evt) => {
       const text = evt.target?.result;
       if (typeof text === 'string') {
-        const lines = text.split('\n').filter((l) => l.trim().length > 0);
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
         if (lines.length > 0) {
           const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
           const rows = lines.slice(1).map((line) =>
@@ -288,6 +575,86 @@ export function KnowledgePage() {
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // Edit Table Data Handlers
+  const handleEditAddColumn = () => {
+    const colName = `Column ${editTableData.headers.length + 1}`;
+    setEditTableData((prev) => ({
+      headers: [...prev.headers, colName],
+      rows: prev.rows.map((row) => [...row, '']),
+    }));
+  };
+
+  const handleEditDeleteColumn = (colIdx) => {
+    if (editTableData.headers.length <= 1) return;
+    setEditTableData((prev) => ({
+      headers: prev.headers.filter((_, i) => i !== colIdx),
+      rows: prev.rows.map((row) => row.filter((_, i) => i !== colIdx)),
+    }));
+  };
+
+  const handleEditHeaderChange = (colIdx, val) => {
+    setEditTableData((prev) => {
+      const newHeaders = [...prev.headers];
+      newHeaders[colIdx] = val;
+      return { ...prev, headers: newHeaders };
+    });
+  };
+
+  const handleEditAddRow = () => {
+    setEditTableData((prev) => ({
+      ...prev,
+      rows: [...prev.rows, new Array(prev.headers.length).fill('')],
+    }));
+  };
+
+  const handleEditDeleteRow = (rowIdx) => {
+    if (editTableData.rows.length <= 1) return;
+    setEditTableData((prev) => ({
+      ...prev,
+      rows: prev.rows.filter((_, i) => i !== rowIdx),
+    }));
+  };
+
+  const handleEditCellChange = (rowIdx, colIdx, val) => {
+    setEditTableData((prev) => {
+      const newRows = prev.rows.map((r, rI) => {
+        if (rI !== rowIdx) return r;
+        const newR = [...r];
+        newR[colIdx] = val;
+        return newR;
+      });
+      return { ...prev, rows: newRows };
+    });
+  };
+
+  const handleEditFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result;
+      if (typeof text === 'string') {
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length > 0) {
+          const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+          const rows = lines.slice(1).map((line) =>
+            line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
+          );
+          setEditTableData({ headers, rows });
+          showToast({
+            type: 'success',
+            title: 'CSV Loaded',
+            message: `Loaded ${rows.length} rows into editor.`,
+          });
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const renderTableContent = (tData) => {
@@ -533,18 +900,33 @@ export function KnowledgePage() {
                     }}
                     className={`knowledge-pc-tile ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
                   >
-                    {/* Pin Badge / Button */}
-                    <button
-                      onClick={(e) => handleTogglePin(item, e)}
-                      title={item.isPinned ? 'Pinned to top' : 'Click to pin'}
-                      className="knowledge-tile-pin-btn"
-                      style={{
-                        color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
-                        opacity: item.isPinned ? 1 : 0.4,
-                      }}
-                    >
-                      <Pin size={12} fill={item.isPinned ? '#F59E0B' : 'none'} />
-                    </button>
+                    {/* Action Bar: Pin, Edit, Delete */}
+                    <div className="knowledge-tile-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleTogglePin(item, e)}
+                        title={item.isPinned ? 'Pinned to top' : 'Click to pin'}
+                        className={`knowledge-tile-btn ${item.isPinned ? 'pinned' : ''}`}
+                      >
+                        <Pin size={11} fill={item.isPinned ? '#F59E0B' : 'none'} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(item);
+                        }}
+                        title={`Edit ${item.type}`}
+                        className="knowledge-tile-btn edit"
+                      >
+                        <Edit2 size={11} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteItem(item.id, e)}
+                        title={`Delete ${item.type}`}
+                        className="knowledge-tile-btn delete"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
 
                     {/* Icon Container (Folder, Document, Spreadsheet) */}
                     <div className={`knowledge-tile-icon-box ${item.type}`}>
@@ -596,6 +978,27 @@ export function KnowledgePage() {
                           <span className="text-xs font-bold text-primary">
                             {lesson.title}
                           </span>
+                          <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditModal(lesson);
+                              }}
+                              className="btn-icon p-0.5 text-primary opacity-60 hover:opacity-100"
+                              title="Edit Lesson"
+                            >
+                              <Edit2 size={11} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteItem(lesson.id, e)}
+                              className="btn-icon p-0.5 text-red-500 opacity-60 hover:opacity-100"
+                              title="Delete Lesson"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
                         </div>
 
                         {idx < chain.length - 1 && (
@@ -673,6 +1076,16 @@ export function KnowledgePage() {
                         <Pin size={13} fill={item.isPinned ? '#F59E0B' : 'none'} />
                       </button>
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(item);
+                        }}
+                        title={`Edit ${item.type}`}
+                        className="btn-icon p-1 text-primary opacity-70 hover:opacity-100"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
                         onClick={(e) => handleDeleteItem(item.id, e)}
                         title="Delete item"
                         className="btn-icon p-1 text-red-500 opacity-60 hover:opacity-100"
@@ -700,12 +1113,36 @@ export function KnowledgePage() {
                 </h2>
               </div>
               <div className="flex items-center gap-1">
+                {activeItem.type === 'table' && (
+                  <button
+                    onClick={() => handleDownloadCSV(activeItem.title, activeItem.content)}
+                    className="btn btn-ghost btn-sm"
+                    title="Export table as CSV file"
+                  >
+                    <Download size={14} /> Export CSV
+                  </button>
+                )}
                 <button
                   onClick={() => handleTogglePin(activeItem)}
                   className="btn btn-ghost btn-sm"
                   style={{ color: activeItem.isPinned ? '#F59E0B' : 'var(--text-secondary)' }}
+                  title={activeItem.isPinned ? 'Unpin' : 'Pin to top'}
                 >
                   <Pin size={14} fill={activeItem.isPinned ? '#F59E0B' : 'none'} />
+                </button>
+                <button
+                  onClick={() => handleOpenEditModal(activeItem)}
+                  className="btn btn-ghost btn-sm text-primary"
+                  title="Edit item"
+                >
+                  <Edit2 size={14} /> Edit
+                </button>
+                <button
+                  onClick={(e) => handleDeleteItem(activeItem.id, e)}
+                  className="btn btn-ghost btn-sm text-red-500 hover:text-red-400"
+                  title="Delete item"
+                >
+                  <Trash2 size={14} /> Delete
                 </button>
                 <button onClick={() => setActiveItem(null)} className="btn btn-ghost btn-sm">
                   Close
@@ -752,138 +1189,637 @@ export function KnowledgePage() {
       {/* Creation Modal */}
       {modalMode && (
         <div
-          className="modal-overlay"
+          className="modal-backdrop"
+          style={{ zIndex: 9999 }}
           onClick={() => setModalMode(null)}
         >
           <div
-            className="card p-6 w-full max-h-[90vh] overflow-y-auto"
+            className="modal-card"
             style={{
-              maxWidth: modalMode === 'table' ? '650px' : '520px',
+              maxWidth: modalMode === 'table' ? '820px' : '560px',
+              width: '100%',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="m-0 mb-4 text-lg font-extrabold text-primary flex items-center gap-2">
-              {modalMode === 'folder' ? (
-                <>
-                  <Folder size={20} color="#F59E0B" /> Create Folder
-                </>
-              ) : modalMode === 'table' ? (
-                <>
-                  <TableIcon size={20} color="#10B981" /> Create Table or Upload CSV/Excel
-                </>
-              ) : (
-                <>
-                  <FileText size={20} color="#3B82F6" /> Create Lesson
-                </>
-              )}
-            </h2>
-
-            <form onSubmit={handleCreateItem} className="flex flex-col gap-3">
-              <div>
-                <label className="block text-xs font-bold text-secondary mb-1">
-                  {modalMode === 'folder' ? 'Folder Name *' : modalMode === 'table' ? 'Table Name *' : 'Lesson Title *'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={
-                    modalMode === 'folder'
-                      ? 'Folder Name'
+            {/* Modal Header */}
+            <div className="modal-header">
+              <div className="flex items-center gap-2.5">
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background:
+                      modalMode === 'folder'
+                        ? 'rgba(245, 158, 11, 0.16)'
+                        : modalMode === 'table'
+                        ? 'rgba(16, 185, 129, 0.16)'
+                        : 'rgba(59, 130, 246, 0.16)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {modalMode === 'folder' ? (
+                    <Folder size={20} color="#F59E0B" />
+                  ) : modalMode === 'table' ? (
+                    <TableIcon size={20} color="#10B981" />
+                  ) : (
+                    <BookOpen size={20} color="#3B82F6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="modal-title text-base font-extrabold m-0">
+                    {modalMode === 'folder'
+                      ? 'Create New Folder'
                       : modalMode === 'table'
-                      ? 'Table Name'
-                      : 'Lesson Title'
-                  }
-                  value={createTitle}
-                  onChange={(e) => setCreateTitle(e.target.value)}
-                  className="form-input"
-                />
+                      ? 'Create Table or Import CSV'
+                      : 'Create Knowledge Lesson'}
+                  </h3>
+                  <p className="text-xs text-secondary mt-0.5 m-0">
+                    {modalMode === 'folder'
+                      ? 'Group your related lessons and tables together.'
+                      : modalMode === 'table'
+                      ? 'Structured data grid with instant columns, rows & CSV import.'
+                      : 'Document practical guides, SOPs, and learning notes.'}
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setModalMode(null)}
+                className="btn-icon"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-              {modalMode === 'lesson' && (
-                <>
-                  <div>
-                    <label className="block text-xs font-bold text-secondary mb-1">
-                      Lesson Content / Notes *
-                    </label>
-                    <textarea
-                      rows={6}
-                      required
-                      placeholder="Lesson content"
-                      value={createContent}
-                      onChange={(e) => setCreateContent(e.target.value)}
-                      className="form-textarea"
-                    />
-                  </div>
+            {/* Modal Form */}
+            <form onSubmit={handleCreateItem}>
+              <div className="modal-body flex flex-col gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    {modalMode === 'folder' ? 'Folder Name *' : modalMode === 'table' ? 'Table Name *' : 'Lesson Title *'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={
+                      modalMode === 'folder'
+                        ? 'e.g. Architecture & System Design'
+                        : modalMode === 'table'
+                        ? 'e.g. Weekly KPI Tracker'
+                        : 'e.g. PostgreSQL Indexing Guide'
+                    }
+                    value={createTitle}
+                    onChange={(e) => setCreateTitle(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
 
-                  {/* Optional Lesson Chaining */}
-                  {lessonsInFolder.length > 0 && (
+                {modalMode === 'lesson' && (
+                  <>
                     <div>
                       <label className="block text-xs font-bold text-secondary mb-1">
-                        Chain to Next Lesson (Optional)
+                        Lesson Content / Notes *
                       </label>
-                      <select
-                        value={createNextLessonId}
-                        onChange={(e) => setCreateNextLessonId(e.target.value)}
-                        className="form-input"
-                      >
-                        <option value="">(None - Not chained)</option>
-                        {lessonsInFolder.map((l) => (
-                          <option key={l.id} value={l.id}>
-                            {l.title}
-                          </option>
-                        ))}
-                      </select>
+                      <textarea
+                        rows={7}
+                        required
+                        placeholder="Write down comprehensive notes, key takeaways, code examples, or summary..."
+                        value={createContent}
+                        onChange={(e) => setCreateContent(e.target.value)}
+                        className="form-textarea"
+                      />
                     </div>
-                  )}
-                </>
-              )}
 
-              {modalMode === 'table' && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-secondary">
-                      Table Preview & Columns
-                    </label>
-                    <label className="btn btn-ghost btn-sm cursor-pointer inline-flex items-center gap-1">
-                      <Upload size={13} /> Import CSV/Excel
-                      <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
-                    </label>
+                    {/* Optional Lesson Chaining */}
+                    {lessonsInFolder.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-bold text-secondary mb-1">
+                          Chain to Next Lesson (Optional Sequence)
+                        </label>
+                        <select
+                          value={createNextLessonId}
+                          onChange={(e) => setCreateNextLessonId(e.target.value)}
+                          className="form-input"
+                        >
+                          <option value="">(None - Standalone Lesson)</option>
+                          {lessonsInFolder.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {modalMode === 'table' && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-border">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-secondary uppercase tracking-wider">
+                          Table Columns & Data
+                        </label>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {tableData.rows.length} rows × {tableData.headers.length} cols
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <label
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '0.76rem',
+                            padding: '4px 10px',
+                          }}
+                          title="Import from a CSV or Excel export"
+                        >
+                          <Upload size={13} /> Import CSV
+                          <input
+                            type="file"
+                            accept=".csv,.txt"
+                            onChange={handleFileUpload}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleAddColumn}
+                          className="btn btn-ghost btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 8px' }}
+                          title="Add column"
+                        >
+                          <Plus size={12} /> Col
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddRow}
+                          className="btn btn-ghost btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 8px' }}
+                          title="Add row"
+                        >
+                          <Plus size={12} /> Row
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetTable}
+                          className="btn btn-ghost btn-sm text-secondary"
+                          style={{ fontSize: '0.76rem', padding: '4px 8px' }}
+                          title="Reset table structure"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Interactive Table Grid */}
+                    <div className="knowledge-table-editor-container">
+                      <table className="knowledge-table-element">
+                        <thead className="knowledge-table-head">
+                          <tr>
+                            <th style={{ width: '38px', textAlign: 'center', padding: '8px 6px', color: 'var(--text-muted)' }}>
+                              #
+                            </th>
+                            {tableData.headers.map((h, cIdx) => (
+                              <th key={cIdx} style={{ padding: '6px 8px', minWidth: '130px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <input
+                                    type="text"
+                                    value={h}
+                                    onChange={(e) => handleHeaderChange(cIdx, e.target.value)}
+                                    className="knowledge-table-header-input"
+                                    placeholder={`Column ${cIdx + 1}`}
+                                  />
+                                  {tableData.headers.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteColumn(cIdx)}
+                                      className="btn-icon"
+                                      title="Delete column"
+                                      style={{ width: '18px', height: '18px', opacity: 0.5, color: '#EF4444' }}
+                                    >
+                                      <Trash2 size={11} />
+                                    </button>
+                                  )}
+                                </div>
+                              </th>
+                            ))}
+                            <th style={{ width: '32px', padding: '6px' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tableData.rows.map((row, rIdx) => (
+                            <tr key={rIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, padding: '6px 4px' }}>
+                                {rIdx + 1}
+                              </td>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx} style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="text"
+                                    value={cell}
+                                    onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
+                                    className="knowledge-table-cell-input"
+                                    placeholder="Enter data..."
+                                  />
+                                </td>
+                              ))}
+                              <td style={{ padding: '4px', textAlign: 'center' }}>
+                                {tableData.rows.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteRow(rIdx)}
+                                    className="btn-icon"
+                                    title="Delete row"
+                                    style={{ width: '20px', height: '20px', opacity: 0.45, color: '#EF4444' }}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddRow}
+                      className="btn btn-ghost btn-sm"
+                      style={{
+                        border: '1px dashed var(--border-color)',
+                        width: '100%',
+                        borderRadius: '8px',
+                        padding: '6px',
+                        fontSize: '0.78rem',
+                        color: 'var(--primary-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Plus size={13} /> Add Row
+                    </button>
                   </div>
-                  {renderTableContent(tableData)}
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Tags (comma-separated, e.g. dev, database, notes)"
+                    value={createTags}
+                    onChange={(e) => setCreateTags(e.target.value)}
+                    className="form-input"
+                  />
                 </div>
-              )}
 
-              <div>
-                <label className="block text-xs font-bold text-secondary mb-1">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  placeholder="Tags (comma-separated)"
-                  value={createTags}
-                  onChange={(e) => setCreateTags(e.target.value)}
-                  className="form-input"
-                />
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="checkbox"
+                    id="pinCheckbox"
+                    checked={createIsPinned}
+                    onChange={(e) => setCreateIsPinned(e.target.checked)}
+                  />
+                  <label htmlFor="pinCheckbox" className="text-xs font-semibold text-primary cursor-pointer">
+                    Pin this item to top of folder
+                  </label>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-1">
-                <input
-                  type="checkbox"
-                  id="pinCheckbox"
-                  checked={createIsPinned}
-                  onChange={(e) => setCreateIsPinned(e.target.checked)}
-                />
-                <label htmlFor="pinCheckbox" className="text-xs font-semibold text-primary cursor-pointer">
-                  Pin this item to top of folder
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-3">
+              {/* Modal Footer */}
+              <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={() => setModalMode(null)}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={submitting || !createTitle.trim()}>
                   {submitting ? 'Creating...' : 'Create in DB'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal (Folder, Lesson, or Table) */}
+      {editModalItem && (
+        <div
+          className="modal-backdrop"
+          style={{ zIndex: 9999 }}
+          onClick={() => setEditModalItem(null)}
+        >
+          <div
+            className="modal-card"
+            style={{
+              maxWidth: editModalItem.type === 'table' ? '820px' : '560px',
+              width: '100%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="modal-header">
+              <div className="flex items-center gap-2.5">
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background:
+                      editModalItem.type === 'folder'
+                        ? 'rgba(245, 158, 11, 0.16)'
+                        : editModalItem.type === 'table'
+                        ? 'rgba(16, 185, 129, 0.16)'
+                        : 'rgba(59, 130, 246, 0.16)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {editModalItem.type === 'folder' ? (
+                    <Folder size={20} color="#F59E0B" />
+                  ) : editModalItem.type === 'table' ? (
+                    <TableIcon size={20} color="#10B981" />
+                  ) : (
+                    <BookOpen size={20} color="#3B82F6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="modal-title text-base font-extrabold m-0">
+                    {editModalItem.type === 'folder'
+                      ? 'Edit Folder'
+                      : editModalItem.type === 'table'
+                      ? 'Edit Data Table'
+                      : 'Edit Knowledge Lesson'}
+                  </h3>
+                  <p className="text-xs text-secondary mt-0.5 m-0">
+                    Update title, details, tags, or structure.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditModalItem(null)}
+                className="btn-icon"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Edit Form */}
+            <form onSubmit={handleSaveEdit}>
+              <div className="modal-body flex flex-col gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    {editModalItem.type === 'folder'
+                      ? 'Folder Name *'
+                      : editModalItem.type === 'table'
+                      ? 'Table Name *'
+                      : 'Lesson Title *'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="form-input"
+                    placeholder="Enter title..."
+                  />
+                </div>
+
+                {editModalItem.type === 'lesson' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-secondary mb-1">
+                        Lesson Notes & Content *
+                      </label>
+                      <textarea
+                        rows={7}
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="form-textarea"
+                        placeholder="Write lesson notes, code samples, takeaways..."
+                      />
+                    </div>
+
+                    {lessonsInFolder.filter((l) => l.id !== editModalItem.id).length > 0 && (
+                      <div>
+                        <label className="block text-xs font-bold text-secondary mb-1">
+                          Chain to Next Lesson
+                        </label>
+                        <select
+                          value={editNextLessonId}
+                          onChange={(e) => setEditNextLessonId(e.target.value)}
+                          className="form-input"
+                        >
+                          <option value="">(None - Standalone Lesson)</option>
+                          {lessonsInFolder
+                            .filter((l) => l.id !== editModalItem.id)
+                            .map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.title}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {editModalItem.type === 'table' && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-border">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-secondary uppercase tracking-wider">
+                          Table Structure & Data
+                        </label>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {editTableData.rows.length} rows × {editTableData.headers.length} cols
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <label
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '0.76rem',
+                            padding: '4px 10px',
+                          }}
+                          title="Import from CSV file"
+                        >
+                          <Upload size={13} /> Import CSV
+                          <input
+                            type="file"
+                            accept=".csv,.txt"
+                            onChange={handleEditFileUpload}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleEditAddColumn}
+                          className="btn btn-ghost btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 8px' }}
+                          title="Add column"
+                        >
+                          <Plus size={12} /> Col
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleEditAddRow}
+                          className="btn btn-ghost btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 8px' }}
+                          title="Add row"
+                        >
+                          <Plus size={12} /> Row
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Table Editor Grid */}
+                    <div className="knowledge-table-editor-container">
+                      <table className="knowledge-table-element">
+                        <thead className="knowledge-table-head">
+                          <tr>
+                            <th style={{ width: '38px', textAlign: 'center', padding: '8px 6px', color: 'var(--text-muted)' }}>
+                              #
+                            </th>
+                            {editTableData.headers.map((h, cIdx) => (
+                              <th key={cIdx} style={{ padding: '6px 8px', minWidth: '130px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <input
+                                    type="text"
+                                    value={h}
+                                    onChange={(e) => handleEditHeaderChange(cIdx, e.target.value)}
+                                    className="knowledge-table-header-input"
+                                    placeholder={`Column ${cIdx + 1}`}
+                                  />
+                                  {editTableData.headers.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditDeleteColumn(cIdx)}
+                                      className="btn-icon"
+                                      title="Delete column"
+                                      style={{ width: '18px', height: '18px', opacity: 0.5, color: '#EF4444' }}
+                                    >
+                                      <Trash2 size={11} />
+                                    </button>
+                                  )}
+                                </div>
+                              </th>
+                            ))}
+                            <th style={{ width: '32px', padding: '6px' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {editTableData.rows.map((row, rIdx) => (
+                            <tr key={rIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, padding: '6px 4px' }}>
+                                {rIdx + 1}
+                              </td>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx} style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="text"
+                                    value={cell}
+                                    onChange={(e) => handleEditCellChange(rIdx, cIdx, e.target.value)}
+                                    className="knowledge-table-cell-input"
+                                    placeholder="Enter data..."
+                                  />
+                                </td>
+                              ))}
+                              <td style={{ padding: '4px', textAlign: 'center' }}>
+                                {editTableData.rows.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditDeleteRow(rIdx)}
+                                    className="btn-icon"
+                                    title="Delete row"
+                                    style={{ width: '20px', height: '20px', opacity: 0.45, color: '#EF4444' }}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleEditAddRow}
+                      className="btn btn-ghost btn-sm"
+                      style={{
+                        border: '1px dashed var(--border-color)',
+                        width: '100%',
+                        borderRadius: '8px',
+                        padding: '6px',
+                        fontSize: '0.78rem',
+                        color: 'var(--primary-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Plus size={13} /> Add Row
+                    </button>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Tags (comma-separated, e.g. dev, database, notes)"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="checkbox"
+                    id="editPinCheckbox"
+                    checked={editIsPinned}
+                    onChange={(e) => setEditIsPinned(e.target.checked)}
+                  />
+                  <label htmlFor="editPinCheckbox" className="text-xs font-semibold text-primary cursor-pointer">
+                    Pin this item to top of folder
+                  </label>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setEditModalItem(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={editSubmitting || !editTitle.trim()}>
+                  {editSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

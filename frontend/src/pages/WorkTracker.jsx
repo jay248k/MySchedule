@@ -22,24 +22,50 @@ import {
   TrendingUp,
   Award,
   Link2,
-  Briefcase
+  Briefcase,
+  Utensils,
+  PhoneCall,
+  Users,
+  PauseCircle,
+  Flag
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
 import '../styles/pages/worktracker.css';
 
-const REASON_ICONS = {
-  'Coffee / Tea Break': '☕',
-  'Lunch / Dinner Break': '🍱',
-  'Phone Call / Discussion': '📞',
-  'Team Meeting': '👥',
-  'Stepped Away / Personal': '🚶',
-  'Task Completed': '🎯',
-  'Switching Tasks': '🔀',
-  'Urgent Interruption': '⚠️',
-  'Finished for Today': '🛑',
-  'Finished Work': '✅',
-};
+function getReasonMeta(reason, isWork = false) {
+  if (isWork) {
+    return {
+      icon: <Briefcase size={15} color="#10B981" />,
+      bg: 'rgba(16, 185, 129, 0.14)',
+      color: '#10B981',
+      label: 'Focus Work Session'
+    };
+  }
+  const r = (reason || '').toLowerCase();
+  if (r.includes('coffee') || r.includes('tea')) {
+    return { icon: <Coffee size={15} color="#F59E0B" />, bg: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B', label: reason || 'Coffee Break' };
+  }
+  if (r.includes('lunch') || r.includes('dinner') || r.includes('meal')) {
+    return { icon: <Utensils size={15} color="#F97316" />, bg: 'rgba(249, 115, 22, 0.14)', color: '#F97316', label: reason || 'Meal Break' };
+  }
+  if (r.includes('phone') || r.includes('call') || r.includes('discussion')) {
+    return { icon: <PhoneCall size={15} color="#3B82F6" />, bg: 'rgba(59, 130, 246, 0.14)', color: '#3B82F6', label: reason || 'Phone Call' };
+  }
+  if (r.includes('meeting') || r.includes('team')) {
+    return { icon: <Users size={15} color="#8B5CF6" />, bg: 'rgba(139, 92, 246, 0.14)', color: '#8B5CF6', label: reason || 'Meeting' };
+  }
+  if (r.includes('personal') || r.includes('stepped') || r.includes('break')) {
+    return { icon: <PauseCircle size={15} color="#EC4899" />, bg: 'rgba(236, 72, 153, 0.14)', color: '#EC4899', label: reason || 'Personal Break' };
+  }
+  if (r.includes('completed') || r.includes('finished work')) {
+    return { icon: <CheckCircle2 size={15} color="#10B981" />, bg: 'rgba(16, 185, 129, 0.14)', color: '#10B981', label: reason || 'Task Completed' };
+  }
+  if (r.includes('today') || r.includes('finish')) {
+    return { icon: <Flag size={15} color="#6366F1" />, bg: 'rgba(99, 102, 241, 0.14)', color: '#6366F1', label: reason || 'Finished for Today' };
+  }
+  return { icon: <Clock size={15} color="#06B6D4" />, bg: 'rgba(6, 182, 212, 0.14)', color: '#06B6D4', label: reason || 'Intermission' };
+}
 
 export function WorkTracker() {
   const {
@@ -73,21 +99,27 @@ export function WorkTracker() {
   const isPaused = isToday && todayChain?.status === 'paused' && !isRunning;
   const isFinished = isToday && todayChain?.status === 'finished' && !isRunning;
 
+  // Filter sessions for currently active date
+  const dateSessions = workSessions.filter((s) => s.date === activeDate);
+  const totalRecordedForDate = dateSessions.reduce(
+    (acc, s) => acc + (Number(s.durationSeconds) || 0),
+    0
+  );
+
   // Active session or accumulated duration (derived from shared AppContext master ticker)
   let activeElapsedSeconds = 0;
   if (isRunning) {
-    activeElapsedSeconds = currentLiveWorkSeconds;
+    activeElapsedSeconds = Math.max(totalRecordedForDate, currentLiveWorkSeconds);
   } else if (isPaused) {
-    activeElapsedSeconds = todayChain.accumulatedWorkSeconds || 0;
+    activeElapsedSeconds = Math.max(totalRecordedForDate, todayChain?.accumulatedWorkSeconds || 0);
+  } else {
+    activeElapsedSeconds = totalRecordedForDate;
   }
 
   const activeHrs = Math.floor(activeElapsedSeconds / 3600);
   const activeMins = Math.floor((activeElapsedSeconds % 3600) / 60);
   const activeSecs = activeElapsedSeconds % 60;
   const activeTimerDisplay = `${String(activeHrs).padStart(2, '0')}:${String(activeMins).padStart(2, '0')}:${String(activeSecs).padStart(2, '0')}`;
-
-  // Filter sessions for currently active date
-  const dateSessions = workSessions.filter((s) => s.date === activeDate);
 
   // Today's tasks for association
   const dateTasks = tasks.filter((t) => t.date === activeDate);
@@ -111,10 +143,9 @@ export function WorkTracker() {
   const [editingSession, setEditingSession] = useState(null);
 
   // Metrics
-  const totalSecondsLogged = dateSessions.reduce(
-    (acc, s) => acc + (Number(s.durationSeconds) || 0),
-    0
-  ) + (isRunning && activeWorkSession?.date === activeDate ? activeElapsedSeconds : 0);
+  const totalSecondsLogged = isRunning && activeWorkSession?.date === activeDate
+    ? Math.max(totalRecordedForDate, currentLiveWorkSeconds)
+    : totalRecordedForDate;
 
   const totalHours = Math.floor(totalSecondsLogged / 3600);
   const totalMinutes = Math.floor((totalSecondsLogged % 3600) / 60);
@@ -406,7 +437,7 @@ export function WorkTracker() {
               id="btn-tracker-finish-day"
               className="btn text-xs py-1.5 px-3 font-bold bg-red-500/15 border border-red-500/45 text-red-300"
             >
-              🛑 Finish Day
+              <Square size={12} fill="currentColor" style={{ marginRight: 4 }} /> Finish Day
             </button>
           </div>
         </div>
@@ -488,7 +519,7 @@ export function WorkTracker() {
                   onClick={() => finishDayWorkSession(activeDate)}
                   className="btn text-xs py-1.5 px-3 font-bold bg-red-500/15 border border-red-500/40 text-red-500 rounded-md"
                 >
-                  🛑 Finish Day
+                  <Square size={12} fill="currentColor" style={{ marginRight: 4 }} /> Finish Day
                 </button>
               </>
             ) : (
@@ -515,7 +546,7 @@ export function WorkTracker() {
                 color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : 'var(--text-primary)',
               }}
             >
-              {isRunning || isPaused ? activeTimerDisplay : '00:00:00'}
+              {activeTimerDisplay}
             </div>
             <div className="text-xs text-secondary font-semibold">
               {isRunning ? (
@@ -527,6 +558,11 @@ export function WorkTracker() {
                 <div>
                   <div className="text-amber-500 font-extrabold text-xs">WORK PAUSED AT {todayChain.lastPausedTimeStr}</div>
                   <div className="text-xs">Frozen at {activeTimerDisplay} · Resumes upon click</div>
+                </div>
+              ) : totalRecordedForDate > 0 ? (
+                <div>
+                  <div className="text-blue-400 font-extrabold text-xs">TOTAL ACCUMULATED TODAY</div>
+                  <div className="text-xs">Holds at {activeTimerDisplay} · Starts from this time on click</div>
                 </div>
               ) : (
                 <div>
@@ -550,7 +586,7 @@ export function WorkTracker() {
               <select
                 value={selectedTaskId}
                 onChange={(e) => setSelectedTaskId(e.target.value)}
-                className="form-input text-xs h-7.5 min-w-[200px]"
+                className="worktracker-task-select"
               >
                 <option value="">General Work (No specific task)</option>
                 {dateTasks.map((t) => (
@@ -607,6 +643,7 @@ export function WorkTracker() {
                   const durHours = Math.floor(durMinutes / 60);
                   const remainMinutes = durMinutes % 60;
                   const durLabel = durHours > 0 ? `${durHours}h ${remainMinutes}m` : `${durMinutes}m`;
+                  const meta = getReasonMeta(node.reason, isWork);
 
                   return (
                     <div
@@ -614,13 +651,13 @@ export function WorkTracker() {
                       className={`worktracker-session-card ${!isWork ? 'is-gap' : ''}`}
                     >
                       <div className="worktracker-session-left">
-                        <div className={`worktracker-session-icon ${!isWork ? 'is-gap' : ''}`}>
-                          {isWork ? <Briefcase size={15} color="#10B981" /> : <Coffee size={15} color="#F59E0B" />}
+                        <div className="worktracker-session-icon" style={{ background: meta.bg }}>
+                          {meta.icon}
                         </div>
                         <div className="worktracker-session-details">
                           <div className="worktracker-session-title-row">
                             <span className="worktracker-session-title">
-                              {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason}`}
+                              {isWork ? (node.taskTitle || 'Focus Work Session') : `Break / Interruption: ${node.reason || 'Pause'}`}
                             </span>
                             <span className={`worktracker-session-badge ${isWork ? 'badge-green' : 'badge-amber'}`}>
                               {isWork ? 'Work Segment' : 'Intermission'}
@@ -629,7 +666,7 @@ export function WorkTracker() {
                           <div className="worktracker-session-meta">
                             <span>{node.startTime} – {node.endTime}</span>
                             {!isWork && node.remarks && node.remarks !== node.reason && (
-                              <span className="worktracker-session-notes"> · "{node.remarks}"</span>
+                              <span className="worktracker-session-notes">"{node.remarks}"</span>
                             )}
                           </div>
                         </div>
@@ -651,7 +688,7 @@ export function WorkTracker() {
                   const durHours = Math.floor(durMin / 60);
                   const remainMin = durMin % 60;
                   const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
-                  const icon = REASON_ICONS[session.stopReason] || '🛑';
+                  const meta = getReasonMeta(session.stopReason, false);
 
                   return (
                     <div
@@ -659,8 +696,8 @@ export function WorkTracker() {
                       className="worktracker-session-card"
                     >
                       <div className="worktracker-session-left">
-                        <div className="worktracker-session-icon">
-                          {icon}
+                        <div className="worktracker-session-icon" style={{ background: meta.bg }}>
+                          {meta.icon}
                         </div>
                         <div className="worktracker-session-details">
                           <div className="worktracker-session-title-row">
@@ -878,7 +915,7 @@ export function WorkTracker() {
                   <option value="Task Completed">🎯 Task Completed</option>
                   <option value="Switching Tasks">🔀 Switching Tasks</option>
                   <option value="Urgent Interruption">⚠️ Urgent Interruption</option>
-                  <option value="Finished for Today">🛑 Finished for Today</option>
+                  <option value="Finished for Today">Finished for Today</option>
                   <option value="Finished Work">✅ Finished Work</option>
                 </select>
               </div>

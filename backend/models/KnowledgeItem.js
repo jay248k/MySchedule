@@ -62,6 +62,12 @@ module.exports = (sequelize) => {
     {
       tableName: 'knowledge_items',
       timestamps: true,
+      indexes: [
+        { fields: ['parentId'] },
+        { fields: ['userId'] },
+        { fields: ['type'] },
+        { fields: ['isPinned'] },
+      ],
     }
   );
 

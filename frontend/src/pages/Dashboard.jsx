@@ -435,16 +435,16 @@ export function Dashboard() {
               boxShadow: '0 2px 10px rgba(37, 99, 235, 0.15)',
             }}
           >
-            <CalendarCheck2 size={22} strokeWidth={2.2} />
+            <CalendarCheck2 size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Total Tasks ({isToday ? 'Today' : formattedActiveDate})
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15 }}>
               {todayStats.total}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
               Scheduled for {isToday ? 'today' : formattedActiveDate}
             </div>
           </div>
@@ -458,19 +458,19 @@ export function Dashboard() {
               background: 'rgba(16, 185, 129, 0.12)',
               color: '#10B981',
               border: '1px solid rgba(16, 185, 129, 0.28)',
-              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.15)',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)',
             }}
           >
-            <CircleCheckBig size={22} strokeWidth={2.3} />
+            <CircleCheckBig size={18} strokeWidth={2.3} />
           </div>
           <div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Completed
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#10B981', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10B981', lineHeight: 1.15 }}>
               {todayStats.completed}
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#10B981', fontWeight: 600, marginTop: '1px' }}>
+            <div style={{ fontSize: '0.68rem', color: '#10B981', fontWeight: 600, marginTop: '1px' }}>
               {todayStats.percentage}% completion rate
             </div>
           </div>
@@ -484,19 +484,19 @@ export function Dashboard() {
               background: 'rgba(245, 158, 11, 0.12)',
               color: '#F59E0B',
               border: '1px solid rgba(245, 158, 11, 0.28)',
-              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
+              boxShadow: '0 2px 8px rgba(245, 158, 11, 0.12)',
             }}
           >
-            <Timer size={22} strokeWidth={2.2} />
+            <Timer size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Pending
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#F59E0B', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F59E0B', lineHeight: 1.15 }}>
               {todayStats.pending}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
               Awaiting completion
             </div>
           </div>
@@ -510,21 +510,21 @@ export function Dashboard() {
               background: 'rgba(239, 68, 68, 0.12)',
               color: '#EF4444',
               border: '1px solid rgba(239, 68, 68, 0.28)',
-              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.12)',
             }}
           >
-            <CircleAlert size={22} strokeWidth={2.2} />
+            <CircleAlert size={18} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Overdue
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#EF4444', lineHeight: 1.15 }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#EF4444', lineHeight: 1.15 }}>
               {todayStats.overdue}
             </div>
             <div
               style={{
-                fontSize: '0.72rem',
+                fontSize: '0.68rem',
                 color: todayStats.overdue > 0 ? '#EF4444' : 'var(--text-muted)',
                 fontWeight: todayStats.overdue > 0 ? 700 : 400,
                 marginTop: '1px',

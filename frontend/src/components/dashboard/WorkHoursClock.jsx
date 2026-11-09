@@ -14,24 +14,6 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
     currentLiveWorkSeconds = 0,
   } = useApp();
 
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-
-  // Clock hand rotations (in degrees)
-  const secondDeg = seconds * 6; // 360 / 60
-  const minuteDeg = minutes * 6 + seconds * 0.1;
-  const hourDeg = (hours % 12) * 30 + minutes * 0.5;
-
   const todayStr = getTodayDateString();
   const targetDate = selectedDate || todayStr;
 
@@ -49,10 +31,8 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
   // When active: shows live tracked session duration (synchronized lock-step across web & mobile)
   // When stopped: shows total recorded work time for today (or 00:00:00 if no work tracked yet)
   const displayTotalSeconds = isRunning
-    ? currentLiveWorkSeconds
-    : totalRecordedSeconds > 0
-    ? totalRecordedSeconds
-    : 0;
+    ? Math.max(totalRecordedSeconds, currentLiveWorkSeconds)
+    : totalRecordedSeconds;
 
   const displayHours = Math.floor(displayTotalSeconds / 3600);
   const displayMins = Math.floor((displayTotalSeconds % 3600) / 60);
@@ -61,11 +41,6 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
   const hrsStr = String(displayHours).padStart(2, '0');
   const minsStr = String(displayMins).padStart(2, '0');
   const secsStr = String(displaySecs).padStart(2, '0');
-
-  // Format 12-hour digital current time string
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const civilHours = hours % 12 || 12;
-  const digitalTimeStr = `${civilHours}:${String(minutes).padStart(2, '0')} ${period}`;
 
   return (
     <div
@@ -391,102 +366,6 @@ export function WorkHoursClock({ tasks = [], selectedDate }) {
           <span>Work Logs</span>
           <ExternalLink size={13} />
         </button>
-
-        {/* Compact Analog Clock Dial */}
-        <div
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            background: 'var(--card-bg)',
-            border: '2px solid var(--border-color)',
-            position: 'relative',
-            boxShadow: 'var(--shadow-sm)',
-            flexShrink: 0,
-            overflow: 'hidden',
-          }}
-          title={`Current Clock Time: ${digitalTimeStr}`}
-        >
-          {/* Tick marks */}
-          {[...Array(12)].map((_, i) => {
-            const rot = i * 30;
-            const isMain = i % 3 === 0;
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  top: '2px',
-                  left: '18px',
-                  width: isMain ? '1.5px' : '1px',
-                  height: isMain ? '3px' : '2px',
-                  background: isMain ? 'var(--text-secondary)' : 'var(--border-color)',
-                  transformOrigin: '1px 17px',
-                  transform: `rotate(${rot}deg)`,
-                }}
-              />
-            );
-          })}
-
-          {/* Hour Hand */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '10px',
-              left: '17.75px',
-              width: '2.5px',
-              height: '9px',
-              background: 'var(--primary-color, #3B82F6)',
-              borderRadius: '2px',
-              transformOrigin: 'bottom center',
-              transform: `rotate(${hourDeg}deg)`,
-            }}
-          />
-
-          {/* Minute Hand */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '8px',
-              left: '18.1px',
-              width: '1.8px',
-              height: '11px',
-              background: '#60A5FA',
-              borderRadius: '2px',
-              transformOrigin: 'bottom center',
-              transform: `rotate(${minuteDeg}deg)`,
-            }}
-          />
-
-          {/* Second Hand (Accurately sized to stay within the inner circle) */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '6px',
-              left: '18.4px',
-              width: '1.2px',
-              height: '13px',
-              background: '#EF4444',
-              borderRadius: '1px',
-              transformOrigin: 'bottom center',
-              transform: `rotate(${secondDeg}deg)`,
-            }}
-          />
-
-          {/* Center Pin */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '16.5px',
-              left: '16.5px',
-              width: '5px',
-              height: '5px',
-              borderRadius: '50%',
-              background: 'var(--text-primary)',
-              boxShadow: '0 0 2px rgba(0, 0, 0, 0.4)',
-            }}
-          />
-        </div>
       </div>
     </div>
   );

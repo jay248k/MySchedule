@@ -2,153 +2,213 @@ import { getTodayDateString, parseDate, formatTime } from './dateUtils';
 import { getEffectiveStatus } from './taskUtils';
 
 /**
- * Intelligent Lag & Risk Assessment Engine for MySchedule
- * Detects:
- *  1. Time Slot Lags (e.g. 7:00-8:00 task was scheduled but not worked on)
- *  2. Category Inactivity Lags (categories falling behind with 0 completions)
- *  3. Goal Milestone Lags (goals lagging in progress vs deadlines)
- *  4. Schedule Deviations & Missed Overdue Deliverables
- * Tracks:
- *  - Real-time Recovery Progress (0% to 100%)
- *  - Automatically marks flags as Recovered / Resolved when performance improves!
+ * Red Flag & Behavioral Lag Analytics Engine
+ *
+ * Core Principles:
+ * 1. Identifies repeated time slots missed across multiple dates (e.g. 10:00 - 11:00 missed across days).
+ * 2. Identifies categories and goals tasks repeatedly avoided/stalled.
+ * 3. Recovery marks are calculated 100% AUTOMATICALLY from tasks completed in those slots/categories
+ *    (e.g., missed 5 days -> requires 10 days of active completions in that slot to reach 100% full marks).
+ * 4. Zero manual resolution buttons — recovery strictly measures actual completed work.
+ * 5. Users can explicitly click "Avoid" to acknowledge or mark an avoidance pattern.
  */
 export function analyzeRedFlags({
   tasks = [],
   categories = [],
   goals = [],
   workSessions = [],
-  activeWorkSession = null,
+  avoidedIds = new Set(),
   targetDate = null,
 }) {
   const todayStr = getTodayDateString();
   const evalDate = targetDate || todayStr;
-  const isEvaluatingToday = evalDate === todayStr;
 
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const flags = [];
+  const slotFlags = [];
+  const categoryFlags = [];
+  const goalFlags = [];
 
   // =========================================================================
-  // 1. TIME SLOT LAGS (e.g. 7:00 to 8:00 task missed / not worked on)
+  // 1. REPEATEDLY MISSED TIME SLOTS
   // =========================================================================
-  const dayTasks = tasks.filter((t) => t.date === evalDate);
+  const slotGroups = new Map();
 
-  dayTasks.forEach((task) => {
-    if (task.startTime && task.endTime) {
-      const [sh, sm] = task.startTime.split(':').map(Number);
-      const [eh, em] = task.endTime.split(':').map(Number);
-      const startMin = sh * 60 + (sm || 0);
-      let endMin = eh * 60 + (em || 0);
-      if (endMin < startMin) endMin += 24 * 60;
+  tasks.forEach((task) => {
+    if (!task.startTime || !task.endTime) return;
+    const slotKey = `${task.startTime} - ${task.endTime}`;
+    if (!slotGroups.has(slotKey)) {
+      slotGroups.set(slotKey, []);
+    }
+    slotGroups.get(slotKey).push(task);
+  });
 
-      const slotPassed = !isEvaluatingToday || currentMinutes >= endMin;
-      const isCompleted = getEffectiveStatus(task) === 'completed';
-      const isOverdue = getEffectiveStatus(task) === 'overdue';
+  slotGroups.forEach((slotTasks, slotKey) => {
+    // Group by date
+    const dateMap = new Map();
+    slotTasks.forEach((t) => {
+      const d = t.date || evalDate;
+      if (!dateMap.has(d)) dateMap.set(d, []);
+      dateMap.get(d).push(t);
+    });
 
-      // Check if any work session was logged or is currently active for this task or slot
-      const hasSessionForTask = workSessions.some(
-        (s) => s.taskId === task.id || (s.date === evalDate && s.startTime && s.startTime === task.startTime)
+    const missedDates = [];
+    const completedDates = [];
+
+    dateMap.forEach((dayTasksInSlot, dateStr) => {
+      const hasCompleted = dayTasksInSlot.some(
+        (t) => getEffectiveStatus(t) === 'completed'
       );
-      const isActivelyTracking = Boolean(
-        activeWorkSession?.isRunning &&
-          (activeWorkSession?.taskId === task.id || activeWorkSession?.taskTitle === task.title)
-      );
-
-      // If slot has passed and task was not completed and no work session occurred
-      if (slotPassed && !isCompleted) {
-        // Recovery progress logic:
-        // - 100% if completed
-        // - 60% if actively tracking or work session logged
-        // - 30% if marked in progress
-        // - 0% if completely unaddressed
-        let recoveryProgress = 0;
-        let recoveryStatus = 'Lagging (Unresolved)';
-
-        if (isCompleted) {
-          recoveryProgress = 100;
-          recoveryStatus = 'Fully Recovered (Completed)';
-        } else if (isActivelyTracking) {
-          recoveryProgress = 65;
-          recoveryStatus = 'Recovering (Active Session Running)';
-        } else if (hasSessionForTask) {
-          recoveryProgress = 50;
-          recoveryStatus = 'Partial Recovery (Work Logged)';
-        } else if (task.status === 'in_progress') {
-          recoveryProgress = 30;
-          recoveryStatus = 'In Progress';
+      if (hasCompleted) {
+        completedDates.push(dateStr);
+      } else {
+        // Check if any work session took place for this slot
+        const hasSession = workSessions.some(
+          (s) => s.date === dateStr && s.startTime === dayTasksInSlot[0]?.startTime
+        );
+        if (hasSession) {
+          completedDates.push(dateStr);
+        } else {
+          missedDates.push(dateStr);
         }
-
-        const isRecovered = recoveryProgress >= 100;
-
-        flags.push({
-          id: `timeslot-${task.id}`,
-          type: 'time_slot',
-          typeLabel: 'Time Slot Lag',
-          title: `Slot ${task.startTime} - ${task.endTime} Missed`,
-          area: `${task.startTime} - ${task.endTime}`,
-          taskTitle: task.title,
-          taskId: task.id,
-          categoryId: task.categoryId,
-          categoryName: categories.find((c) => c.id === task.categoryId)?.name || 'General',
-          date: evalDate,
-          reason: `Task '${task.title}' was scheduled for ${task.startTime} - ${task.endTime} but was not completed in that slot.`,
-          severity: isOverdue ? 'critical' : 'high',
-          recoveryProgress,
-          recoveryStatus,
-          isRecovered,
-          actionRequired: isRecovered ? 'None - Resolved' : 'Complete task or log catch-up session',
-        });
       }
+    });
+
+    // Detect if this time slot is missed repeatedly (at least 1 missed date, prioritized if >= 2)
+    if (missedDates.length > 0) {
+      // Sort missed dates chronologically
+      missedDates.sort();
+      completedDates.sort();
+
+      // Calculation Rule:
+      // If missed N days (e.g. 5 days from 11th to 15th),
+      // requires N * 2 days (minimum 5, e.g. 10 days) of completed work in that slot to reach 100% full marks.
+      const requiredRecoveryDays = Math.max(5, missedDates.length * 2);
+      const completedDaysCount = completedDates.length;
+      const recoveryProgress = Math.min(
+        100,
+        Math.round((completedDaysCount / requiredRecoveryDays) * 100)
+      );
+      const isRecovered = recoveryProgress >= 100;
+
+      const flagId = `slot-${slotKey.replace(/\s+/g, '')}`;
+      const isAvoided = avoidedIds.has(flagId);
+
+      // Date range label
+      let dateRangeLabel = `${missedDates.length} date(s)`;
+      if (missedDates.length === 1) {
+        dateRangeLabel = missedDates[0];
+      } else if (missedDates.length <= 3) {
+        dateRangeLabel = missedDates.join(', ');
+      } else {
+        dateRangeLabel = `${missedDates[0]} to ${missedDates[missedDates.length - 1]} (${missedDates.length} dates)`;
+      }
+
+      slotFlags.push({
+        id: flagId,
+        type: 'time_slot',
+        typeLabel: 'Repeatedly Missed Time Slot',
+        title: `Slot ${slotKey} Missed Repeatedly`,
+        slotKey,
+        area: `Time Slot: ${slotKey}`,
+        missedDates,
+        dateRangeLabel,
+        completedDates,
+        requiredRecoveryDays,
+        completedDaysCount,
+        avoidedTasksCount: slotTasks.filter((t) => getEffectiveStatus(t) !== 'completed').length,
+        taskTitles: [...new Set(slotTasks.map((t) => t.title))].slice(0, 4),
+        severity: missedDates.length >= 3 ? 'critical' : 'high',
+        recoveryProgress,
+        recoveryStatus: isRecovered
+          ? '100% Full Marks (Recovered)'
+          : completedDaysCount > 0
+          ? `${recoveryProgress}% Recovering (${completedDaysCount}/${requiredRecoveryDays} days completed)`
+          : `0% Unrecovered (${completedDaysCount}/${requiredRecoveryDays} recovery days completed)`,
+        isRecovered,
+        isAvoided,
+        explanation: `Scheduled in ${slotKey} but missed across ${missedDates.length} date(s). Complete tasks in this slot to earn automatic recovery marks.`,
+      });
     }
   });
 
+  // Sort slots: unrecovered first, then by missed dates count descending
+  slotFlags.sort((a, b) => {
+    if (a.isRecovered !== b.isRecovered) return a.isRecovered ? 1 : -1;
+    return b.missedDates.length - a.missedDates.length;
+  });
+
   // =========================================================================
-  // 2. CATEGORY INACTIVITY LAGS (Categories neglected or stalled)
+  // 2. REPEATEDLY AVOIDED CATEGORIES
   // =========================================================================
   categories.forEach((cat) => {
     const catTasks = tasks.filter((t) => t.categoryId === cat.id);
     if (catTasks.length === 0) return;
 
-    const completedInCat = catTasks.filter((t) => getEffectiveStatus(t) === 'completed').length;
-    const overdueInCat = catTasks.filter((t) => getEffectiveStatus(t) === 'overdue').length;
-    const totalInCat = catTasks.length;
-    const completionRate = Math.round((completedInCat / totalInCat) * 100);
+    const overdueTasks = catTasks.filter((t) => getEffectiveStatus(t) === 'overdue');
+    const completedTasks = catTasks.filter((t) => getEffectiveStatus(t) === 'completed');
+    const incompleteTasks = catTasks.filter((t) => getEffectiveStatus(t) !== 'completed');
 
-    // If category has high overdue count or >3 tasks with 0% completion
-    if (overdueInCat >= 2 || (totalInCat >= 3 && completionRate < 25)) {
-      const isRecovered = overdueInCat === 0 && completionRate >= 60;
-      const recoveryProgress = isRecovered
-        ? 100
-        : Math.min(Math.round((completedInCat / (totalInCat || 1)) * 100), 95);
+    // Dates with missed/uncompleted tasks in this category
+    const missedDates = [...new Set(incompleteTasks.map((t) => t.date).filter(Boolean))].sort();
 
-      flags.push({
-        id: `cat-${cat.id}`,
+    // Trigger avoidance flag if overdue tasks exist or multiple missed dates
+    if (overdueTasks.length >= 1 || (incompleteTasks.length >= 2 && missedDates.length >= 2)) {
+      const requiredRecoveryDays = Math.max(5, missedDates.length * 2);
+      const completedDays = [...new Set(completedTasks.map((t) => t.date).filter(Boolean))];
+      const completionRatio = completedTasks.length / (catTasks.length || 1);
+      const recoveryProgress = Math.min(
+        100,
+        Math.round(
+          (completedDays.length / (requiredRecoveryDays || 1)) * 50 + completionRatio * 50
+        )
+      );
+      const isRecovered = recoveryProgress >= 100;
+
+      const flagId = `cat-${cat.id}`;
+      const isAvoided = avoidedIds.has(flagId);
+
+      let dateRangeLabel = `${missedDates.length} dates with pending tasks`;
+      if (missedDates.length > 0 && missedDates.length <= 3) {
+        dateRangeLabel = missedDates.join(', ');
+      } else if (missedDates.length > 3) {
+        dateRangeLabel = `${missedDates[0]} to ${missedDates[missedDates.length - 1]} (${missedDates.length} dates)`;
+      }
+
+      categoryFlags.push({
+        id: flagId,
         type: 'category',
-        typeLabel: 'Category Lag',
-        title: `Category '${cat.name}' Stalled`,
+        typeLabel: 'Repeatedly Avoided Category',
+        title: `Category '${cat.name}' Repeatedly Avoided`,
         area: `Category: ${cat.name}`,
         categoryId: cat.id,
         categoryName: cat.name,
-        date: evalDate,
-        reason: `${overdueInCat} overdue tasks and only ${completedInCat}/${totalInCat} completed (${completionRate}% velocity).`,
-        severity: overdueInCat >= 3 ? 'critical' : 'medium',
+        categoryColor: cat.color || '#F59E0B',
+        missedDates,
+        dateRangeLabel,
+        overdueCount: overdueTasks.length,
+        incompleteCount: incompleteTasks.length,
+        completedCount: completedTasks.length,
+        totalTasks: catTasks.length,
+        requiredRecoveryDays,
+        completedDaysCount: completedDays.length,
+        severity: overdueTasks.length >= 3 ? 'critical' : 'high',
         recoveryProgress,
         recoveryStatus: isRecovered
-          ? 'Fully Recovered'
-          : recoveryProgress > 40
-          ? 'Recovering Pace'
-          : 'Low Velocity / Neglected',
+          ? '100% Fully Recovered'
+          : `${recoveryProgress}% Recovering (${completedTasks.length}/${catTasks.length} tasks completed)`,
         isRecovered,
-        actionRequired: isRecovered
-          ? 'Velocity healthy'
-          : `Clear ${overdueInCat} overdue task(s) in ${cat.name}`,
+        isAvoided,
+        explanation: `${incompleteTasks.length} task(s) avoided across ${missedDates.length} dates. Completing tasks in ${cat.name} automatically increases recovery marks.`,
       });
     }
   });
 
+  categoryFlags.sort((a, b) => {
+    if (a.isRecovered !== b.isRecovered) return a.isRecovered ? 1 : -1;
+    return b.overdueCount - a.overdueCount;
+  });
+
   // =========================================================================
-  // 3. GOAL PROGRESSION LAGS (Goals lagging behind schedule)
+  // 3. REPEATEDLY AVOIDED GOALS
   // =========================================================================
   goals.forEach((goal) => {
     if (goal.status === 'completed') return;
@@ -156,70 +216,80 @@ export function analyzeRedFlags({
     const progress = Number(goal.progress) || 0;
     const targetDateObj = goal.targetDate ? parseDate(goal.targetDate) : null;
     let daysRemaining = null;
-    let isUrgent = false;
+    let isStalled = false;
 
     if (targetDateObj) {
       const diffMs = targetDateObj - new Date();
       daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      if (daysRemaining <= 7 && progress < 60) isUrgent = true;
-      if (daysRemaining < 0 && progress < 100) isUrgent = true;
+      if (daysRemaining <= 10 && progress < 50) isStalled = true;
+      if (daysRemaining < 0 && progress < 100) isStalled = true;
+    } else if (progress === 0) {
+      isStalled = true;
     }
 
-    if (isUrgent || (progress === 0 && goal.createdAt)) {
-      const isRecovered = progress >= 100 || goal.status === 'completed';
-      const recoveryProgress = Math.min(progress, 100);
+    if (isStalled) {
+      const isRecovered = progress >= 100;
+      const recoveryProgress = Math.min(100, Math.round(progress));
 
-      flags.push({
-        id: `goal-${goal.id}`,
+      const flagId = `goal-${goal.id}`;
+      const isAvoided = avoidedIds.has(flagId);
+
+      goalFlags.push({
+        id: flagId,
         type: 'goal',
-        typeLabel: 'Goal Lag',
-        title: `Goal '${goal.title}' Behind Schedule`,
+        typeLabel: 'Repeatedly Avoided Goal',
+        title: `Goal '${goal.title}' Stalled & Avoided`,
         area: `Goal: ${goal.title}`,
         goalId: goal.id,
-        date: evalDate,
-        reason:
-          daysRemaining !== null && daysRemaining < 0
-            ? `Past deadline by ${Math.abs(daysRemaining)} days with only ${progress}% progress achieved.`
-            : daysRemaining !== null
-            ? `Only ${daysRemaining} day(s) left until target date with ${progress}% completion.`
-            : `Goal has 0% progress recorded.`,
+        goalTitle: goal.title,
+        progress,
+        daysRemaining,
         severity: daysRemaining !== null && daysRemaining < 0 ? 'critical' : 'high',
         recoveryProgress,
         recoveryStatus: isRecovered
-          ? 'Goal Milestone Achieved'
-          : recoveryProgress > 50
-          ? 'Catching Up'
-          : 'Off Track',
+          ? '100% Goal Completed'
+          : `${recoveryProgress}% Milestone Progress`,
         isRecovered,
-        actionRequired: isRecovered
-          ? 'Goal completed'
-          : 'Advance key milestones or log progress update',
+        isAvoided,
+        explanation:
+          daysRemaining !== null && daysRemaining < 0
+            ? `Past target deadline by ${Math.abs(daysRemaining)} days with progress frozen at ${progress}%.`
+            : daysRemaining !== null
+            ? `Only ${daysRemaining} days left with progress stalled at ${progress}%.`
+            : `Goal has 0% progress recorded.`,
       });
     }
   });
 
-  // Separate into active lags vs safely recovered
-  const activeFlags = flags.filter((f) => !f.isRecovered);
-  const recoveredFlags = flags.filter((f) => f.isRecovered);
+  goalFlags.sort((a, b) => a.recoveryProgress - b.recoveryProgress);
 
-  // Overall health score (100 = flawless, 0 = severe lags)
-  const penalty = activeFlags.reduce((acc, f) => {
-    if (f.severity === 'critical') return acc + 25;
-    if (f.severity === 'high') return acc + 15;
-    return acc + 8;
-  }, 0);
-  const healthScore = Math.max(0, 100 - penalty);
+  // Consolidated Flags
+  const allFlags = [...slotFlags, ...categoryFlags, ...goalFlags];
+  const activeFlags = allFlags.filter((f) => !f.isRecovered);
+  const recoveredFlags = allFlags.filter((f) => f.isRecovered);
+  const avoidedList = allFlags.filter((f) => f.isAvoided);
+
+  // Behavioral Schedule Health Score (0 - 100)
+  const totalCount = allFlags.length;
+  const avgRecovery =
+    totalCount > 0
+      ? Math.round(allFlags.reduce((sum, f) => sum + f.recoveryProgress, 0) / totalCount)
+      : 100;
 
   return {
-    allFlags: flags,
+    allFlags,
+    slotFlags,
+    categoryFlags,
+    goalFlags,
     activeFlags,
     recoveredFlags,
-    totalCount: flags.length,
+    avoidedList,
+    totalCount,
+    avgRecovery,
     activeCount: activeFlags.length,
     recoveredCount: recoveredFlags.length,
-    healthScore,
+    avoidedCount: avoidedList.length,
     criticalCount: activeFlags.filter((f) => f.severity === 'critical').length,
     highCount: activeFlags.filter((f) => f.severity === 'high').length,
-    mediumCount: activeFlags.filter((f) => f.severity === 'medium').length,
   };
 }

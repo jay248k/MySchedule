@@ -13,9 +13,14 @@ import {
   ArrowRight,
   AlertCircle,
   Sparkles,
+  BookOpen,
+  Table as TableIcon,
+  Lightbulb,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatDate } from '../../utils/dateUtils';
+import { api } from '../../services/api';
+import { cookieUtils } from '../../utils/cookieUtils';
 
 const RECENT_SEARCHES_KEY = 'myschedule_recent_searches';
 const RECENTLY_VIEWED_KEY = 'myschedule_recently_viewed';
@@ -64,12 +69,14 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   } = useApp();
 
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'tasks', 'goals', 'categories', 'events', 'reports'
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'tasks', 'knowledge', 'thoughts', 'goals', 'categories', 'events', 'reports'
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [knowledgeItems, setKnowledgeItems] = useState([]);
+  const [thoughtsList, setThoughtsList] = useState([]);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
-      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-      return saved ? JSON.parse(saved) : INITIAL_RECENT_SEARCHES;
+      const saved = cookieUtils.getJSON(RECENT_SEARCHES_KEY);
+      return saved ? saved : INITIAL_RECENT_SEARCHES;
     } catch {
       return INITIAL_RECENT_SEARCHES;
     }
@@ -77,8 +84,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
   const [recentlyViewed, setRecentlyViewed] = useState(() => {
     try {
-      const saved = localStorage.getItem(RECENTLY_VIEWED_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const saved = cookieUtils.getJSON(RECENTLY_VIEWED_KEY);
+      return saved ? saved : [];
     } catch {
       return [];
     }
@@ -87,7 +94,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   const inputRef = useRef(null);
   const resultsListRef = useRef(null);
 
-  // Focus input when modal opens
+  // Focus input and fetch knowledge & thoughts when modal opens
   useEffect(() => {
     if (isOpen) {
       setQuery('');
@@ -95,6 +102,22 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       setTimeout(() => {
         if (inputRef.current) inputRef.current.focus();
       }, 50);
+
+      // Pre-fetch knowledge items
+      api.getKnowledgeItems().then((res) => {
+        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        setKnowledgeItems(list);
+      }).catch((err) => {
+        console.warn('Search: failed to load knowledge items', err);
+      });
+
+      // Pre-fetch thoughts
+      api.getThoughts().then((res) => {
+        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        setThoughtsList(list);
+      }).catch((err) => {
+        console.warn('Search: failed to load thoughts', err);
+      });
     }
   }, [isOpen]);
 
@@ -106,7 +129,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
       const updated = [trimmed, ...filtered].slice(0, 6);
       try {
-        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+        cookieUtils.setJSON(RECENT_SEARCHES_KEY, updated, 30);
       } catch (err) {
         console.error(err);
       }
@@ -119,7 +142,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     setRecentSearches((prev) => {
       const updated = prev.filter((item) => item !== text);
       try {
-        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+        cookieUtils.setJSON(RECENT_SEARCHES_KEY, updated, 30);
       } catch (err) {
         console.error(err);
       }
@@ -130,7 +153,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
   const clearAllRecentSearches = () => {
     setRecentSearches([]);
     try {
-      localStorage.removeItem(RECENT_SEARCHES_KEY);
+      cookieUtils.remove(RECENT_SEARCHES_KEY);
     } catch (err) {
       console.error(err);
     }
@@ -142,7 +165,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       const filtered = prev.filter((i) => !(i.id === item.id && i.type === item.type));
       const updated = [item, ...filtered].slice(0, 5);
       try {
-        localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(updated));
+        cookieUtils.setJSON(RECENTLY_VIEWED_KEY, updated, 30);
       } catch (err) {
         console.error(err);
       }
@@ -163,6 +186,52 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       return titleMatch || descMatch || catMatch;
     });
   }, [tasks, categories, q]);
+
+  const matchingKnowledge = useMemo(() => {
+    if (!knowledgeItems || knowledgeItems.length === 0) return [];
+    if (!q) return knowledgeItems.slice(0, 6);
+
+    const isFolderKeyword = q === 'folder' || q === 'folders' || q === 'directory' || q === 'dir';
+    const isLessonKeyword = q === 'lesson' || q === 'lessons' || q === 'note' || q === 'notes' || q === 'guide';
+    const isTableKeyword = q === 'table' || q === 'tables' || q === 'sheet' || q === 'sheets' || q === 'csv' || q === 'excel';
+
+    return knowledgeItems.filter((k) => {
+      const titleMatch = (k.title || '').toLowerCase().includes(q);
+      const contentMatch = (k.content || '').toLowerCase().includes(q);
+      const tagsMatch = (k.tags || '').toLowerCase().includes(q);
+      const typeMatch = (k.type || '').toLowerCase().includes(q);
+
+      const keywordMatch =
+        (isFolderKeyword && k.type === 'folder') ||
+        (isLessonKeyword && k.type === 'lesson') ||
+        (isTableKeyword && k.type === 'table');
+
+      return titleMatch || contentMatch || tagsMatch || typeMatch || keywordMatch;
+    });
+  }, [knowledgeItems, q]);
+
+  const matchingThoughts = useMemo(() => {
+    if (!thoughtsList || thoughtsList.length === 0) return [];
+    if (!q) return thoughtsList.slice(0, 6);
+
+    const isThoughtKeyword =
+      q === 'thought' ||
+      q === 'thoughts' ||
+      q === 'quote' ||
+      q === 'quotes' ||
+      q === 'motivation' ||
+      q === 'discipline' ||
+      q === 'mindset';
+
+    return thoughtsList.filter((t) => {
+      const textMatch = (t.text || '').toLowerCase().includes(q);
+      const authorMatch = (t.author || '').toLowerCase().includes(q);
+      const catMatch = (t.category || '').toLowerCase().includes(q);
+      const tagsMatch = (t.tags || '').toLowerCase().includes(q);
+
+      return textMatch || authorMatch || catMatch || tagsMatch || isThoughtKeyword;
+    });
+  }, [thoughtsList, q]);
 
   const matchingGoals = useMemo(() => {
     if (!q) return goals.slice(0, 4);
@@ -222,6 +291,58 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           icon: CheckSquare,
           iconColor: '#10B981',
           iconBg: 'rgba(16, 185, 129, 0.14)',
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'knowledge') {
+      matchingKnowledge.forEach((k) => {
+        const isFolder = k.type === 'folder';
+        const isTable = k.type === 'table';
+        const itemType = isFolder ? 'knowledge-folder' : isTable ? 'knowledge-table' : 'knowledge-lesson';
+        const IconComp = isFolder ? Folder : isTable ? TableIcon : BookOpen;
+        const iconColor = isFolder ? '#F59E0B' : isTable ? '#10B981' : '#3B82F6';
+        const iconBg = isFolder
+          ? 'rgba(245, 158, 11, 0.14)'
+          : isTable
+          ? 'rgba(16, 185, 129, 0.14)'
+          : 'rgba(59, 130, 246, 0.14)';
+        const badgeText = isFolder ? 'Folder' : isTable ? 'Table' : 'Lesson';
+
+        list.push({
+          id: `knowledge-${k.id}`,
+          type: itemType,
+          raw: k,
+          title: k.title,
+          subtitle: isFolder
+            ? `Folder ${k.tags ? `• ${k.tags}` : '• Knowledge Base'}`
+            : isTable
+            ? `Table ${k.tags ? `• ${k.tags}` : '• Structured data'}`
+            : `Lesson ${k.tags ? `• ${k.tags}` : '• Knowledge lesson'}`,
+          badgeText,
+          badgeColor: iconColor,
+          badgeBg: iconBg,
+          icon: IconComp,
+          iconColor,
+          iconBg,
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'thoughts') {
+      matchingThoughts.forEach((t) => {
+        list.push({
+          id: `thought-${t.id}`,
+          type: 'thought',
+          raw: t,
+          title: t.text ? (t.text.length > 75 ? `${t.text.slice(0, 75)}...` : t.text) : 'Motivational Thought',
+          subtitle: `— ${t.author || 'Anonymous'} ${t.category ? `• ${t.category}` : ''}`,
+          badgeText: t.category || 'Thought',
+          badgeColor: '#A855F7',
+          badgeBg: 'rgba(168, 85, 247, 0.14)',
+          icon: Lightbulb,
+          iconColor: '#A855F7',
+          iconBg: 'rgba(168, 85, 247, 0.14)',
         });
       });
     }
@@ -299,7 +420,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     }
 
     return list;
-  }, [activeTab, matchingTasks, matchingGoals, matchingCategories, matchingEvents, matchingReports, categories]);
+  }, [activeTab, matchingTasks, matchingKnowledge, matchingThoughts, matchingGoals, matchingCategories, matchingEvents, matchingReports, categories]);
 
   // Handle Item Execution (Open/Navigate)
   const handleSelectItem = (item) => {
@@ -331,11 +452,17 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       openModal('event', item.raw);
     } else if (item.type === 'report') {
       navigate('/reports');
+    } else if (item.type === 'knowledge-folder') {
+      navigate(`/knowledge?folder=${item.raw.id}`);
+    } else if (item.type === 'knowledge-lesson' || item.type === 'knowledge-table') {
+      navigate(`/knowledge?item=${item.raw.id}`);
+    } else if (item.type === 'thought') {
+      navigate(`/thoughts?thought=${item.raw.id}`);
     }
   };
 
   // Keyboard navigation
-  const tabsList = ['all', 'tasks', 'goals', 'categories', 'events', 'reports'];
+  const tabsList = ['all', 'tasks', 'knowledge', 'thoughts', 'goals', 'categories', 'events', 'reports'];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -392,6 +519,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
   const totalResults =
     matchingTasks.length +
+    matchingKnowledge.length +
+    matchingThoughts.length +
     matchingGoals.length +
     matchingCategories.length +
     matchingEvents.length +
@@ -431,7 +560,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search tasks, goals, categories, reports, meetings..."
+            placeholder="Search tasks, lessons, folders, thoughts, goals, reports..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -483,7 +612,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Filter Category Tabs (All, Tasks, Goals, Categories, Events, Reports) */}
+        {/* Filter Category Tabs (All, Tasks, Lessons & Folders, Thoughts, Goals, Categories, Events, Reports) */}
         <div
           style={{
             display: 'flex',
@@ -498,6 +627,8 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           {[
             { id: 'all', label: `All (${totalResults})` },
             { id: 'tasks', label: `Tasks (${matchingTasks.length})` },
+            { id: 'knowledge', label: `Lessons & Folders (${matchingKnowledge.length})` },
+            { id: 'thoughts', label: `Thoughts (${matchingThoughts.length})` },
             { id: 'goals', label: `Goals (${matchingGoals.length})` },
             { id: 'categories', label: `Categories (${matchingCategories.length})` },
             { id: 'events', label: `Events (${matchingEvents.length})` },

@@ -526,7 +526,7 @@ export function MonthlySchedule() {
               </div>
             </div>
 
-            <div className="calendar-side-panel-body" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+            <div className="calendar-side-panel-body" style={{ maxHeight: 'none', overflow: 'visible' }}>
               {dateScheduleView === 'timeline' ? (
                 <DailyScheduleTimeline
                   date={selectedDate}

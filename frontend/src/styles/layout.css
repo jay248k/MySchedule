@@ -254,8 +254,8 @@
 .mobile-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 36, 84, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: none;
   z-index: 90;
 }
 
@@ -535,12 +535,14 @@
   }
 }
 
-.modal-backdrop {
+.modal-backdrop,
+.modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 36, 84, 0.45);
-  backdrop-filter: blur(4px);
-  z-index: 110;
+  background: rgba(11, 36, 84, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -592,12 +594,12 @@
   border-bottom-right-radius: var(--radius-xl);
 }
 
-/* Toasts */
+/* Toasts - Positioned Top Right with Supreme Layering */
 .toast-container {
   position: fixed;
-  bottom: 24px;
+  top: 24px;
   right: 24px;
-  z-index: 150;
+  z-index: 999999;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1030,11 +1032,11 @@ body.calendar-fullpage-active .page-container,
 
 .calendar-side-panel-body {
   padding: 16px 18px;
-  overflow-y: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 560px;
+  max-height: none;
 }
 
 /* Responsive adjustments */
@@ -1509,9 +1511,9 @@ body.calendar-fullpage-active .page-container,
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 20px 24px;
-  border-radius: var(--radius-lg);
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
@@ -1520,17 +1522,17 @@ body.calendar-fullpage-active .page-container,
 .daily-date-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .date-input-picker {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--page-bg);
   color: var(--text-primary);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   outline: none;
@@ -1640,25 +1642,25 @@ body.calendar-fullpage-active .page-container,
 }
 
 .history-report-card {
-  padding: 18px 20px;
-  border-radius: var(--radius-lg);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background: var(--card-bg);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   position: relative;
 }
 
 .history-report-card:hover {
   border-color: var(--primary-color);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .history-report-card.selected {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color), var(--shadow-md);
+  box-shadow: 0 0 0 1px var(--primary-color), var(--shadow-sm);
 }
 
 /* Archive View Controls */
@@ -1667,9 +1669,9 @@ body.calendar-fullpage-active .page-container,
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -1896,76 +1898,74 @@ body.calendar-fullpage-active .page-container,
 
 /* Enhanced Dashboard Stat Cards */
 .dash-stat-card {
-  padding: 12px 16px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-radius: var(--radius-lg);
+  gap: 10px;
+  border-radius: var(--radius-md, 10px);
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
 
 .dash-stat-card:hover {
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .dash-stat-card:hover .dash-stat-icon-wrapper {
-  transform: scale(1.08) translateY(-1px);
+  transform: scale(1.05);
 }
 
 .dash-stat-card.total {
-  border-top: 3px solid #2563EB;
+  border-top: 2.5px solid #2563EB;
 }
 
 .dash-stat-card.total:hover {
   border-top-color: #3B82F6;
-  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.16);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.14);
 }
 
 .dash-stat-card.completed {
-  border-top: 3px solid #10B981;
+  border-top: 2.5px solid #10B981;
 }
 
 .dash-stat-card.completed:hover {
   border-top-color: #34D399;
-  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.16);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.14);
 }
 
 .dash-stat-card.pending {
-  border-top: 3px solid #F59E0B;
+  border-top: 2.5px solid #F59E0B;
 }
 
 .dash-stat-card.pending:hover {
   border-top-color: #FBBF24;
-  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.16);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.14);
 }
 
 .dash-stat-card.overdue {
-  border-top: 3px solid #EF4444;
+  border-top: 2.5px solid #EF4444;
 }
 
 .dash-stat-card.overdue:hover {
   border-top-color: #F87171;
-  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.16);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.14);
 }
 
 .dash-stat-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  transition: transform 0.2s ease;
   border: 1px solid transparent;
 }
 

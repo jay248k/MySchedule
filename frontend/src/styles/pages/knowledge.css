@@ -10,16 +10,16 @@
 
 /* Banner */
 .knowledge-banner-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
-  border: 1.5px solid rgba(16, 185, 129, 0.25);
-  border-radius: 16px;
-  padding: 20px 24px;
-  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(37, 99, 235, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
 }
 
 .knowledge-badge-emerald {
@@ -34,7 +34,7 @@
 
 .knowledge-banner-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text-primary);
   display: flex;
@@ -44,7 +44,7 @@
 
 .knowledge-banner-subtitle {
   margin: 4px 0 0;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
 }
 
@@ -259,14 +259,56 @@
   border: 1.5px solid rgba(245, 158, 11, 0.5);
 }
 
-.knowledge-tile-pin-btn {
+.knowledge-tile-actions {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  padding: 1px 3px;
+  border: 1px solid var(--border-color);
+  opacity: 0.85;
+  transition: all 0.15s ease;
+  z-index: 5;
+}
+
+.knowledge-pc-tile:hover .knowledge-tile-actions {
+  opacity: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  border-color: var(--primary-color);
+}
+
+.knowledge-tile-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 2px;
+  padding: 2.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: all 0.12s ease;
+}
+
+.knowledge-tile-btn:hover {
+  background: var(--card-hover);
+  color: var(--text-primary);
+}
+
+.knowledge-tile-btn.edit:hover {
+  color: var(--primary-color);
+}
+
+.knowledge-tile-btn.delete:hover {
+  color: #EF4444;
+}
+
+.knowledge-tile-btn.pinned {
+  color: #F59E0B;
 }
 
 .knowledge-tile-icon-box {
@@ -493,5 +535,52 @@
   padding: 10px 14px;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+/* Table Editor in Creation Modal */
+.knowledge-table-editor-container {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.knowledge-table-header-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.knowledge-table-header-input:hover,
+.knowledge-table-header-input:focus {
+  background: var(--card-bg);
+  border-color: var(--primary-color);
+}
+
+.knowledge-table-cell-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.knowledge-table-cell-input:hover,
+.knowledge-table-cell-input:focus {
+  background: var(--card-bg);
+  border-color: var(--primary-color);
 }
 

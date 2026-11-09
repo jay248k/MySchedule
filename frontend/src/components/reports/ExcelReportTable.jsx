@@ -13,21 +13,21 @@ import {
   Sparkles,
   ArrowLeft,
   ArrowRight,
-  ArrowUp,
-  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Calendar,
+  CalendarDays,
+  X,
   Move,
   RotateCcw,
+  TrendingUp,
 } from 'lucide-react';
 import { exportToExcel, exportToWord, exportToPdf } from '../../utils/reportExporter';
 
 /**
- * Excel-Style Production Data Grid Component
- * Features:
- *  - Excel-style grid aesthetics (crisp cell borders, sticky headers, alternate shading)
- *  - Full multi-format downloads (Excel .xlsx, Word .doc, Printable PDF)
- *  - Instant search & filter
- *  - Sortable columns
- *  - Custom cell renderers (progress bars, status pills, category tags)
+ * Excel-Style Production Data Grid Component with Full-Page Flow, Pagination & Date/Month Filters
  */
 export function ExcelReportTable({
   title = 'Report Table',
@@ -44,10 +44,41 @@ export function ExcelReportTable({
   const [sortKey, setSortKey] = useState(defaultSortKey || (columns[0]?.key || ''));
   const [sortAsc, setSortAsc] = useState(true);
 
-  // Scrollable container ref & mouse pan state
+  // Month & Skip Date Filters (Default: Current Month)
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = String(now.getMonth() + 1).padStart(2, '0');
+  const defaultCurrentMonth = `${currentYear}-${currentMonthNum}`;
+
+  const [monthFilter, setMonthFilter] = useState(defaultCurrentMonth);
+  const [skipDate, setSkipDate] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSummary, setShowSummary] = useState(true);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [jumpPageInput, setJumpPageInput] = useState('');
+
+  // Generate dynamic list of last 12 months for selector
+  const monthOptions = useMemo(() => {
+    const list = [];
+    const dateCursor = new Date();
+    for (let i = 0; i < 12; i++) {
+      const y = dateCursor.getFullYear();
+      const m = String(dateCursor.getMonth() + 1).padStart(2, '0');
+      const val = `${y}-${m}`;
+      const label = dateCursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      list.push({ val, label: i === 0 ? `Current Month (${label})` : label });
+      dateCursor.setMonth(dateCursor.getMonth() - 1);
+    }
+    return list;
+  }, []);
+
+  // Scrollable container ref & mouse pan state (horizontal navigation for wide columns)
   const tableContainerRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
-  const [panOrigin, setPanOrigin] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const [panOrigin, setPanOrigin] = useState({ x: 0, scrollLeft: 0 });
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return; // Only primary mouse button
@@ -58,9 +89,7 @@ export function ExcelReportTable({
     setIsPanning(true);
     setPanOrigin({
       x: e.clientX,
-      y: e.clientY,
       scrollLeft: tableContainerRef.current.scrollLeft,
-      scrollTop: tableContainerRef.current.scrollTop,
     });
   };
 
@@ -68,9 +97,7 @@ export function ExcelReportTable({
     if (!isPanning || !tableContainerRef.current) return;
     e.preventDefault();
     const deltaX = e.clientX - panOrigin.x;
-    const deltaY = e.clientY - panOrigin.y;
     tableContainerRef.current.scrollLeft = panOrigin.scrollLeft - deltaX;
-    tableContainerRef.current.scrollTop = panOrigin.scrollTop - deltaY;
   };
 
   const handleMouseUp = () => {
@@ -79,7 +106,6 @@ export function ExcelReportTable({
     }
   };
 
-  // Window-level mouseup listener to catch releases outside the container
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       setIsPanning(false);
@@ -88,12 +114,11 @@ export function ExcelReportTable({
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
 
-  // Arrow scroll functions (horizontal and vertical)
-  const scrollTable = (dx, dy) => {
+  // Horizontal scroll controls
+  const scrollTable = (dx) => {
     if (!tableContainerRef.current) return;
     tableContainerRef.current.scrollBy({
       left: dx,
-      top: dy,
       behavior: 'smooth',
     });
   };
@@ -102,7 +127,6 @@ export function ExcelReportTable({
     if (!tableContainerRef.current) return;
     tableContainerRef.current.scrollTo({
       left: 0,
-      top: 0,
       behavior: 'smooth',
     });
   };
@@ -121,7 +145,23 @@ export function ExcelReportTable({
   const processedData = useMemo(() => {
     let result = [...data];
 
-    // Search filter across all string values
+    // 1. Skip / Jump to Specific Date Filter
+    if (skipDate) {
+      result = result.filter((row) => {
+        const rowDate = row.date || row.completedAt || row.scheduledDate || row.createdAt || '';
+        return String(rowDate).startsWith(skipDate);
+      });
+    } else if (monthFilter && monthFilter !== 'all') {
+      // 2. Default Month Filter
+      result = result.filter((row) => {
+        const rowDate = row.date || row.completedAt || row.scheduledDate || row.createdAt;
+        // Keep rows with no specific date (e.g. general goals)
+        if (!rowDate) return true;
+        return String(rowDate).startsWith(monthFilter);
+      });
+    }
+
+    // 3. Search query filter across all string values
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter((row) =>
@@ -131,7 +171,7 @@ export function ExcelReportTable({
       );
     }
 
-    // Sort
+    // 4. Sort
     if (sortKey) {
       result.sort((a, b) => {
         let valA = a[sortKey];
@@ -151,9 +191,39 @@ export function ExcelReportTable({
     }
 
     return result;
-  }, [data, searchQuery, sortKey, sortAsc]);
+  }, [data, skipDate, monthFilter, searchQuery, sortKey, sortAsc]);
 
-  // Export handlers
+  // Reset pagination to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, monthFilter, skipDate, pageSize]);
+
+  // Pagination calculations
+  const totalRecords = processedData.length;
+  const isAll = pageSize === 'all';
+  const sizeNum = isAll ? totalRecords : Number(pageSize);
+  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalRecords / sizeNum));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedRows = useMemo(() => {
+    if (isAll) return processedData;
+    const start = (safePage - 1) * sizeNum;
+    return processedData.slice(start, start + sizeNum);
+  }, [processedData, safePage, sizeNum, isAll]);
+
+  const startIndex = totalRecords === 0 ? 0 : (safePage - 1) * sizeNum + 1;
+  const endIndex = isAll ? totalRecords : Math.min(safePage * sizeNum, totalRecords);
+
+  const handleJumpToPage = (e) => {
+    e.preventDefault();
+    const p = parseInt(jumpPageInput, 10);
+    if (!isNaN(p) && p >= 1 && p <= totalPages) {
+      setCurrentPage(p);
+      setJumpPageInput('');
+    }
+  };
+
+  // Export handlers (exports all matching processed records)
   const handleExportExcel = () => {
     const exportRows = processedData.map((row) => {
       const obj = {};
@@ -194,14 +264,14 @@ export function ExcelReportTable({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. Summary Cards Ribbon */}
-      {summaryCards && summaryCards.length > 0 && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* 1. Summary Cards Ribbon (Ultra-Compact & Collapsible) */}
+      {showSummary && summaryCards && summaryCards.length > 0 && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))`,
-            gap: '12px',
+            gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`,
+            gap: '8px',
           }}
         >
           {summaryCards.map((c, i) => (
@@ -209,21 +279,22 @@ export function ExcelReportTable({
               key={i}
               className="card"
               style={{
-                padding: '14px 18px',
-                borderLeft: `4px solid ${c.color || 'var(--primary-color)'}`,
+                padding: '6px 10px',
+                borderLeft: `3px solid ${c.color || 'var(--primary-color)'}`,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
+                gap: '1px',
+                borderRadius: '6px',
               }}
             >
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                 {c.label}
               </span>
-              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: c.color || 'var(--text-primary)' }}>
+              <span style={{ fontSize: '1.15rem', fontWeight: 900, color: c.color || 'var(--text-primary)', lineHeight: 1.1 }}>
                 {c.value}
               </span>
               {c.subtext && (
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
                   {c.subtext}
                 </span>
               )}
@@ -232,33 +303,106 @@ export function ExcelReportTable({
         </div>
       )}
 
-      {/* 2. Top Action Bar: Search & Export Buttons */}
+      {/* 2. Top Action Bar: Search, Filter Toggle Button, Summary Toggle & Export */}
       <div
         className="card"
         style={{
-          padding: '14px 18px',
+          padding: '6px 10px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '8px',
           background: 'var(--card-bg)',
-          borderRadius: 'var(--radius-lg)',
+          borderRadius: 'var(--radius-md)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+          {/* Toggle Summary Cards Button */}
+          {summaryCards && summaryCards.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowSummary(!showSummary)}
+              className={`btn btn-sm ${showSummary ? 'btn-ghost' : 'btn-secondary'}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+              }}
+              title={showSummary ? 'Hide summary KPI cards' : 'Show summary KPI cards'}
+            >
+              <TrendingUp size={12} />
+              <span>{showSummary ? 'Hide Stats' : 'Stats'}</span>
+            </button>
+          )}
+
+          {/* Toggle Filters Button */}
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-secondary'}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              padding: '4px 8px',
+              borderRadius: '6px',
+            }}
+          >
+            <Filter size={12} />
+            <span>{showFilters ? 'Hide Filters' : 'Filters'}</span>
+            {(monthFilter !== 'all' || skipDate) && (
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: showFilters ? '#FFFFFF' : '#10B981',
+                }}
+              />
+            )}
+          </button>
+
+          {/* Active Filter Pill when collapsed */}
+          {!showFilters && (monthFilter !== 'all' || skipDate) && (
+            <span
+              style={{
+                fontSize: '0.74rem',
+                color: 'var(--text-secondary)',
+                background: 'var(--page-bg)',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <Calendar size={12} color="var(--primary-color)" />
+              {skipDate ? `Date: ${skipDate}` : `Month: ${monthFilter}`}
+            </span>
+          )}
+
+          {/* Search Input */}
           <div
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: '360px',
+              maxWidth: '240px',
             }}
           >
             <Search
-              size={15}
+              size={13}
               style={{
                 position: 'absolute',
-                left: '12px',
+                left: '9px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-muted)',
@@ -266,28 +410,25 @@ export function ExcelReportTable({
             />
             <input
               type="text"
-              placeholder="Search spreadsheet records..."
+              placeholder="Search records..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '8px 12px 8px 34px',
-                borderRadius: '8px',
+                padding: '5px 10px 5px 28px',
+                borderRadius: '7px',
                 border: '1px solid var(--border-color)',
                 background: 'var(--page-bg)',
                 color: 'var(--text-primary)',
-                fontSize: '0.84rem',
+                fontSize: '0.78rem',
                 outline: 'none',
               }}
             />
           </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Showing <strong>{processedData.length}</strong> of {data.length} records
-          </span>
         </div>
 
         {/* Export Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <button
             type="button"
             className="btn btn-sm btn-ghost"
@@ -295,18 +436,17 @@ export function ExcelReportTable({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.82rem',
+              gap: '5px',
+              fontSize: '0.78rem',
               fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: '7px',
+              border: '1px solid var(--border-color)',
               color: '#10B981',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              background: 'rgba(16, 185, 129, 0.08)',
-              padding: '6px 14px',
             }}
-            title="Download formatted Excel Spreadsheet (.xlsx)"
           >
-            <FileSpreadsheet size={15} />
-            Excel (.xlsx)
+            <FileSpreadsheet size={13} />
+            Excel
           </button>
 
           <button
@@ -316,18 +456,17 @@ export function ExcelReportTable({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.82rem',
+              gap: '5px',
+              fontSize: '0.78rem',
               fontWeight: 700,
-              color: '#2563EB',
-              border: '1px solid rgba(37, 99, 235, 0.3)',
-              background: 'rgba(37, 99, 235, 0.08)',
-              padding: '6px 14px',
+              padding: '4px 10px',
+              borderRadius: '7px',
+              border: '1px solid var(--border-color)',
+              color: '#3B82F6',
             }}
-            title="Download formatted Word Document (.doc)"
           >
-            <FileText size={15} />
-            Word (.doc)
+            <FileText size={13} />
+            Word
           </button>
 
           <button
@@ -337,23 +476,136 @@ export function ExcelReportTable({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.82rem',
+              gap: '5px',
+              fontSize: '0.78rem',
               fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: '7px',
+              border: '1px solid var(--border-color)',
               color: '#EF4444',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              background: 'rgba(239, 68, 68, 0.08)',
-              padding: '6px 14px',
             }}
-            title="Print or Save as PDF"
           >
-            <Printer size={15} />
-            PDF / Print
+            <Printer size={13} />
+            PDF
           </button>
         </div>
       </div>
 
-      {/* 3. Excel Spreadsheet Data Table with Arrow & Drag-to-Pan Navigation */}
+      {/* 2b. Collapsible Filter Tray (Month Filter & Skip Date) */}
+      {showFilters && (
+        <div
+          className="card"
+          style={{
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            flexWrap: 'wrap',
+            background: 'var(--page-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            animation: 'fadeIn 0.15s ease',
+          }}
+        >
+          {/* Default Month Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={14} color="var(--primary-color)" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Month:</span>
+            <select
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                setSkipDate('');
+              }}
+              style={{
+                padding: '5px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {monthOptions.map((opt) => (
+                <option key={opt.val} value={opt.val}>
+                  {opt.label}
+                </option>
+              ))}
+              <option value="all">All Months (Full History)</option>
+            </select>
+          </div>
+
+          {/* Skip / Jump to Specific Date */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <CalendarDays size={14} color="#10B981" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Skip Date:</span>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="date"
+                value={skipDate}
+                onChange={(e) => setSkipDate(e.target.value)}
+                title="Skip to specific date"
+                placeholder="Skip to date..."
+                style={{
+                  padding: '5px 24px 5px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--card-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.78rem',
+                  outline: 'none',
+                }}
+              />
+              {skipDate && (
+                <button
+                  type="button"
+                  onClick={() => setSkipDate('')}
+                  title="Clear date filter"
+                  style={{
+                    position: 'absolute',
+                    right: '5px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {(monthFilter !== defaultCurrentMonth || skipDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setMonthFilter(defaultCurrentMonth);
+                setSkipDate('');
+              }}
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--primary-color)',
+                cursor: 'pointer',
+                fontWeight: 700,
+                background: 'none',
+                border: 'none',
+                textDecoration: 'underline',
+              }}
+            >
+              Reset to Current Month
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 3. Full-Page Data Grid (No Fixed-Box Scroll) */}
       <div
         className="card"
         style={{
@@ -365,7 +617,7 @@ export function ExcelReportTable({
           boxShadow: 'var(--shadow-md)',
         }}
       >
-        {/* Navigation Toolbar: Pan Tip + Arrow Navigation Controls */}
+        {/* Navigation Toolbar: Pan Tip + Horizontal Scroll Controls */}
         <div
           style={{
             display: 'flex',
@@ -383,7 +635,7 @@ export function ExcelReportTable({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Move size={14} color="var(--primary-color)" />
             <span>
-              <strong>Pan & Scroll:</strong> Hold left-click & drag anywhere to scroll, or use the arrow controls:
+              <strong>Table Navigation:</strong> Drag to pan horizontally, or use column scroll controls:
             </span>
           </div>
 
@@ -392,7 +644,7 @@ export function ExcelReportTable({
             <button
               type="button"
               className="btn btn-sm btn-ghost"
-              onClick={() => scrollTable(-240, 0)}
+              onClick={() => scrollTable(-240)}
               title="Scroll Left"
               style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
@@ -404,7 +656,7 @@ export function ExcelReportTable({
             <button
               type="button"
               className="btn btn-sm btn-ghost"
-              onClick={() => scrollTable(240, 0)}
+              onClick={() => scrollTable(240)}
               title="Scroll Right"
               style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
@@ -412,36 +664,12 @@ export function ExcelReportTable({
               <ArrowRight size={13} />
             </button>
 
-            {/* Up */}
-            <button
-              type="button"
-              className="btn btn-sm btn-ghost"
-              onClick={() => scrollTable(0, -180)}
-              title="Scroll Up"
-              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
-            >
-              <ArrowUp size={13} />
-              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Up</span>
-            </button>
-
-            {/* Down */}
-            <button
-              type="button"
-              className="btn btn-sm btn-ghost"
-              onClick={() => scrollTable(0, 180)}
-              title="Scroll Down"
-              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
-            >
-              <ArrowDown size={13} />
-              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Down</span>
-            </button>
-
             {/* Reset */}
             <button
               type="button"
               className="btn btn-sm btn-ghost"
               onClick={resetTableScroll}
-              title="Reset to Top-Left"
+              title="Reset Table Position"
               style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
               <RotateCcw size={12} />
@@ -450,6 +678,7 @@ export function ExcelReportTable({
           </div>
         </div>
 
+        {/* FULL PAGE TABLE: overflowY is visible so rows expand naturally without inner box scroll */}
         <div
           ref={tableContainerRef}
           onMouseDown={handleMouseDown}
@@ -457,8 +686,7 @@ export function ExcelReportTable({
           onMouseUp={handleMouseUp}
           style={{
             overflowX: 'auto',
-            overflowY: 'auto',
-            maxHeight: '680px',
+            overflowY: 'visible',
             cursor: isPanning ? 'grabbing' : 'grab',
             userSelect: isPanning ? 'none' : 'auto',
           }}
@@ -519,7 +747,7 @@ export function ExcelReportTable({
               </tr>
             </thead>
             <tbody>
-              {processedData.length === 0 ? (
+              {paginatedRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length + 1}
@@ -530,67 +758,260 @@ export function ExcelReportTable({
                       fontSize: '0.9rem',
                     }}
                   >
-                    No matching records found.
+                    No matching records found for the selected month/date.
                   </td>
                 </tr>
               ) : (
-                processedData.map((row, idx) => (
-                  <tr
-                    key={row.id || idx}
-                    onClick={() => onRowClick && onRowClick(row)}
-                    style={{
-                      borderBottom: '1px solid var(--border-color)',
-                      background:
-                        idx % 2 === 0
-                          ? 'transparent'
-                          : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))',
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(23, 105, 255, 0.06))';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        idx % 2 === 0
-                          ? 'transparent'
-                          : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))';
-                    }}
-                  >
-                    <td
+                paginatedRows.map((row, idx) => {
+                  const rowNum = isAll ? idx + 1 : (safePage - 1) * sizeNum + idx + 1;
+                  return (
+                    <tr
+                      key={row.id || idx}
+                      onClick={() => onRowClick && onRowClick(row)}
                       style={{
-                        padding: '10px 12px',
-                        textAlign: 'center',
-                        color: 'var(--text-muted)',
-                        fontSize: '0.74rem',
-                        borderRight: '1px solid var(--border-color)',
-                        background: 'rgba(0, 0, 0, 0.05)',
+                        borderBottom: '1px solid var(--border-color)',
+                        background:
+                          idx % 2 === 0
+                            ? 'transparent'
+                            : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))',
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        transition: 'background 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(23, 105, 255, 0.06))';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          idx % 2 === 0
+                            ? 'transparent'
+                            : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))';
                       }}
                     >
-                      {idx + 1}
-                    </td>
-                    {columns.map((col) => {
-                      const val = row[col.key];
-                      return (
-                        <td
-                          key={col.key}
-                          style={{
-                            padding: '10px 14px',
-                            borderRight: '1px solid var(--border-color)',
-                            color: 'var(--text-primary)',
-                            whiteSpace: col.wrap ? 'normal' : 'nowrap',
-                            maxWidth: col.maxWidth || 'auto',
-                          }}
-                        >
-                          {col.render ? col.render(val, row) : val !== undefined && val !== null ? String(val) : '-'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                      <td
+                        style={{
+                          padding: '10px 12px',
+                          textAlign: 'center',
+                          color: 'var(--text-muted)',
+                          fontSize: '0.74rem',
+                          borderRight: '1px solid var(--border-color)',
+                          background: 'rgba(0, 0, 0, 0.05)',
+                        }}
+                      >
+                        {rowNum}
+                      </td>
+                      {columns.map((col) => {
+                        const val = row[col.key];
+                        return (
+                          <td
+                            key={col.key}
+                            style={{
+                              padding: '10px 14px',
+                              borderRight: '1px solid var(--border-color)',
+                              color: 'var(--text-primary)',
+                              whiteSpace: col.wrap ? 'normal' : 'nowrap',
+                              maxWidth: col.maxWidth || 'auto',
+                            }}
+                          >
+                            {col.render ? col.render(val, row) : val !== undefined && val !== null ? String(val) : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* 4. Full Pagination Controls Bar */}
+        <div
+          style={{
+            padding: '12px 18px',
+            background: 'var(--page-bg)',
+            borderTop: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '14px',
+            fontSize: '0.82rem',
+          }}
+        >
+          {/* Left: Summary + Rows per page */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Showing <strong>{startIndex}</strong> to <strong>{endIndex}</strong> of <strong>{totalRecords}</strong> records
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>Per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--card-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Right: Page Navigation & Jump */}
+          {!isAll && totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* First Page */}
+              <button
+                type="button"
+                className="btn-icon"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage(1)}
+                title="First Page"
+                style={{
+                  padding: '5px',
+                  opacity: safePage <= 1 ? 0.35 : 1,
+                  cursor: safePage <= 1 ? 'not-allowed' : 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                }}
+              >
+                <ChevronsLeft size={14} />
+              </button>
+
+              {/* Previous Page */}
+              <button
+                type="button"
+                className="btn-icon"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                title="Previous Page"
+                style={{
+                  padding: '5px',
+                  opacity: safePage <= 1 ? 0.35 : 1,
+                  cursor: safePage <= 1 ? 'not-allowed' : 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                }}
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {/* Page Number Chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pNum;
+                  if (totalPages <= 5) {
+                    pNum = i + 1;
+                  } else if (safePage <= 3) {
+                    pNum = i + 1;
+                  } else if (safePage >= totalPages - 2) {
+                    pNum = totalPages - 4 + i;
+                  } else {
+                    pNum = safePage - 2 + i;
+                  }
+
+                  const isActive = pNum === safePage;
+                  return (
+                    <button
+                      key={pNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pNum)}
+                      style={{
+                        minWidth: '28px',
+                        height: '28px',
+                        padding: '0 6px',
+                        borderRadius: '6px',
+                        border: isActive ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+                        background: isActive ? 'var(--primary-color)' : 'var(--card-bg)',
+                        color: isActive ? '#FFFFFF' : 'var(--text-primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: isActive ? 800 : 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {pNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Next Page */}
+              <button
+                type="button"
+                className="btn-icon"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                title="Next Page"
+                style={{
+                  padding: '5px',
+                  opacity: safePage >= totalPages ? 0.35 : 1,
+                  cursor: safePage >= totalPages ? 'not-allowed' : 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                }}
+              >
+                <ChevronRight size={14} />
+              </button>
+
+              {/* Last Page */}
+              <button
+                type="button"
+                className="btn-icon"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                title="Last Page"
+                style={{
+                  padding: '5px',
+                  opacity: safePage >= totalPages ? 0.35 : 1,
+                  cursor: safePage >= totalPages ? 'not-allowed' : 'pointer',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                }}
+              >
+                <ChevronsRight size={14} />
+              </button>
+
+              {/* Jump to page form */}
+              <form onSubmit={handleJumpToPage} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>Page:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  placeholder={String(safePage)}
+                  value={jumpPageInput}
+                  onChange={(e) => setJumpPageInput(e.target.value)}
+                  style={{
+                    width: '44px',
+                    height: '28px',
+                    padding: '2px 4px',
+                    textAlign: 'center',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.78rem',
+                    outline: 'none',
+                  }}
+                />
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

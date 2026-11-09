@@ -1,7 +1,18 @@
 import axios from 'axios';
 import { cookieUtils, purgeLegacyLocalStorage } from '../utils/cookieUtils';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://myschedule-w52y.onrender.com/api';
+// Smart Base URL resolver: on localhost, prioritize local backend on port 5000 for instant response
+const resolveApiBaseUrl = () => {
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ) {
+    return 'http://localhost:5000/api';
+  }
+  return import.meta.env.VITE_API_URL || 'https://myschedule-w52y.onrender.com/api';
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 /**
  * Custom Axios client configured for MySchedule API
@@ -15,26 +26,17 @@ export const apiClient = axios.create({
 });
 
 /**
- * Request Interceptor: Attach JWT bearer token from Cookies (not localStorage)
+ * Request Interceptor: Attach JWT bearer token strictly from Cookies (NO localStorage)
  */
 apiClient.interceptors.request.use(
   (config) => {
-    // 1. Primary: Retrieve token from Cookie
-    let token =
+    // Purge any accidental localStorage
+    purgeLegacyLocalStorage();
+
+    // Primary: Retrieve token strictly from Cookie
+    const token =
       cookieUtils.get('myschedule_auth_token') ||
       cookieUtils.get('my_schedule_auth_token');
-
-    // 2. Migration fallback: If found in legacy localStorage, migrate to Cookie and purge
-    if (!token && typeof window !== 'undefined' && window.localStorage) {
-      const legacyToken =
-        localStorage.getItem('my_schedule_auth_token') ||
-        localStorage.getItem('myschedule_auth_token');
-      if (legacyToken) {
-        token = legacyToken;
-        cookieUtils.set('myschedule_auth_token', token, 30);
-        purgeLegacyLocalStorage();
-      }
-    }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

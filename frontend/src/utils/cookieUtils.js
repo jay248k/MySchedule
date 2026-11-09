@@ -49,6 +49,21 @@ export const cookieUtils = {
   },
 
   /**
+   * Clear all application cookies
+   */
+  clearAll() {
+    if (typeof document === 'undefined') return;
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      const eqPos = c.indexOf('=');
+      const name = eqPos > -1 ? c.substring(0, eqPos).trim() : c.trim();
+      if (name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+      }
+    }
+  },
+
+  /**
    * Retrieve and parse a JSON cookie
    */
   getJSON(name) {
@@ -78,34 +93,14 @@ export const cookieUtils = {
 };
 
 /**
- * Clean up legacy unusual static data dumped into Chrome localStorage
+ * Completely purge browser localStorage so that all data lives exclusively in cookies / Neon DB
  */
 export function purgeLegacyLocalStorage() {
   if (typeof window === 'undefined' || !window.localStorage) return;
 
-  const legacyKeysToRemove = [
-    'my_schedule_tasks',
-    'my_schedule_categories',
-    'my_schedule_events',
-    'my_schedule_goals',
-    'my_schedule_settings',
-    'my_schedule_notifications',
-    'my_schedule_user',
-    'my_schedule_daily_reports',
-    'my_schedule_work_sessions',
-    'my_schedule_active_work_session',
-    'my_schedule_deviations',
-    'my_schedule_work_requests',
-    'my_schedule_habits',
-    'my_schedule_import_history',
-    'my_schedule_work_chain',
-  ];
-
   try {
-    legacyKeysToRemove.forEach((key) => {
-      window.localStorage.removeItem(key);
-    });
+    window.localStorage.clear();
   } catch (err) {
-    console.warn('[Storage] Could not clear legacy localStorage keys:', err);
+    console.warn('[Storage] Could not clear localStorage:', err);
   }
 }

@@ -1,477 +1,437 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import {
-  Flag,
-  AlertTriangle,
   Clock,
   Target,
   Tags,
   CheckCircle2,
-  Play,
-  RotateCcw,
+  AlertTriangle,
+  EyeOff,
+  Check,
   Sparkles,
+  ShieldAlert,
   Calendar,
-  FileSpreadsheet,
-  FileText,
-  Printer,
-  TrendingUp,
-  Activity,
   Layers,
+  TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getTodayDateString, formatDate } from '../utils/dateUtils';
 import { analyzeRedFlags } from '../utils/redFlagEngine';
-import { ExcelReportTable } from '../components/reports/ExcelReportTable';
-import { ProgressBar } from '../components/common/ProgressRing';
+import { cookieUtils } from '../utils/cookieUtils';
 import '../styles/pages/redflags.css';
 
+const AVOIDED_STORAGE_KEY = 'myschedule_avoided_redflags';
+
 export function RedFlagPage() {
-  const navigate = useNavigate();
   const {
     tasks = [],
     categories = [],
     goals = [],
     workSessions = [],
-    activeWorkSession,
-    startWorkSession,
-    toggleTaskComplete,
-    openModal,
     selectedDate,
-    setSelectedDate,
     showToast,
   } = useApp();
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
-  const isToday = activeDate === todayStr;
 
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'recovered', 'report'
+  // Active filter tab: 'all' | 'slots' | 'categories' | 'goals' | 'avoided'
+  const [activeTab, setActiveTab] = useState('all');
 
-  // Run real-time lag detection engine
-  const analysis = analyzeRedFlags({
-    tasks,
-    categories,
-    goals,
-    workSessions,
-    activeWorkSession,
-    targetDate: activeDate,
+  // Avoided IDs stored exclusively in Cookies (NO localStorage)
+  const [avoidedIds, setAvoidedIds] = useState(() => {
+    try {
+      const saved = cookieUtils.getJSON(AVOIDED_STORAGE_KEY);
+      return new Set(Array.isArray(saved) ? saved : []);
+    } catch {
+      return new Set();
+    }
   });
 
+  // Toggle Avoid button handler
+  const handleToggleAvoid = (flagId) => {
+    setAvoidedIds((prev) => {
+      const next = new Set(prev);
+      const isCurrentlyAvoided = next.has(flagId);
+
+      if (isCurrentlyAvoided) {
+        next.delete(flagId);
+        showToast({
+          type: 'info',
+          title: 'Avoidance Removed',
+          message: 'This pattern is no longer marked as avoided.',
+        });
+      } else {
+        next.add(flagId);
+        showToast({
+          type: 'warning',
+          title: 'Marked as Avoided',
+          message: 'Flag marked as an acknowledged/deliberate avoidance pattern.',
+        });
+      }
+
+      // Persist strictly to cookies
+      cookieUtils.setJSON(AVOIDED_STORAGE_KEY, Array.from(next), 365);
+      return next;
+    });
+  };
+
+  // Run behavioral lag analysis engine
+  const analysis = useMemo(() => {
+    return analyzeRedFlags({
+      tasks,
+      categories,
+      goals,
+      workSessions,
+      avoidedIds,
+      targetDate: activeDate,
+    });
+  }, [tasks, categories, goals, workSessions, avoidedIds, activeDate]);
+
   const {
-    activeFlags,
-    recoveredFlags,
     allFlags,
-    healthScore,
-    criticalCount,
-    highCount,
+    slotFlags,
+    categoryFlags,
+    goalFlags,
+    avoidedList,
+    totalCount,
+    avgRecovery,
+    avoidedCount,
   } = analysis;
 
-  // Handle Recovery Actions
-  const handleStartCatchUp = (flag) => {
-    if (flag.taskId) {
-      startWorkSession({
-        taskId: flag.taskId,
-        taskTitle: flag.taskTitle,
-        categoryId: flag.categoryId,
-        categoryName: flag.categoryName,
-      });
-      showToast({
-        type: 'info',
-        title: 'Work Session Started',
-        message: `Tracking recovery work for: ${flag.taskTitle}`,
-      });
-      navigate('/work-tracker');
-    } else {
-      navigate('/work-tracker');
+  // Filter flags based on active tab
+  const displayedFlags = useMemo(() => {
+    switch (activeTab) {
+      case 'slots':
+        return slotFlags;
+      case 'categories':
+        return categoryFlags;
+      case 'goals':
+        return goalFlags;
+      case 'avoided':
+        return avoidedList;
+      case 'all':
+      default:
+        return allFlags;
     }
-  };
+  }, [activeTab, allFlags, slotFlags, categoryFlags, goalFlags, avoidedList]);
 
-  const handleResolveTask = (flag) => {
-    if (flag.taskId) {
-      toggleTaskComplete(flag.taskId);
-      showToast({
-        type: 'success',
-        title: 'Task Marked Completed',
-        message: `Lag resolved! ${flag.taskTitle} reached 100% recovery.`,
-      });
-    }
-  };
-
-  // Excel-style columns for Red Flag Report
-  const redFlagColumns = [
-    {
-      key: 'typeLabel',
-      label: 'Lag Type',
-      width: '140px',
-      render: (val, row) => (
-        <span
-          className="inline-flex items-center gap-1 text-xs font-extrabold py-0.5 px-2 rounded"
-          style={{
-            background:
-              row.type === 'time_slot'
-                ? 'rgba(239, 68, 68, 0.14)'
-                : row.type === 'category'
-                ? 'rgba(245, 158, 11, 0.14)'
-                : 'rgba(59, 130, 246, 0.14)',
-            color:
-              row.type === 'time_slot'
-                ? '#EF4444'
-                : row.type === 'category'
-                ? '#F59E0B'
-                : '#3B82F6',
-          }}
-        >
-          {row.type === 'time_slot' ? <Clock size={11} /> : row.type === 'category' ? <Tags size={11} /> : <Target size={11} />}
-          {val}
-        </span>
-      ),
-    },
-    {
-      key: 'title',
-      label: 'Flag Title & Area',
-      render: (val, row) => (
-        <div>
-          <div className="font-bold text-primary">{val}</div>
-          <div className="text-xs text-muted mt-0.5">
-            {row.area}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'reason',
-      label: 'Detected Lag Reason',
-      wrap: true,
-      maxWidth: '380px',
-      render: (val) => (
-        <span className="text-xs text-secondary">
-          {val}
-        </span>
-      ),
-    },
-    {
-      key: 'severity',
-      label: 'Severity',
-      width: '100px',
-      render: (val) => {
-        const isCritical = val === 'critical';
-        return (
-          <span
-            className="py-0.5 px-2 rounded-full text-xs font-extrabold uppercase"
-            style={{
-              background: isCritical ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-              color: isCritical ? '#EF4444' : '#F59E0B',
-              border: isCritical ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)',
-            }}
-          >
-            {val}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'recoveryProgress',
-      label: 'Recovery Progress',
-      width: '180px',
-      render: (val, row) => (
-        <div className="flex flex-col gap-1 min-w-[140px]">
-          <div className="flex justify-between text-xs">
-            <span style={{ fontWeight: 700, color: val >= 100 ? '#10B981' : val > 0 ? '#38BDF8' : '#EF4444' }}>
-              {val}% {row.isRecovered ? 'Recovered' : val > 0 ? 'In Progress' : 'Unaddressed'}
-            </span>
-          </div>
-          <ProgressBar progress={val} color={val >= 100 ? '#10B981' : val > 0 ? '#38BDF8' : '#EF4444'} />
-        </div>
-      ),
-    },
-    {
-      key: 'actionRequired',
-      label: 'Recommended Action',
-      render: (val) => (
-        <span className="text-xs text-secondary">
-          {val}
-        </span>
-      ),
-    },
-  ];
+  // Find most repeatedly missed slot
+  const topMissedSlot = slotFlags.length > 0 ? slotFlags[0] : null;
 
   return (
     <div className="redflag-page-container">
-      {/* 1. Module Header */}
+      {/* 1. Header Card */}
       <div className="redflag-header-card card">
         <div>
           <div className="flex items-center gap-2">
             <span className="redflag-title-tag">
-              <Flag size={11} fill="#FFFFFF" />
-              Red Flag Diagnostic Hub
+              <ShieldAlert size={12} />
+              Behavioral Avoidance Hub
             </span>
             <span className="text-xs text-muted">
-              Lag Detection · Recovery Management
+              Schedule Lag & Repeated Misses
             </span>
           </div>
           <h1 className="redflag-header-title">
             Red Flag & Schedule Lag Analytics
           </h1>
           <p className="redflag-header-sub">
-            Detect inactive time slots, stalled categories, and lagging goals. Track recovery progress in real time.
+            Shows repeatedly missed time slots, stalled categories, and avoided goals.
+            Recovery marks calculate <strong>100% automatically from your completed tasks</strong> in those slots — without manual buttons.
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
+        {/* Filter Tabs */}
         <div className="redflag-tabs-wrap">
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'active' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setActiveTab('active')}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
+            className={`redflag-tab-btn ${activeTab === 'all' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('all')}
           >
-            <AlertTriangle size={13} color="#EF4444" />
-            Active ({activeFlags.length})
+            All Patterns ({allFlags.length})
           </button>
-
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'recovered' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setActiveTab('recovered')}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
+            className={`redflag-tab-btn ${activeTab === 'slots' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('slots')}
           >
-            <CheckCircle2 size={13} color="#10B981" />
-            Recovered ({recoveredFlags.length})
+            <Clock size={13} />
+            Missed Time Slots ({slotFlags.length})
           </button>
-
           <button
             type="button"
-            className={`btn btn-sm ${activeTab === 'report' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setActiveTab('report')}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
+            className={`redflag-tab-btn ${activeTab === 'categories' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('categories')}
           >
-            <FileSpreadsheet size={13} />
-            Lag Report
+            <Tags size={13} />
+            Avoided Categories ({categoryFlags.length})
+          </button>
+          <button
+            type="button"
+            className={`redflag-tab-btn ${activeTab === 'goals' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('goals')}
+          >
+            <Target size={13} />
+            Avoided Goals ({goalFlags.length})
+          </button>
+          <button
+            type="button"
+            className={`redflag-tab-btn ${activeTab === 'avoided' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('avoided')}
+          >
+            <EyeOff size={13} />
+            Marked as Avoided ({avoidedCount})
           </button>
         </div>
       </div>
 
-      {/* 2. Real-Time Lag Diagnostics Health Ribbon */}
+      {/* 2. Executive KPI Metrics Ribbon */}
       <div className="redflag-kpi-grid">
-        <div className="card redflag-kpi-card kpi-red">
-          <div className="redflag-kpi-label">
-            ACTIVE RED FLAGS
+        <div className="card redflag-kpi-card kpi-slots">
+          <div className="redflag-kpi-label">Repeatedly Missed Slots</div>
+          <div className="redflag-kpi-val" style={{ color: slotFlags.length > 0 ? '#EF4444' : '#10B981' }}>
+            {slotFlags.length}
           </div>
+          <div className="redflag-kpi-sub">
+            {topMissedSlot ? `Top slot: ${topMissedSlot.slotKey} (${topMissedSlot.missedDates.length} days missed)` : 'Zero recurring slot misses'}
+          </div>
+        </div>
+
+        <div className="card redflag-kpi-card kpi-domains">
+          <div className="redflag-kpi-label">Avoided Categories & Goals</div>
+          <div className="redflag-kpi-val" style={{ color: categoryFlags.length + goalFlags.length > 0 ? '#F59E0B' : '#10B981' }}>
+            {categoryFlags.length + goalFlags.length}
+          </div>
+          <div className="redflag-kpi-sub">
+            {categoryFlags.length} categories · {goalFlags.length} goals stalled
+          </div>
+        </div>
+
+        <div className="card redflag-kpi-card kpi-recovery">
+          <div className="redflag-kpi-label">Automated Recovery Score</div>
           <div
             className="redflag-kpi-val"
-            style={{ color: activeFlags.length > 0 ? '#EF4444' : '#10B981' }}
+            style={{
+              color: avgRecovery >= 80 ? '#10B981' : avgRecovery >= 50 ? '#38BDF8' : '#EF4444',
+            }}
           >
-            {activeFlags.length}
+            {avgRecovery}%
           </div>
           <div className="redflag-kpi-sub">
-            {criticalCount} critical · {highCount} high
+            Calculated strictly from completed tasks
           </div>
         </div>
 
-        <div className="card redflag-kpi-card kpi-green">
-          <div className="redflag-kpi-label">
-            RECOVERED / RESOLVED
-          </div>
-          <div className="redflag-kpi-val text-emerald-500">
-            {recoveredFlags.length}
+        <div className="card redflag-kpi-card kpi-avoided">
+          <div className="redflag-kpi-label">Marked As Avoided</div>
+          <div className="redflag-kpi-val text-purple-400">
+            {avoidedCount}
           </div>
           <div className="redflag-kpi-sub">
-            Safely cleared from lag status
-          </div>
-        </div>
-
-        <div className="card redflag-kpi-card kpi-blue">
-          <div className="redflag-kpi-label">
-            SCHEDULE HEALTH SCORE
-          </div>
-          <div
-            className="redflag-kpi-val"
-            style={{ color: healthScore >= 80 ? '#10B981' : healthScore >= 50 ? '#F59E0B' : '#EF4444' }}
-          >
-            {healthScore}%
-          </div>
-          <div className="redflag-kpi-sub">
-            {healthScore >= 80 ? 'Robust momentum' : 'Lag interventions needed'}
-          </div>
-        </div>
-
-        <div className="card redflag-kpi-card kpi-purple">
-          <div className="redflag-kpi-label">
-            DATE CONTEXT
-          </div>
-          <div className="text-base font-extrabold mt-0.5 text-primary">
-            {isToday ? 'Today' : formatDate(activeDate, { month: 'short', day: 'numeric' })}
-          </div>
-          <div className="redflag-kpi-sub">
-            {formatDate(activeDate, { weekday: 'long' })}
+            User acknowledged avoidance patterns
           </div>
         </div>
       </div>
 
-      {/* 3. TAB CONTENT */}
+      {/* 3. Cards Grid */}
+      {displayedFlags.length === 0 ? (
+        <div className="redflag-empty-state card">
+          <CheckCircle2 size={42} color="#10B981" className="mx-auto mb-3" />
+          <h3 className="text-base font-extrabold text-primary m-0">
+            {activeTab === 'avoided'
+              ? 'No Avoided Patterns'
+              : 'Zero Avoidance Patterns Detected!'}
+          </h3>
+          <p className="text-xs text-secondary mt-1 max-w-md mx-auto">
+            {activeTab === 'avoided'
+              ? 'You have not marked any time slots or categories as avoided. Click the "Avoid" button on any card to tag it.'
+              : 'You have no recurring missed time slots or stalled categories. All scheduled work is completed on pace.'}
+          </p>
+        </div>
+      ) : (
+        <div className="redflag-cards-grid">
+          {displayedFlags.map((flag) => {
+            const isSlot = flag.type === 'time_slot';
+            const isCategory = flag.type === 'category';
+            const isGoal = flag.type === 'goal';
+            const isAvoided = Boolean(flag.isAvoided);
 
-      {/* TAB A: ACTIVE RED FLAGS (COMPACT GRID CARDS) */}
-      {activeTab === 'active' && (
-        <div
-          className="redflag-active-grid"
-          style={{
-            gridTemplateColumns: activeFlags.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))',
-          }}
-        >
-          {activeFlags.length === 0 ? (
-            <div className="card p-9 text-center rounded-lg border border-dashed border-emerald-500/30 bg-emerald-500/5">
-              <CheckCircle2 size={36} color="#10B981" className="mx-auto mb-2.5" />
-              <h3 className="text-base font-extrabold text-primary m-0">
-                Zero Active Red Flags!
-              </h3>
-              <p className="text-xs text-secondary mt-1">
-                All scheduled time slots, categories, and goals are on track. No schedule lags detected.
-              </p>
-            </div>
-          ) : (
-            activeFlags.map((flag) => (
-              <div key={flag.id} className="card redflag-card-item">
-                <div className="flex items-start justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="redflag-avatar-icon">
-                      <Flag size={18} fill="#EF4444" />
+            // Dynamic progress bar color
+            const barColor =
+              flag.recoveryProgress >= 100
+                ? '#10B981'
+                : flag.recoveryProgress >= 40
+                ? '#38BDF8'
+                : '#EF4444';
+
+            return (
+              <div
+                key={flag.id}
+                className={`redflag-item-card ${flag.isRecovered ? 'is-recovered' : ''} ${
+                  isAvoided ? 'is-avoided-card' : ''
+                }`}
+              >
+                {/* Card Header */}
+                <div className="redflag-card-header">
+                  <div className="redflag-card-icon-title">
+                    <div className={`redflag-card-icon-box ${flag.type}`}>
+                      {isSlot ? (
+                        <Clock size={20} />
+                      ) : isCategory ? (
+                        <Tags size={20} />
+                      ) : (
+                        <Target size={20} />
+                      )}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-extrabold text-primary m-0">
-                          {flag.title}
-                        </h4>
+                      <h3 className="redflag-card-title">{flag.title}</h3>
+                      <div className="redflag-card-meta">
+                        <span>{flag.typeLabel}</span>
+                        <span>•</span>
                         <span
-                          className="text-xs font-extrabold py-0.5 px-2 rounded-full uppercase"
+                          className="font-extrabold uppercase px-1.5 py-0.2 rounded"
                           style={{
-                            background: flag.severity === 'critical' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                            background:
+                              flag.severity === 'critical'
+                                ? 'rgba(239, 68, 68, 0.18)'
+                                : 'rgba(245, 158, 11, 0.18)',
                             color: flag.severity === 'critical' ? '#EF4444' : '#F59E0B',
+                            fontSize: '0.68rem',
                           }}
                         >
                           {flag.severity}
                         </span>
                       </div>
-                      <div className="text-xs text-muted mt-0.5">
-                        {flag.typeLabel} · {flag.area}
-                      </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 items-center">
-                    {flag.taskId && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost flex items-center gap-1.5 text-xs font-bold text-emerald-500 border border-emerald-500/30"
-                        onClick={() => handleResolveTask(flag)}
-                      >
-                        <CheckCircle2 size={14} /> Mark Completed
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary flex items-center gap-1.5 text-xs font-extrabold bg-red-500 border-red-500"
-                      onClick={() => handleStartCatchUp(flag)}
-                    >
-                      <Play size={13} fill="#FFFFFF" /> Start Recovery Session
-                    </button>
-                  </div>
+                  {/* ONLY ONE ACTION BUTTON: AVOID BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAvoid(flag.id)}
+                    className={`btn-avoid-toggle ${isAvoided ? 'is-avoided' : ''}`}
+                    title={
+                      isAvoided
+                        ? 'Click to remove avoided status'
+                        : 'Mark this pattern as deliberately avoided'
+                    }
+                  >
+                    {isAvoided ? <Check size={13} /> : <EyeOff size={13} />}
+                    {isAvoided ? 'Avoided' : 'Avoid'}
+                  </button>
                 </div>
 
-                {/* Lag Reason Description */}
-                <div className="redflag-reason-box">
-                  <strong className="text-red-500">Lag Reason:</strong> {flag.reason}
-                </div>
+                {/* Avoidance Details Box */}
+                <div className="redflag-detail-box">
+                  <div className="redflag-detail-label">
+                    {isSlot
+                      ? 'Missed Dates History'
+                      : isCategory
+                      ? 'Avoided Category Details'
+                      : 'Milestone Status'}
+                  </div>
 
-                {/* Recovery Progress Bar */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-secondary">
-                      Recovery Progress
-                    </span>
-                    <span
-                      className="font-extrabold"
-                      style={{
-                        color: flag.recoveryProgress > 0 ? '#38BDF8' : '#EF4444',
-                      }}
-                    >
-                      {flag.recoveryProgress}% · {flag.recoveryStatus}
-                    </span>
-                  </div>
-                  <ProgressBar
-                    progress={flag.recoveryProgress}
-                    color={flag.recoveryProgress >= 100 ? '#10B981' : flag.recoveryProgress > 0 ? '#38BDF8' : '#EF4444'}
-                  />
-                  <div className="text-xs text-muted">
-                    💡 <em>Once this work reaches 100% completion or consistent velocity, it will automatically clear from Red Flags.</em>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+                  {/* Missed Dates Chip List */}
+                  {flag.missedDates && flag.missedDates.length > 0 && (
+                    <div className="redflag-chips-list">
+                      {flag.missedDates.slice(0, 8).map((dStr, idx) => (
+                        <span key={idx} className="redflag-date-chip">
+                          {dStr}
+                        </span>
+                      ))}
+                      {flag.missedDates.length > 8 && (
+                        <span className="text-xs text-muted font-bold self-center">
+                          +{flag.missedDates.length - 8} more
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-      {/* TAB B: RECOVERED & RESOLVED FLAGS */}
-      {activeTab === 'recovered' && (
-        <div
-          className="grid gap-3"
-          style={{
-            gridTemplateColumns: recoveredFlags.length === 0 ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))',
-          }}
-        >
-          {recoveredFlags.length === 0 ? (
-            <div className="card p-9 text-center text-muted rounded-lg">
-              No recovered lags yet. Work on active red flags to achieve 100% recovery!
-            </div>
-          ) : (
-            recoveredFlags.map((flag) => (
-              <div key={flag.id} className="card redflag-recovered-card">
-                <div className="flex items-center gap-3">
-                  <div className="w-8.5 h-8.5 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
-                    <CheckCircle2 size={18} />
+                  <div className="text-xs text-secondary mt-0.5">
+                    {flag.explanation}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <strong className="text-sm text-primary">
-                        {flag.title}
-                      </strong>
-                      <span className="text-xs font-extrabold py-0.5 px-2 rounded-full bg-emerald-500/20 text-emerald-500">
-                        100% RECOVERED
+
+                  {/* Associated Task Titles (if time slot) */}
+                  {flag.taskTitles && flag.taskTitles.length > 0 && (
+                    <div className="mt-1 flex flex-col gap-1">
+                      <span className="text-[11px] font-bold text-muted">
+                        Associated Tasks Avoided in this Slot:
                       </span>
+                      {flag.taskTitles.map((tTitle, idx) => (
+                        <div key={idx} className="redflag-task-item">
+                          <span className="text-red-400">•</span>
+                          <span className="truncate">{tTitle}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="text-xs text-muted mt-0.5">
-                      {flag.typeLabel} · {flag.area} · Successfully resolved
-                    </div>
+                  )}
+                </div>
+
+                {/* Automated Recovery Progress (Strictly measures real completed work) */}
+                <div className="redflag-recovery-section">
+                  <div className="redflag-recovery-head">
+                    <span className="redflag-recovery-title">
+                      <Sparkles size={13} color={barColor} />
+                      Automated Recovery Progress
+                    </span>
+                    <span className="redflag-recovery-percent" style={{ color: barColor }}>
+                      {flag.recoveryProgress}% {flag.isRecovered ? '• FULL MARKS' : ''}
+                    </span>
+                  </div>
+
+                  {/* Visual Progress Bar */}
+                  <div className="redflag-progress-track">
+                    <div
+                      className="redflag-progress-fill"
+                      style={{
+                        width: `${flag.recoveryProgress}%`,
+                        background:
+                          flag.recoveryProgress >= 100
+                            ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
+                            : flag.recoveryProgress >= 40
+                            ? 'linear-gradient(90deg, #38BDF8 0%, #0284C7 100%)'
+                            : 'linear-gradient(90deg, #EF4444 0%, #DC2626 100%)',
+                      }}
+                    />
+                  </div>
+
+                  <div className="redflag-recovery-caption">
+                    {isSlot ? (
+                      flag.isRecovered ? (
+                        <span className="text-emerald-400 font-bold">
+                          ✓ Full marks achieved: completed tasks across {flag.completedDaysCount} days in this slot.
+                        </span>
+                      ) : (
+                        <span>
+                          {flag.completedDaysCount} of {flag.requiredRecoveryDays} recovery days completed.
+                          Work {flag.requiredRecoveryDays - flag.completedDaysCount} more days in this {flag.slotKey} slot to earn 100% full recovery marks.
+                        </span>
+                      )
+                    ) : isCategory ? (
+                      flag.isRecovered ? (
+                        <span className="text-emerald-400 font-bold">
+                          ✓ Category fully recovered: healthy velocity achieved.
+                        </span>
+                      ) : (
+                        <span>
+                          {flag.completedCount} of {flag.totalTasks} tasks completed in {flag.categoryName}.
+                          Complete remaining tasks to advance recovery.
+                        </span>
+                      )
+                    ) : (
+                      <span>
+                        Milestone progress is at {flag.progress}%. Complete milestone tasks to clear flag.
+                      </span>
+                    )}
                   </div>
                 </div>
-
-                <div className="min-w-[150px]">
-                  <ProgressBar progress={100} color="#10B981" />
-                </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
-      )}
-
-      {/* TAB C: EXCEL-STYLE SPREADSHEET LAG REPORT */}
-      {activeTab === 'report' && (
-        <ExcelReportTable
-          title={`Red Flag Lag Diagnostic Report - ${formatDate(activeDate)}`}
-          summaryCards={[
-            { label: 'Total Lag Events', value: allFlags.length, color: '#3B82F6' },
-            { label: 'Active Red Flags', value: activeFlags.length, color: '#EF4444' },
-            { label: 'Recovered Lags', value: recoveredFlags.length, color: '#10B981' },
-            { label: 'Schedule Health', value: `${healthScore}%`, color: healthScore >= 80 ? '#10B981' : '#F59E0B' },
-          ]}
-          columns={redFlagColumns}
-          data={allFlags}
-          exportFileName={`Red_Flag_Lag_Report_${activeDate}`}
-          sheetName="RedFlags"
-        />
       )}
     </div>
   );
 }
+
+export default RedFlagPage;

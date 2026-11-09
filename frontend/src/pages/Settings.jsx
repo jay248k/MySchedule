@@ -63,6 +63,8 @@ export function Settings() {
 
   // Active category tab for navigation
   const [activeTab, setActiveTab] = useState('appearance');
+  const [draggedNavIdx, setDraggedNavIdx] = useState(null);
+  const [dragOverNavIdx, setDragOverNavIdx] = useState(null);
 
   const handleUpdate = (key, value) => {
     const updated = {
@@ -113,16 +115,14 @@ export function Settings() {
     });
   };
 
-  // Calculate local storage size
+  // Calculate cookie storage size
   const storageMetrics = useMemo(() => {
     let totalBytes = 0;
-    for (let x in localStorage) {
-      if (localStorage.hasOwnProperty(x)) {
-        totalBytes += (localStorage[x].length + x.length) * 2;
-      }
+    if (typeof document !== 'undefined') {
+      totalBytes = (document.cookie || '').length * 2;
     }
     const kbUsed = (totalBytes / 1024).toFixed(1);
-    const percent = Math.min(100, Math.round((totalBytes / (5 * 1024 * 1024)) * 100)); // 5MB standard quota
+    const percent = Math.min(100, Math.round((totalBytes / (64 * 1024)) * 100)); // 64KB cookie standard budget
     return { kbUsed, percent };
   }, [tasks, goals, categories, dailyReports]);
 
@@ -1032,21 +1032,72 @@ export function Settings() {
                     handleUpdate('navigationOrder', newPathOrder);
                   };
 
-                  return sorted.map((item, idx) => (
+                  return sorted.map((item, idx) => {
+                    const isDragging = draggedNavIdx === idx;
+                    const isDragOver = dragOverNavIdx === idx;
+
+                    return (
                     <div
                       key={item.path}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        setDraggedNavIdx(idx);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragOverNavIdx !== idx) setDragOverNavIdx(idx);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverNavIdx === idx) setDragOverNavIdx(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedNavIdx === null || draggedNavIdx === idx) return;
+                        const newSorted = [...sorted];
+                        const draggedItem = newSorted.splice(draggedNavIdx, 1)[0];
+                        newSorted.splice(idx, 0, draggedItem);
+                        setDraggedNavIdx(null);
+                        setDragOverNavIdx(null);
+                        const newPathOrder = newSorted.map((i) => i.path);
+                        handleUpdate('navigationOrder', newPathOrder);
+                        showToast({
+                          type: 'success',
+                          title: 'Sidebar Reordered',
+                          message: `Moved "${draggedItem.label}" to position #${idx + 1}.`,
+                        });
+                      }}
+                      onDragEnd={() => {
+                        setDraggedNavIdx(null);
+                        setDragOverNavIdx(null);
+                      }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '10px 14px',
-                        background: 'var(--page-bg)',
-                        border: '1px solid var(--border-color)',
+                        background: isDragging
+                          ? 'rgba(23, 105, 255, 0.12)'
+                          : isDragOver
+                          ? 'rgba(16, 185, 129, 0.12)'
+                          : 'var(--page-bg)',
+                        border: isDragOver
+                          ? '2px dashed var(--primary-color)'
+                          : isDragging
+                          ? '1px solid var(--primary-color)'
+                          : '1px solid var(--border-color)',
                         borderRadius: '8px',
                         transition: 'all 0.15s ease',
+                        cursor: 'grab',
+                        transform: isDragging ? 'scale(0.98)' : 'none',
+                        opacity: isDragging ? 0.6 : 1,
                       }}
+                      title="Drag and drop to reorder"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ color: 'var(--text-muted)', cursor: 'grab', display: 'flex', alignItems: 'center' }}>
+                          <GripVertical size={16} />
+                        </div>
                         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
                           #{idx + 1}
                         </span>
@@ -1097,7 +1148,8 @@ export function Settings() {
                         </button>
                       </div>
                     </div>
-                  ));
+                    );
+                  });
                 })()}
               </div>
             </div>

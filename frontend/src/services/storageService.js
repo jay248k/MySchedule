@@ -67,38 +67,44 @@ export const storageService = {
     inMemoryStore.goals = goals || [];
   },
 
+  getTheme() {
+    try {
+      const cookieTheme = cookieUtils.get('myschedule_theme');
+      if (cookieTheme) return cookieTheme;
+      const cookieSettings = cookieUtils.getJSON('myschedule_user_settings');
+      if (cookieSettings && cookieSettings.theme) return cookieSettings.theme;
+    } catch {
+      // Fallback
+    }
+    return null;
+  },
+
   getSettings() {
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const local = localStorage.getItem('myschedule_user_settings');
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (parsed && typeof parsed === 'object') {
-            return { ...initialSettings, ...parsed };
-          }
-        }
-      }
+      const themeOverride = this.getTheme();
       const cookieSettings = cookieUtils.getJSON('myschedule_user_settings');
       if (cookieSettings && typeof cookieSettings === 'object') {
-        return { ...initialSettings, ...cookieSettings };
+        const res = { ...initialSettings, ...cookieSettings };
+        if (themeOverride) res.theme = themeOverride;
+        return res;
       }
     } catch {
       // Fallback
     }
-    return inMemoryStore.settings || initialSettings;
+    const fallback = inMemoryStore.settings || initialSettings;
+    const themeOverride = this.getTheme();
+    return themeOverride ? { ...fallback, theme: themeOverride } : fallback;
   },
 
   saveSettings(settings) {
     const updated = { ...initialSettings, ...(settings || {}) };
     inMemoryStore.settings = updated;
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem('myschedule_user_settings', JSON.stringify(updated));
-        if (updated.theme) {
-          localStorage.setItem('myschedule_theme', updated.theme);
-        }
-      }
+      purgeLegacyLocalStorage();
       cookieUtils.setJSON('myschedule_user_settings', updated, 365);
+      if (updated.theme) {
+        cookieUtils.set('myschedule_theme', updated.theme, 365);
+      }
     } catch {
       // Storage fallback
     }

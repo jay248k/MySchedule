@@ -70,9 +70,9 @@
 }
 
 /* Dark Mode Overrides */
-html.dark-mode,
-body.dark-mode,
-[data-theme='dark'] {
+html[data-theme='dark'],
+body[data-theme='dark'],
+html.dark-mode:not([data-theme='oled']):not([data-theme='warm']):not([data-theme='light']) {
   --sidebar-bg: #071738;
   --sidebar-active: #0D265A;
   --sidebar-hover: rgba(255, 255, 255, 0.06);

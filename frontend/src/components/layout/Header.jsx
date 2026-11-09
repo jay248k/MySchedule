@@ -43,7 +43,10 @@ export function Header() {
     markNotificationRead,
     clearNotifications,
     openModal,
+    mobileSidebarOpen,
     setMobileSidebarOpen,
+    sidebarCollapsed,
+    setSidebarCollapsed,
     globalSearchQuery,
     setGlobalSearchQuery,
     settings,
@@ -175,9 +178,16 @@ export function Header() {
         <button
           type="button"
           className="btn-icon mobile-menu-btn"
-          onClick={() => setMobileSidebarOpen(true)}
+          onClick={() => {
+            if (window.innerWidth > 1024) {
+              setSidebarCollapsed(!sidebarCollapsed);
+            } else {
+              setMobileSidebarOpen(!mobileSidebarOpen);
+            }
+          }}
           id="btn-mobile-sidebar-toggle"
-          aria-label="Open mobile navigation"
+          aria-label="Toggle navigation"
+          title="Toggle Navigation Menu"
         >
           <Menu size={22} />
         </button>

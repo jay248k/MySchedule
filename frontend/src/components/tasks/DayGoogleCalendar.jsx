@@ -3,6 +3,7 @@ import { Check, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatTime, formatDate, getTodayDateString } from '../../utils/dateUtils';
 import { getEffectiveStatus } from '../../utils/taskUtils';
+import { cookieUtils } from '../../utils/cookieUtils';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
@@ -18,14 +19,14 @@ export function DayGoogleCalendar({
 
   // Screen fit mode: default to true for no scrolling
   const [fitToScreen, setFitToScreen] = useState(() => {
-    const saved = localStorage.getItem('gcal_fit_screen');
+    const saved = cookieUtils.get('gcal_fit_screen');
     return saved !== null ? saved === 'true' : true;
   });
 
   const toggleFitToScreen = () => {
     setFitToScreen((prev) => {
       const next = !prev;
-      localStorage.setItem('gcal_fit_screen', String(next));
+      cookieUtils.set('gcal_fit_screen', String(next), 365);
       return next;
     });
   };
