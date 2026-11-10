@@ -340,21 +340,21 @@ export function Categories() {
         </div>
       </div>
 
-      {/* 3. Dedicated Charts Section */}
+      {/* 3. Dedicated Charts Section (Compact, Sleek & Space-Efficient) */}
       {(viewMode === 'both' || viewMode === 'charts') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Main 2-Column Chart Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '20px' }}>
-            {/* Chart 1: Weekly Trajectory Trend (Exactly matching user requested design) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '10px' }}>
+            {/* Chart 1: Weekly Trajectory Trend */}
             <div style={{ gridColumn: 'span 7' }} className="dash-col-left">
-              <div className="card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+              <div className="card" style={{ padding: '10px 14px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                     <div
                       style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '7px',
                         background: 'rgba(23, 105, 255, 0.12)',
                         color: 'var(--primary-color)',
                         display: 'flex',
@@ -364,13 +364,13 @@ export function Categories() {
                         flexShrink: 0,
                       }}
                     >
-                      <TrendingUp size={18} strokeWidth={2.4} />
+                      <TrendingUp size={15} strokeWidth={2.4} />
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                         Weekly Trajectory Trend
                       </h3>
-                      <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      <p style={{ margin: '1px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                         Daily completed vs pending tasks{' '}
                         {selectedChartCat !== 'all'
                           ? `for ${categories.find((c) => c.id === selectedChartCat)?.name || 'Category'}`
@@ -380,7 +380,7 @@ export function Categories() {
                   </div>
 
                   {/* Themed Custom Filter selector */}
-                  <div style={{ width: '170px', flexShrink: 0 }}>
+                  <div style={{ width: '150px', flexShrink: 0 }}>
                     <CustomSelect
                       value={selectedChartCat}
                       onChange={(val) => setSelectedChartCat(val)}
@@ -397,24 +397,26 @@ export function Categories() {
                   </div>
                 </div>
 
-                <div style={{ width: '100%', height: 270, marginTop: '16px' }}>
+                <div style={{ width: '100%', height: 180, marginTop: '8px' }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.6)" />
-                      <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                      <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} allowDecimals={false} />
+                    <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.15)" />
+                      <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
+                      <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} allowDecimals={false} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: 'var(--card-bg)',
                           borderColor: 'var(--border-color)',
                           borderRadius: '8px',
                           boxShadow: 'var(--shadow-md)',
+                          fontSize: '0.75rem',
+                          padding: '6px 10px',
                         }}
                       />
                       <Legend
-                        wrapperStyle={{ paddingTop: '10px' }}
+                        wrapperStyle={{ paddingTop: '4px' }}
                         formatter={(value) => (
-                          <span style={{ color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--text-primary)', fontSize: '0.76rem', fontWeight: 600 }}>
                             {value}
                           </span>
                         )}
@@ -423,9 +425,9 @@ export function Categories() {
                         type="monotone"
                         dataKey="completed"
                         stroke="#10B981"
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: '#10B981' }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={2.5}
+                        dot={{ r: 3, fill: '#10B981' }}
+                        activeDot={{ r: 5 }}
                         name="Completed"
                       />
                       <Line
@@ -434,8 +436,8 @@ export function Categories() {
                         stroke="#F59E0B"
                         strokeWidth={2}
                         strokeDasharray="4 4"
-                        dot={{ r: 4, fill: '#F59E0B' }}
-                        activeDot={{ r: 6 }}
+                        dot={{ r: 3, fill: '#F59E0B' }}
+                        activeDot={{ r: 5 }}
                         name="Pending"
                       />
                     </LineChart>
@@ -446,14 +448,14 @@ export function Categories() {
 
             {/* Chart 2: Category Workload Share (Donut Chart) */}
             <div style={{ gridColumn: 'span 5' }} className="dash-col-right">
-              <div className="card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="card" style={{ padding: '10px 14px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                       style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '7px',
                         background: 'rgba(139, 92, 246, 0.12)',
                         color: '#8B5CF6',
                         display: 'flex',
@@ -463,22 +465,22 @@ export function Categories() {
                         flexShrink: 0,
                       }}
                     >
-                      <PieIcon size={18} strokeWidth={2.4} />
+                      <PieIcon size={15} strokeWidth={2.4} />
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                         Workload Distribution
                       </h3>
-                      <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      <p style={{ margin: '1px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                         Share of total tasks by category
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ width: '100%', height: 270, marginTop: '16px' }}>
+                <div style={{ width: '100%', height: 180, marginTop: '8px' }}>
                   {pieData.length === 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                       No tasks assigned to categories yet.
                     </div>
                   ) : (
@@ -488,8 +490,8 @@ export function Categories() {
                           data={pieData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={95}
+                          innerRadius={44}
+                          outerRadius={70}
                           paddingAngle={3}
                           dataKey="total"
                         >
@@ -506,11 +508,14 @@ export function Categories() {
                             backgroundColor: 'var(--card-bg)',
                             borderColor: 'var(--border-color)',
                             borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            padding: '6px 10px',
                           }}
                         />
                         <Legend
+                          wrapperStyle={{ paddingTop: '2px' }}
                           formatter={(value, entry) => (
-                            <span style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                            <span style={{ color: 'var(--text-primary)', fontSize: '0.74rem', fontWeight: 600 }}>
                               {entry.payload.name}
                             </span>
                           )}
@@ -524,20 +529,20 @@ export function Categories() {
           </div>
 
           {/* Chart 3: Category Completion & Volume Comparison Bar Chart */}
-          <div className="card" style={{ padding: '24px' }}>
+          <div className="card" style={{ padding: '10px 14px', borderRadius: '12px' }}>
             <div className="card-header-flex">
               <div>
-                <h3 className="card-title">
-                  <BarChart3 size={20} color="var(--primary-color)" />
+                <h3 className="card-title" style={{ fontSize: '0.92rem', gap: '6px' }}>
+                  <BarChart3 size={16} color="var(--primary-color)" />
                   Category Task Volume & Completion Status
                 </h3>
-                <span className="card-subtitle">Completed tasks vs pending tasks per category</span>
+                <span className="card-subtitle" style={{ fontSize: '0.72rem' }}>Completed tasks vs pending tasks per category</span>
               </div>
             </div>
 
-            <div style={{ width: '100%', height: 280, marginTop: '16px' }}>
+            <div style={{ width: '100%', height: 190, marginTop: '8px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryStatsData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                <BarChart data={categoryStatsData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="barCompletedGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#10B981" stopOpacity={0.95} />
@@ -549,19 +554,19 @@ export function Categories() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.15)" />
-                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                  <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} allowDecimals={false} />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
+                  <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<CategoryBarTooltip />} cursor={{ fill: 'rgba(23, 105, 255, 0.06)' }} />
                   <Legend
-                    wrapperStyle={{ paddingTop: '12px' }}
+                    wrapperStyle={{ paddingTop: '6px' }}
                     content={({ payload }) => (
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', paddingTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', paddingTop: '4px' }}>
                         {payload && payload.map((entry, index) => {
                           const color = entry.dataKey === 'completed' ? '#10B981' : '#F59E0B';
                           return (
-                            <div key={`legend-item-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: color, display: 'inline-block' }} />
-                              <span style={{ color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 600 }}>
+                            <div key={`legend-item-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: 10, height: 10, borderRadius: 2.5, backgroundColor: color, display: 'inline-block' }} />
+                              <span style={{ color: 'var(--text-primary)', fontSize: '0.76rem', fontWeight: 600 }}>
                                 {entry.value}
                               </span>
                             </div>
@@ -570,8 +575,8 @@ export function Categories() {
                       </div>
                     )}
                   />
-                  <Bar dataKey="completed" name="Completed Tasks" fill="url(#barCompletedGrad)" radius={[5, 5, 0, 0]} />
-                  <Bar dataKey="pending" name="Pending Tasks" fill="url(#barPendingGrad)" radius={[5, 5, 0, 0]} />
+                  <Bar dataKey="completed" name="Completed Tasks" fill="url(#barCompletedGrad)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="pending" name="Pending Tasks" fill="url(#barPendingGrad)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

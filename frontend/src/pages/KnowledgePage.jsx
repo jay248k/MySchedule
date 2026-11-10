@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import {
   Folder,
   FileText,
@@ -26,6 +27,7 @@ import {
   GitBranch,
   X,
   MoreVertical,
+  Clipboard,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -59,6 +61,8 @@ export function KnowledgePage() {
       ['2', 'Core Architecture', 'Design models, routes, and database schema', 'In Progress'],
     ],
   });
+  const [showPasteBox, setShowPasteBox] = useState(false);
+  const [pasteText, setPasteText] = useState('');
 
   // Edit Modal State
   const [editModalItem, setEditModalItem] = useState(null); // item object being edited
@@ -69,6 +73,8 @@ export function KnowledgePage() {
   const [editNextLessonId, setEditNextLessonId] = useState('');
   const [editTableData, setEditTableData] = useState({ headers: ['Column 1'], rows: [['']] });
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [showEditPasteBox, setShowEditPasteBox] = useState(false);
+  const [editPasteText, setEditPasteText] = useState('');
 
   // 3-Dots Action Dropdown Menu State
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -299,10 +305,19 @@ export function KnowledgePage() {
   };
 
   const handleCreateItem = async (e) => {
-    e.preventDefault();
-    if (!createTitle.trim()) return;
+    if (e && e.preventDefault) e.preventDefault();
 
-    const itemTitle = createTitle.trim();
+    let itemTitle = createTitle.trim();
+    if (!itemTitle) {
+      if (modalMode === 'table') {
+        itemTitle = (tableData.headers && tableData.headers[0] && tableData.headers[0] !== 'Step')
+          ? `${tableData.headers[0]} Table`
+          : 'Data Table';
+      } else {
+        itemTitle = modalMode === 'folder' ? 'New Folder' : 'New Knowledge Lesson';
+      }
+    }
+
     const itemType = modalMode;
     const tempId = `temp-know-${Date.now()}`;
 
@@ -311,7 +326,7 @@ export function KnowledgePage() {
     if (itemType === 'table') {
       const cleanHeaders = tableData.headers.map((h, i) => (h && h.trim()) || `Col ${i + 1}`);
       const cleanRows = tableData.rows.map((row) =>
-        cleanHeaders.map((_, cI) => (row[cI] !== undefined ? String(row[cI]) : ''))
+        cleanHeaders.map((_, cI) => (row[cI] !== undefined && row[cI] !== null ? String(row[cI]) : ''))
       );
       formattedContent = JSON.stringify({ headers: cleanHeaders, rows: cleanRows });
     }
@@ -341,6 +356,8 @@ export function KnowledgePage() {
     setCreateTags('');
     setCreateIsPinned(false);
     setCreateNextLessonId('');
+    setShowPasteBox(false);
+    setPasteText('');
 
     showToast({
       type: 'success',
@@ -361,7 +378,7 @@ export function KnowledgePage() {
       showToast({
         type: 'danger',
         title: 'Creation Failed',
-        message: err.message || 'Error saving item to database.',
+        message: err?.response?.data?.message || err?.message || 'Error saving item to database.',
       });
     } finally {
       setSubmitting(false);
@@ -393,12 +410,16 @@ export function KnowledgePage() {
   };
 
   const handleSaveEdit = async (e) => {
-    e.preventDefault();
-    if (!editModalItem || !editTitle.trim()) return;
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editModalItem) return;
+
+    let updatedTitle = editTitle.trim();
+    if (!updatedTitle) {
+      updatedTitle = editModalItem.title || (editModalItem.type === 'table' ? 'Data Table' : 'Untitled');
+    }
 
     const targetId = editModalItem.id;
     const targetType = editModalItem.type;
-    const updatedTitle = editTitle.trim();
 
     let formattedContent = editContent;
     if (targetType === 'table') {
@@ -431,6 +452,8 @@ export function KnowledgePage() {
     }
 
     setEditModalItem(null);
+    setShowEditPasteBox(false);
+    setEditPasteText('');
     showToast({
       type: 'success',
       title: 'Changes Saved',
@@ -552,7 +575,7 @@ export function KnowledgePage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${title || 'table'}.csv`);
+      link.setAttribute('download', `${(title || 'table').replace(/[^a-zA-Z0-9_-]/g, '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -563,31 +586,172 @@ export function KnowledgePage() {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleDownloadExcel = (title, tableContent) => {
+    try {
+      const parsed = typeof tableContent === 'string' ? JSON.parse(tableContent) : tableContent;
+      const headers = parsed?.headers || [];
+      const rows = parsed?.rows || [];
+      const sheetData = [headers, ...rows];
+      const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, (title || 'Data').slice(0, 31));
+      const filename = `${(title || 'table').replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      showToast({ type: 'success', title: 'Excel Exported', message: `Exported to ${filename}` });
+    } catch (e) {
+      showToast({ type: 'danger', title: 'Export Error', message: 'Could not export table to Excel.' });
+    }
+  };
+
+  const parseSpreadsheetFile = async (file) => {
+    const filename = file.name || '';
+    const ext = filename.split('.').pop().toLowerCase();
+    let headers = [];
+    let rows = [];
+    let detectedTitle = '';
+
+    const cleanFilename = filename.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+    if (cleanFilename) {
+      detectedTitle = cleanFilename.charAt(0).toUpperCase() + cleanFilename.slice(1);
+    }
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      if (firstSheetName && firstSheetName.toLowerCase() !== 'sheet1') {
+        detectedTitle = firstSheetName;
+      }
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      let headerIdx = 0;
+      while (headerIdx < rawData.length && (!rawData[headerIdx] || rawData[headerIdx].every((c) => !String(c).trim()))) {
+        headerIdx++;
+      }
+
+      if (headerIdx < rawData.length) {
+        const headerRow = rawData[headerIdx];
+        headers = headerRow.map((h, i) => (h !== undefined && String(h).trim() ? String(h).trim() : `Col ${i + 1}`));
+        rows = rawData.slice(headerIdx + 1)
+          .filter((r) => r && r.some((c) => c !== undefined && String(c).trim() !== ''))
+          .map((r) => headers.map((_, i) => (r[i] !== undefined && r[i] !== null ? String(r[i]).trim() : '')));
+      }
+    } else {
+      const text = await file.text();
+      const parsed = parseRawTextTable(text, detectedTitle);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      if (parsed.detectedTitle) detectedTitle = parsed.detectedTitle;
+    }
+
+    return { headers, rows, detectedTitle, filename };
+  };
+
+  const parseRawTextTable = (text, fallbackTitle = '') => {
+    let headers = [];
+    let rows = [];
+    let detectedTitle = fallbackTitle;
+
+    if (!text || !text.trim()) return { headers, rows, detectedTitle };
+
+    try {
+      const workbook = XLSX.read(text, { type: 'string' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      let headerIdx = 0;
+      while (headerIdx < rawData.length && (!rawData[headerIdx] || rawData[headerIdx].every((c) => !String(c).trim()))) {
+        headerIdx++;
+      }
+
+      if (headerIdx < rawData.length) {
+        const headerRow = rawData[headerIdx];
+        headers = headerRow.map((h, i) => (h !== undefined && String(h).trim() ? String(h).trim() : `Col ${i + 1}`));
+        rows = rawData.slice(headerIdx + 1)
+          .filter((r) => r && r.some((c) => c !== undefined && String(c).trim() !== ''))
+          .map((r) => headers.map((_, i) => (r[i] !== undefined && r[i] !== null ? String(r[i]).trim() : '')));
+      }
+    } catch {
+      const isTab = text.includes('\t');
+      const separator = isTab ? '\t' : ',';
+      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length > 0) {
+        headers = lines[0].split(separator).map((h, i) => h.replace(/^["']|["']$/g, '').trim() || `Col ${i + 1}`);
+        rows = lines.slice(1).map((l) => {
+          const cells = l.split(separator).map((c) => c.replace(/^["']|["']$/g, '').trim());
+          return headers.map((_, i) => cells[i] || '');
+        });
+      }
+    }
+
+    return { headers, rows, detectedTitle };
+  };
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result;
-      if (typeof text === 'string') {
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length > 0) {
-          const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
-          const rows = lines.slice(1).map((line) =>
-            line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
-          );
-          setTableData({ headers, rows });
-          showToast({
-            type: 'success',
-            title: 'File Parsed',
-            message: `Loaded ${rows.length} rows into structured table preview.`,
-          });
+    try {
+      const { headers, rows, detectedTitle, filename } = await parseSpreadsheetFile(file);
+      if (headers.length > 0) {
+        setTableData({
+          headers,
+          rows: rows.length > 0 ? rows : [new Array(headers.length).fill('')],
+        });
+        if (!createTitle.trim() && detectedTitle) {
+          setCreateTitle(detectedTitle);
         }
+        showToast({
+          type: 'success',
+          title: 'File Parsed',
+          message: `Loaded ${rows.length} rows & ${headers.length} columns from "${filename}".`,
+        });
+      } else {
+        showToast({
+          type: 'warning',
+          title: 'Empty File',
+          message: 'The file has no valid tabular rows.',
+        });
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+    } catch (err) {
+      console.error('File import error:', err);
+      showToast({
+        type: 'danger',
+        title: 'Import Failed',
+        message: 'Could not parse Excel or CSV file. Please verify file format.',
+      });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleApplyPasteText = () => {
+    if (!pasteText.trim()) return;
+    const { headers, rows } = parseRawTextTable(pasteText);
+    if (headers.length > 0) {
+      setTableData({
+        headers,
+        rows: rows.length > 0 ? rows : [new Array(headers.length).fill('')],
+      });
+      if (!createTitle.trim() && headers[0]) {
+        setCreateTitle(`${headers[0]} Table`);
+      }
+      setShowPasteBox(false);
+      setPasteText('');
+      showToast({
+        type: 'success',
+        title: 'Data Imported',
+        message: `Parsed ${rows.length} rows & ${headers.length} columns from pasted text.`,
+      });
+    } else {
+      showToast({
+        type: 'warning',
+        title: 'Empty Data',
+        message: 'Could not detect table columns in pasted text.',
+      });
+    }
   };
 
   // Edit Table Data Handlers
@@ -642,31 +806,68 @@ export function KnowledgePage() {
     });
   };
 
-  const handleEditFileUpload = (e) => {
+  const handleEditFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result;
-      if (typeof text === 'string') {
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length > 0) {
-          const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
-          const rows = lines.slice(1).map((line) =>
-            line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
-          );
-          setEditTableData({ headers, rows });
-          showToast({
-            type: 'success',
-            title: 'CSV Loaded',
-            message: `Loaded ${rows.length} rows into editor.`,
-          });
+    try {
+      const { headers, rows, detectedTitle, filename } = await parseSpreadsheetFile(file);
+      if (headers.length > 0) {
+        setEditTableData({
+          headers,
+          rows: rows.length > 0 ? rows : [new Array(headers.length).fill('')],
+        });
+        if (!editTitle.trim() && detectedTitle) {
+          setEditTitle(detectedTitle);
         }
+        showToast({
+          type: 'success',
+          title: 'File Loaded',
+          message: `Loaded ${rows.length} rows & ${headers.length} columns into editor from "${filename}".`,
+        });
+      } else {
+        showToast({
+          type: 'warning',
+          title: 'Empty File',
+          message: 'The file has no valid tabular rows.',
+        });
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+    } catch (err) {
+      showToast({
+        type: 'danger',
+        title: 'Import Failed',
+        message: 'Could not parse Excel or CSV file.',
+      });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleApplyEditPasteText = () => {
+    if (!editPasteText.trim()) return;
+    const { headers, rows } = parseRawTextTable(editPasteText);
+    if (headers.length > 0) {
+      setEditTableData({
+        headers,
+        rows: rows.length > 0 ? rows : [new Array(headers.length).fill('')],
+      });
+      if (!editTitle.trim() && headers[0]) {
+        setEditTitle(`${headers[0]} Table`);
+      }
+      setShowEditPasteBox(false);
+      setEditPasteText('');
+      showToast({
+        type: 'success',
+        title: 'Data Imported',
+        message: `Parsed ${rows.length} rows & ${headers.length} columns into editor.`,
+      });
+    } else {
+      showToast({
+        type: 'warning',
+        title: 'Empty Data',
+        message: 'Could not detect table columns in pasted text.',
+      });
+    }
   };
 
   const renderTableContent = (tData) => {
@@ -1198,13 +1399,22 @@ export function KnowledgePage() {
               </div>
               <div className="flex items-center gap-1">
                 {activeItem.type === 'table' && (
-                  <button
-                    onClick={() => handleDownloadCSV(activeItem.title, activeItem.content)}
-                    className="btn btn-ghost btn-sm"
-                    title="Export table as CSV file"
-                  >
-                    <Download size={14} /> Export CSV
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleDownloadExcel(activeItem.title, activeItem.content)}
+                      className="btn btn-secondary btn-sm"
+                      title="Export table as Excel (.xlsx) file"
+                    >
+                      <Download size={14} /> Export Excel
+                    </button>
+                    <button
+                      onClick={() => handleDownloadCSV(activeItem.title, activeItem.content)}
+                      className="btn btn-ghost btn-sm"
+                      title="Export table as CSV file"
+                    >
+                      <Download size={14} /> CSV
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => handleTogglePin(activeItem)}
@@ -1318,14 +1528,14 @@ export function KnowledgePage() {
                     {modalMode === 'folder'
                       ? 'Create New Folder'
                       : modalMode === 'table'
-                      ? 'Create Table or Import CSV'
+                      ? 'Create Table or Import Excel / CSV'
                       : 'Create Knowledge Lesson'}
                   </h3>
                   <p className="text-xs text-secondary mt-0.5 m-0">
                     {modalMode === 'folder'
                       ? 'Group your related lessons and tables together.'
                       : modalMode === 'table'
-                      ? 'Structured data grid with instant columns, rows & CSV import.'
+                      ? 'Structured data grid with Excel (.xlsx, .xls), CSV import & instant editing.'
                       : 'Document practical guides, SOPs, and learning notes.'}
                   </p>
                 </div>
@@ -1349,12 +1559,12 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    required
+                    required={modalMode !== 'table'}
                     placeholder={
                       modalMode === 'folder'
                         ? 'e.g. Architecture & System Design'
                         : modalMode === 'table'
-                        ? 'e.g. Weekly KPI Tracker'
+                        ? 'e.g. Electron vs Proton (or auto-named from file)'
                         : 'e.g. PostgreSQL Indexing Guide'
                     }
                     value={createTitle}
@@ -1425,16 +1635,25 @@ export function KnowledgePage() {
                             fontSize: '0.76rem',
                             padding: '4px 10px',
                           }}
-                          title="Import from a CSV or Excel export"
+                          title="Import from Excel (.xlsx, .xls) or CSV / TSV"
                         >
-                          <Upload size={13} /> Import CSV
+                          <Upload size={13} /> Import Excel / CSV
                           <input
                             type="file"
-                            accept=".csv,.txt"
+                            accept=".xlsx,.xls,.csv,.tsv,.txt"
                             onChange={handleFileUpload}
                             style={{ display: 'none' }}
                           />
                         </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPasteBox((prev) => !prev)}
+                          className={`btn btn-sm ${showPasteBox ? 'btn-primary' : 'btn-secondary'}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 10px' }}
+                          title="Paste CSV or copied spreadsheet rows"
+                        >
+                          <Clipboard size={13} /> {showPasteBox ? 'Hide Paste' : 'Paste Data'}
+                        </button>
                         <button
                           type="button"
                           onClick={handleAddColumn}
@@ -1464,6 +1683,44 @@ export function KnowledgePage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Optional Inline Paste Box */}
+                    {showPasteBox && (
+                      <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                            <Clipboard size={13} /> Paste Spreadsheet / CSV Data
+                          </span>
+                          <span className="text-[11px] text-secondary">
+                            Tab-separated (Excel / Sheets copy) or Comma-separated (CSV)
+                          </span>
+                        </div>
+                        <textarea
+                          rows={4}
+                          value={pasteText}
+                          onChange={(e) => setPasteText(e.target.value)}
+                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here (e.g. Header 1&#9;Header 2&#10;Val 1&#9;Val 2)..."
+                          className="form-input text-xs font-mono"
+                          style={{ width: '100%', resize: 'vertical' }}
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setShowPasteBox(false); setPasteText(''); }}
+                            className="btn btn-ghost btn-sm text-xs"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleApplyPasteText}
+                            className="btn btn-primary btn-sm text-xs font-bold"
+                          >
+                            Parse & Load Into Grid
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Interactive Table Grid */}
                     <div className="knowledge-table-editor-container">
@@ -1589,7 +1846,7 @@ export function KnowledgePage() {
                 <button type="button" className="btn btn-ghost" onClick={() => setModalMode(null)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting || !createTitle.trim()}>
+                <button type="submit" className="btn btn-primary" disabled={submitting || (modalMode !== 'table' && !createTitle.trim())}>
                   {submitting ? 'Creating...' : 'Create in DB'}
                 </button>
               </div>
@@ -1646,7 +1903,7 @@ export function KnowledgePage() {
                     {editModalItem.type === 'folder'
                       ? 'Edit Folder'
                       : editModalItem.type === 'table'
-                      ? 'Edit Data Table'
+                      ? 'Edit Data Table (Excel / CSV)'
                       : 'Edit Knowledge Lesson'}
                   </h3>
                   <p className="text-xs text-secondary mt-0.5 m-0">
@@ -1677,7 +1934,7 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    required
+                    required={editModalItem.type !== 'table'}
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
                     className="form-input"
@@ -1747,16 +2004,25 @@ export function KnowledgePage() {
                             fontSize: '0.76rem',
                             padding: '4px 10px',
                           }}
-                          title="Import from CSV file"
+                          title="Import from Excel (.xlsx, .xls) or CSV / TSV"
                         >
-                          <Upload size={13} /> Import CSV
+                          <Upload size={13} /> Import Excel / CSV
                           <input
                             type="file"
-                            accept=".csv,.txt"
+                            accept=".xlsx,.xls,.csv,.tsv,.txt"
                             onChange={handleEditFileUpload}
                             style={{ display: 'none' }}
                           />
                         </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowEditPasteBox((prev) => !prev)}
+                          className={`btn btn-sm ${showEditPasteBox ? 'btn-primary' : 'btn-secondary'}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', padding: '4px 10px' }}
+                          title="Paste CSV or copied spreadsheet rows"
+                        >
+                          <Clipboard size={13} /> {showEditPasteBox ? 'Hide Paste' : 'Paste Data'}
+                        </button>
                         <button
                           type="button"
                           onClick={handleEditAddColumn}
@@ -1777,6 +2043,44 @@ export function KnowledgePage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Optional Inline Edit Paste Box */}
+                    {showEditPasteBox && (
+                      <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                            <Clipboard size={13} /> Paste Spreadsheet / CSV Data
+                          </span>
+                          <span className="text-[11px] text-secondary">
+                            Tab or Comma separated rows
+                          </span>
+                        </div>
+                        <textarea
+                          rows={4}
+                          value={editPasteText}
+                          onChange={(e) => setEditPasteText(e.target.value)}
+                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here..."
+                          className="form-input text-xs font-mono"
+                          style={{ width: '100%', resize: 'vertical' }}
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setShowEditPasteBox(false); setEditPasteText(''); }}
+                            className="btn btn-ghost btn-sm text-xs"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleApplyEditPasteText}
+                            className="btn btn-primary btn-sm text-xs font-bold"
+                          >
+                            Parse & Load Into Editor
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Table Editor Grid */}
                     <div className="knowledge-table-editor-container">
@@ -1902,7 +2206,7 @@ export function KnowledgePage() {
                 <button type="button" className="btn btn-ghost" onClick={() => setEditModalItem(null)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={editSubmitting || !editTitle.trim()}>
+                <button type="submit" className="btn btn-primary" disabled={editSubmitting || (editModalItem.type !== 'table' && !editTitle.trim())}>
                   {editSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

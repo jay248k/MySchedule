@@ -44,6 +44,24 @@ function parseBulletPoints(text) {
     .map((line) => line.replace(/^[•\-\*\d\.\)]\s*/, ''));
 }
 
+function isRealBlocker(blockers) {
+  if (!blockers || typeof blockers !== 'string') return false;
+  const lower = blockers.trim().toLowerCase();
+  if (
+    lower.startsWith('none') ||
+    lower.includes('no impediment') ||
+    lower.includes('steady progress') ||
+    lower.includes('no major') ||
+    lower === '-' ||
+    lower === 'n/a' ||
+    lower === 'nil' ||
+    lower === 'no'
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function ReportsArchive() {
   const navigate = useNavigate();
   const {
@@ -437,7 +455,7 @@ export function ReportsArchive() {
           </div>
         ) : (
           <>
-            {/* VIEW 1: CARDS VIEW (COMPACT) */}
+            {/* VIEW 1: CARDS VIEW (MODERN GLASSMORPHIC - MATCHING GOALS) */}
             {archiveView === 'cards' && (
               <div className="archive-cards-grid">
                 {filteredReports.map((report) => {
@@ -453,70 +471,88 @@ export function ReportsArchive() {
                   const isExpanded = expandedReportIds.has(report.id || report.date);
                   const displayedBullets = isExpanded ? bullets : bullets.slice(0, 3);
                   const hasMore = bullets.length > 3;
+                  const hasRealBlocker = isRealBlocker(report.blockers);
 
                   return (
                     <div
                       key={report.id || report.date}
-                      className="archive-history-card"
+                      className="archive-modern-card card"
+                      style={{
+                        '--card-accent': moodMeta.color || 'var(--primary-color)',
+                      }}
                     >
-                      {/* Header */}
-                      <div className="archive-card-header">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar size={13} color="var(--primary-color)" />
-                            <strong className="text-sm text-primary">
-                              {formattedDate}
-                            </strong>
-                          </div>
+                      {/* Top Row: Date Pill, Today Tag, Velocity Badge & Delete Action */}
+                      <div className="archive-card-top-row">
+                        <div className="archive-badges-cluster">
+                          <span className="archive-date-pill">
+                            <Calendar size={12} color="var(--primary-color)" />
+                            <span>{formattedDate}</span>
+                          </span>
+
                           {report.date === todayStr && (
-                            <span className="badge badge-success text-xs px-1.5 py-0.5 mt-0.5">
+                            <span className="archive-today-pill">
                               Today
                             </span>
                           )}
+
+                          <span
+                            className="archive-velocity-pill"
+                            style={{
+                              background: moodMeta.bg,
+                              color: moodMeta.color,
+                              borderColor: moodMeta.border,
+                            }}
+                          >
+                            {moodMeta.emoji} {moodMeta.label}
+                          </span>
                         </div>
 
-                        <span
-                          className="badge text-xs px-1.5 py-0.5 shrink-0"
-                          style={{
-                            background: moodMeta.bg,
-                            color: moodMeta.color,
-                            border: `1px solid ${moodMeta.border}`,
-                          }}
-                        >
-                          {moodMeta.emoji} {moodMeta.label}
-                        </span>
+                        <div className="archive-card-actions">
+                          <button
+                            type="button"
+                            className="archive-action-btn delete"
+                            title="Delete report"
+                            aria-label="Delete report"
+                            onClick={() => deleteDailyReport(report.id)}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Stats */}
-                      <div className="archive-card-stats">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock size={11} color="var(--primary-color)" />
-                          <strong>Logged:</strong> {report.hoursLogged || '7.0'} hrs
-                        </span>
+                      {/* Stats Row: Logged Hours & Completed Count */}
+                      <div className="archive-stats-row">
+                        <div className="archive-stat-chip">
+                          <Clock size={12} color="var(--primary-color)" />
+                          <span className="archive-stat-label">Logged:</span>
+                          <strong className="archive-stat-val">{report.hoursLogged || '7.0'} hrs</strong>
+                        </div>
 
                         {bullets.length > 0 && (
-                          <span className="inline-flex items-center gap-1">
-                            <CheckCircle2 size={11} color="#10B981" />
-                            {bullets.length} done
-                          </span>
+                          <div className="archive-stat-chip done">
+                            <CheckCircle2 size={12} color="#10B981" />
+                            <strong className="archive-stat-val">{bullets.length} done</strong>
+                          </div>
                         )}
                       </div>
 
-                      {/* Accomplishments Clean List */}
+                      {/* Accomplishments Clean Glass Container */}
                       {bullets.length > 0 && (
-                        <div className="archive-card-bullets">
-                          {displayedBullets.map((bullet, idx) => (
-                            <div key={idx} className="archive-bullet-item">
-                              <span className="text-emerald-500 shrink-0">•</span>
-                              <span>{bullet}</span>
-                            </div>
-                          ))}
+                        <div className="archive-accomplishments-box">
+                          <div className="archive-accomplishments-list">
+                            {displayedBullets.map((bullet, idx) => (
+                              <div key={idx} className="archive-bullet-item">
+                                <span className="archive-bullet-dot">•</span>
+                                <span className="archive-bullet-text">{bullet}</span>
+                              </div>
+                            ))}
+                          </div>
 
                           {hasMore && (
                             <button
                               type="button"
                               onClick={() => toggleExpandReport(report.id || report.date)}
-                              className="text-xs text-primary font-bold cursor-pointer pt-0.5 text-left bg-transparent border-none"
+                              className="archive-expand-btn"
                             >
                               {isExpanded ? '▲ Show Less' : `▼ +${bullets.length - 3} more accomplishments`}
                             </button>
@@ -524,33 +560,22 @@ export function ReportsArchive() {
                         </div>
                       )}
 
-                      {/* Blockers alert tag if present */}
-                      {report.blockers && report.blockers !== 'None.' && report.blockers !== 'None' && (
-                        <div className="flex items-center gap-1.5 text-xs text-red-500 bg-red-500/10 p-1.5 rounded border border-red-500/20">
+                      {/* Real Blocker if any (Red box completely removed for 'None' / steady progress) */}
+                      {hasRealBlocker && (
+                        <div className="archive-blocker-pill">
                           <AlertTriangle size={12} color="#EF4444" className="shrink-0" />
-                          <span className="truncate">
-                            {report.blockers}
-                          </span>
+                          <span className="truncate">{report.blockers}</span>
                         </div>
                       )}
 
-                      {/* Footer Actions */}
+                      {/* Footer: Inspect / Edit Button */}
                       <div className="archive-card-footer">
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm text-xs py-1 px-2.5"
+                          className="archive-inspect-btn"
                           onClick={() => navigate(`/reports?date=${report.date}`)}
                         >
                           <ArrowRight size={13} /> Inspect / Edit Day
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-icon text-muted"
-                          title="Delete report"
-                          onClick={() => deleteDailyReport(report.id)}
-                        >
-                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -584,7 +609,7 @@ export function ReportsArchive() {
 
                       const moodMeta = MOOD_METADATA[report.mood] || MOOD_METADATA.productive;
                       const bullets = parseBulletPoints(report.accomplishments);
-                      const hasBlocker = report.blockers && report.blockers !== 'None.' && report.blockers !== 'None';
+                      const hasBlocker = isRealBlocker(report.blockers);
 
                       return (
                         <tr key={report.id || report.date}>
