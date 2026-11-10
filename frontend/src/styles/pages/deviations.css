@@ -650,23 +650,6 @@
   gap: 8px;
 }
 
-.deviation-distraction-chips {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.deviation-distraction-chip {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
 .deviation-rootcause-section {
   padding: 14px 16px;
   border-radius: 14px;
@@ -674,25 +657,7 @@
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.deviation-chips-wrap {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.deviation-preset-chip {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease;
+  gap: 8px;
 }
 
 .deviation-lesson-section {

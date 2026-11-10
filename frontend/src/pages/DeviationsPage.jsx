@@ -80,12 +80,18 @@ export function DeviationsPage() {
     endTime: '11:00',
     plannedAction: '',
     actualAction: '',
-    reasonCategory: 'Social Media / Browsing',
+    reasonCategory: 'Deviation',
     rootCause: '',
     lessonLearned: '',
     deviationType: 'unproductive',
     taskId: '',
   });
+
+  // Scheduled tasks for quick picking (active date first, or all tasks)
+  const selectableTasks = useMemo(() => {
+    const forDate = tasks.filter((t) => t.date === activeDate);
+    return forDate.length > 0 ? forDate : tasks;
+  }, [tasks, activeDate]);
 
   // Calculate duration in minutes
   const formDurationMinutes = useMemo(() => {
@@ -97,22 +103,21 @@ export function DeviationsPage() {
   }, [form.startTime, form.endTime]);
 
   // Statistics
-  const totalMinutesLost = useMemo(
-    () => dateDeviations.reduce((acc, d) => acc + (Number(d.durationMinutes) || 0), 0),
-    [dateDeviations]
-  );
+  const totalMinutesLost = useMemo(() => {
+    return dateDeviations.reduce((acc, d) => acc + (Number(d.durationMinutes) || 0), 0);
+  }, [dateDeviations]);
   const hoursLost = Math.floor(totalMinutesLost / 60);
   const minsLost = totalMinutesLost % 60;
 
   const handleOpenAddModal = (task = null) => {
     setEditingId(null);
     setForm({
-      date: activeDate,
+      date: task?.date || activeDate,
       startTime: task?.startTime || '10:00',
       endTime: task?.endTime || '11:00',
       plannedAction: task?.title || '',
       actualAction: '',
-      reasonCategory: 'Social Media / Browsing',
+      reasonCategory: task?.category || 'Deviation',
       rootCause: '',
       lessonLearned: '',
       deviationType: 'unproductive',
@@ -129,7 +134,7 @@ export function DeviationsPage() {
       endTime: dev.endTime,
       plannedAction: dev.plannedAction,
       actualAction: dev.actualAction,
-      reasonCategory: dev.reasonCategory || 'Social Media / Browsing',
+      reasonCategory: dev.reasonCategory || 'Deviation',
       rootCause: dev.rootCause || '',
       lessonLearned: dev.lessonLearned || '',
       deviationType: dev.deviationType || 'unproductive',
@@ -541,6 +546,47 @@ export function DeviationsPage() {
 
             {/* Modal Body Form */}
             <form onSubmit={handleSubmit} className="deviation-modal-form">
+              {/* Task Selection (Only task selection option) */}
+              <div className="deviation-form-section">
+                <label className="deviation-label-with-icon">
+                  <Target size={14} color="var(--primary-color)" />
+                  <span>Select Scheduled Task</span>
+                </label>
+                <CustomSelect
+                  value={form.taskId || ''}
+                  onChange={(selectedId) => {
+                    if (!selectedId) {
+                      setForm((prev) => ({ ...prev, taskId: '', plannedAction: '', reasonCategory: 'Deviation' }));
+                      return;
+                    }
+                    const t = selectableTasks.find((item) => item.id === selectedId);
+                    if (t) {
+                      setForm((prev) => ({
+                        ...prev,
+                        plannedAction: t.title,
+                        taskId: t.id,
+                        reasonCategory: t.category || 'Deviation',
+                        ...(t.startTime && { startTime: t.startTime }),
+                        ...(t.endTime && { endTime: t.endTime }),
+                        ...(t.date && { date: t.date }),
+                      }));
+                    }
+                  }}
+                  placeholder="-- Choose a scheduled task --"
+                  searchPlaceholder="Search scheduled tasks..."
+                  isClearable={true}
+                  options={[
+                    { value: '', label: '-- Choose a scheduled task or write manually --' },
+                    ...selectableTasks.map((t) => ({
+                      value: t.id,
+                      label: t.title,
+                      description: `${t.startTime || 'No time'}${t.endTime ? ` - ${t.endTime}` : ''} • ${t.category || 'Task'}`,
+                      color: t.color || '#3B82F6',
+                    })),
+                  ]}
+                />
+              </div>
+
               {/* Date & Time Slot Grid with Dynamic Duration */}
               <div className="deviation-form-section">
                 <div className="deviation-time-grid">
@@ -596,46 +642,6 @@ export function DeviationsPage() {
                     {Math.floor(formDurationMinutes / 60) > 0 ? `${Math.floor(formDurationMinutes / 60)}h ` : ''}{formDurationMinutes % 60}m ({formDurationMinutes} mins)
                   </span>
                 </div>
-
-                {/* Quick Pick From Scheduled Tasks with Searchable CustomSelect */}
-                {dateTasks.length > 0 && !editingId && (
-                  <div>
-                    <label className="block text-xs font-bold text-muted mb-1">
-                      Quick Pick From Scheduled Tasks:
-                    </label>
-                    <CustomSelect
-                      value={form.taskId || ''}
-                      onChange={(selectedId) => {
-                        if (!selectedId) {
-                          setForm({ ...form, taskId: '', plannedAction: '' });
-                          return;
-                        }
-                        const t = dateTasks.find((item) => item.id === selectedId);
-                        if (t) {
-                          setForm({
-                            ...form,
-                            plannedAction: t.title,
-                            taskId: t.id,
-                            ...(t.startTime && { startTime: t.startTime }),
-                            ...(t.endTime && { endTime: t.endTime }),
-                          });
-                        }
-                      }}
-                      placeholder="-- Choose a scheduled task to auto-fill --"
-                      searchPlaceholder="Search today's tasks..."
-                      isClearable={true}
-                      options={[
-                        { value: '', label: '-- Choose a scheduled task or enter custom below --' },
-                        ...dateTasks.map((t) => ({
-                          value: t.id,
-                          label: t.title,
-                          description: `${t.startTime || 'No time'}${t.endTime ? ` - ${t.endTime}` : ''}`,
-                          color: t.color || '#3B82F6',
-                        })),
-                      ]}
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Comparative Section: Planned vs Actual Mistake */}
@@ -673,63 +679,22 @@ export function DeviationsPage() {
                     onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
                     required
                   />
-                  {/* Quick distraction chips */}
-                  <div className="deviation-distraction-chips">
-                    {[
-                      '📱 Social Media / Instagram',
-                      '📺 YouTube Videos',
-                      '💬 Phone Call',
-                      '🥱 Fatigue / Took Nap',
-                      '☕ Unplanned Break',
-                    ].map((dist) => (
-                      <button
-                        key={dist}
-                        type="button"
-                        onClick={() => setForm({ ...form, actualAction: dist })}
-                        className="deviation-distraction-chip"
-                      >
-                        {dist}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-xs text-muted">
+                    What actually diverted your focus
+                  </span>
                 </div>
               </div>
 
-              {/* Root Cause & Common Friction Preset Chips */}
+              {/* Root Cause Section (Clean input, no unwanted preset chips) */}
               <div className="deviation-rootcause-section">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-primary flex items-center gap-1">
-                    <HelpCircle size={14} color="var(--primary-color)" />
-                    Why Did This Happen? (Root Cause):
-                  </label>
-                  <span className="text-xs text-muted">
-                    Click a preset chip or write custom
-                  </span>
-                </div>
-
-                {/* Preset Chips */}
-                <div className="deviation-chips-wrap">
-                  {REASON_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        const newCause = form.rootCause
-                          ? `${form.rootCause}; ${cat.id}`
-                          : cat.id;
-                        setForm({ ...form, rootCause: newCause });
-                      }}
-                      className="deviation-preset-chip"
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-
+                <label className="deviation-label-with-icon">
+                  <HelpCircle size={14} color="var(--primary-color)" />
+                  <span>Why Did This Happen? (Root Cause):</span>
+                </label>
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="Detail the root friction or mental trigger (e.g. felt bored, task too overwhelming)..."
+                  placeholder="Detail the root friction or trigger (e.g. felt tired, task felt unclear, got interrupted)..."
                   value={form.rootCause}
                   onChange={(e) => setForm({ ...form, rootCause: e.target.value })}
                 />
@@ -744,7 +709,7 @@ export function DeviationsPage() {
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="Enter preventive rule or corrective step..."
+                  placeholder="Enter preventive rule or corrective step to stay on track next time..."
                   value={form.lessonLearned}
                   onChange={(e) => setForm({ ...form, lessonLearned: e.target.value })}
                 />
