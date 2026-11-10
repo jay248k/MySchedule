@@ -12,6 +12,7 @@ import {
   UploadCloud,
   ChevronDown,
   ChevronUp,
+  Clock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate } from '../utils/dateUtils';
@@ -19,10 +20,45 @@ import { ProgressBar } from '../components/common/ProgressRing';
 import { EmptyState } from '../components/common/EmptyState';
 import '../styles/pages/goals.css';
 
+const getCategoryColor = (catNameOrId, categories = []) => {
+  if (!catNameOrId) return '#3B82F6';
+  const found = categories.find(
+    (c) => c.name?.toLowerCase() === catNameOrId?.toLowerCase() || c.id === catNameOrId
+  );
+  return found?.color || '#3B82F6';
+};
+
+const getDeadlineInfo = (targetDate, isCompleted) => {
+  if (isCompleted) {
+    return { text: 'Completed', color: '#10B981', isPast: false };
+  }
+  if (!targetDate) {
+    return { text: 'No target date', color: 'var(--text-muted)', isPast: false };
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { text: `${Math.abs(diffDays)}d overdue`, color: '#EF4444', isPast: true };
+  }
+  if (diffDays === 0) {
+    return { text: 'Due today', color: '#F59E0B', isPast: false };
+  }
+  if (diffDays === 1) {
+    return { text: 'Due tomorrow', color: '#F59E0B', isPast: false };
+  }
+  return { text: `${diffDays} days left`, color: 'var(--text-secondary)', isPast: false };
+};
+
 export function Goals() {
   const {
     goals,
     tasks,
+    categories = [],
     openModal,
     deleteGoal,
     toggleTaskComplete,
@@ -181,77 +217,93 @@ export function Goals() {
               : 0;
             const isCompleted = hasLinkedTasks && effectiveProgress >= 100;
             const isExpanded = !!expandedGoalIds[goal.id];
+            const categoryColor = getCategoryColor(goal.category, categories);
+            const deadlineInfo = getDeadlineInfo(goal.targetDate, isCompleted);
 
             return (
               <div
                 key={goal.id}
-                className="goal-compact-card card"
+                className={`goal-modern-card card ${isCompleted ? 'is-completed' : ''} ${isExpanded ? 'is-expanded' : ''}`}
                 style={{
-                  borderTop: `3px solid ${isCompleted ? '#10B981' : 'var(--primary-color)'}`,
-                  boxShadow: isExpanded ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+                  '--accent-color': isCompleted ? '#10B981' : categoryColor || 'var(--primary-color)',
                 }}
               >
-                {/* Header */}
-                <div className="goal-card-header">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`badge ${isCompleted ? 'badge-success' : 'badge-primary'} text-xs px-1.5 py-0.5`}>
-                        {isCompleted ? 'Completed' : 'In Progress'}
+                {/* Top Row: Status, Category, Linked Counter & Action Buttons */}
+                <div className="goal-card-top-row">
+                  <div className="goal-badges-cluster">
+                    <span className={`goal-status-pill ${isCompleted ? 'completed' : 'in-progress'}`}>
+                      <span className="goal-status-dot" />
+                      {isCompleted ? 'Completed' : 'In Progress'}
+                    </span>
+
+                    {goal.category && (
+                      <span
+                        className="goal-category-pill"
+                        style={{
+                          background: `${categoryColor}18`,
+                          color: categoryColor,
+                          borderColor: `${categoryColor}35`,
+                        }}
+                      >
+                        {goal.category}
                       </span>
-                      {goal.category && (
-                        <span className="badge badge-neutral text-xs px-1.5 py-0.5">{goal.category}</span>
-                      )}
-                      <span className="badge badge-neutral text-xs px-1.5 py-0.5 inline-flex items-center gap-1 border border-color">
-                        <Target size={11} color="var(--primary-color)" />
-                        <span>{relatedTasks.length} linked</span>
-                      </span>
-                    </div>
-                    <h3 className="goal-card-title" title={goal.title}>
-                      {goal.title}
-                    </h3>
+                    )}
+
+                    <span className="goal-linked-pill" title={`${relatedTasks.length} linked tasks`}>
+                      <Target size={11} color="var(--primary-color)" />
+                      <span>{relatedTasks.length} linked</span>
+                    </span>
                   </div>
 
-                  <div className="flex gap-0.5 shrink-0">
+                  <div className="goal-card-actions">
                     <button
                       type="button"
-                      className="btn-icon w-7 h-7"
+                      className="goal-action-btn edit"
                       onClick={() => openModal('goal', goal)}
                       title="Edit Goal"
+                      aria-label="Edit Goal"
                     >
                       <Edit2 size={13} />
                     </button>
                     <button
                       type="button"
-                      className="btn-icon w-7 h-7 text-danger"
+                      className="goal-action-btn delete"
                       onClick={() => deleteGoal(goal.id)}
                       title="Delete Goal"
+                      aria-label="Delete Goal"
                     >
                       <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                {goal.description ? (
-                  <p
-                    className="goal-card-desc"
-                    style={{
-                      WebkitLineClamp: isExpanded ? 'unset' : 1,
-                      overflow: isExpanded ? 'visible' : 'hidden',
-                    }}
-                    title={!isExpanded ? goal.description : undefined}
-                  >
-                    {goal.description}
-                  </p>
-                ) : null}
+                {/* Title & Description */}
+                <div className="goal-card-main">
+                  <h3 className="goal-card-title" title={goal.title}>
+                    {goal.title}
+                  </h3>
+                  {goal.description ? (
+                    <p
+                      className="goal-card-desc"
+                      style={{
+                        WebkitLineClamp: isExpanded ? 'unset' : 1,
+                        overflow: isExpanded ? 'visible' : 'hidden',
+                      }}
+                      title={!isExpanded ? goal.description : undefined}
+                    >
+                      {goal.description}
+                    </p>
+                  ) : null}
+                </div>
 
-                {/* Compact Progress Line & Bar */}
+                {/* Progress Bar & Metrics */}
                 <div className="goal-progress-wrap">
-                  <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="font-semibold text-secondary">
+                  <div className="goal-progress-metrics">
+                    <span className="goal-track-label">
                       {hasLinkedTasks ? `Auto-track: ${completedLinkedCount}/${relatedTasks.length} done` : 'Manual progress'}
                     </span>
                     <strong
-                      className="text-xs"
+                      className="goal-percent-val"
                       style={{ color: isCompleted ? '#10B981' : 'var(--primary-color)' }}
                     >
                       {effectiveProgress}%
@@ -267,27 +319,26 @@ export function Goals() {
 
                 {/* Collapsible Linked Tasks Checklist Section */}
                 <div className="goal-tasks-section">
-                  {/* Small card task bar with arrow */}
                   <div
-                    className="goal-tasks-bar-toggle"
-                    style={{
-                      background: isExpanded ? 'var(--page-bg)' : 'transparent',
-                    }}
+                    className={`goal-tasks-bar-toggle ${isExpanded ? 'expanded' : ''}`}
                     onClick={() => toggleExpand(goal.id)}
                     title={isExpanded ? 'Click to collapse tasks' : 'Click to view tasks'}
                   >
-                    <span className="text-sm font-bold text-primary flex items-center gap-1.5">
-                      <CheckCircle2 size={15} color="var(--primary-color)" />
-                      Goal Tasks ({completedLinkedCount}/{relatedTasks.length})
-                    </span>
+                    <div className="goal-tasks-toggle-label">
+                      <CheckCircle2 size={14} className="goal-tasks-check-icon" />
+                      <span>Goal Tasks</span>
+                      <span className="goal-tasks-counter-badge">
+                        {completedLinkedCount}/{relatedTasks.length}
+                      </span>
+                    </div>
 
                     <div
-                      className="flex items-center gap-1.5"
+                      className="goal-tasks-actions-wrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         type="button"
-                        className="btn btn-primary btn-sm h-6 px-2 text-xs"
+                        className="btn btn-primary btn-sm goal-add-task-btn"
                         onClick={() => openModal('task', { goalId: goal.id })}
                         title="Add task to this goal"
                       >
@@ -296,16 +347,12 @@ export function Goals() {
 
                       <button
                         type="button"
-                        className="btn-icon w-6 h-6 rounded-full border border-color flex items-center justify-center cursor-pointer"
-                        style={{
-                          background: isExpanded ? 'rgba(59, 130, 246, 0.12)' : 'var(--page-bg)',
-                          color: isExpanded ? 'var(--primary-color)' : 'var(--text-secondary)',
-                        }}
+                        className={`goal-chevron-btn ${isExpanded ? 'expanded' : ''}`}
                         onClick={() => toggleExpand(goal.id)}
                         title={isExpanded ? 'Collapse card' : 'Expand card'}
                         aria-label={isExpanded ? 'Collapse card' : 'Expand card'}
                       >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        <ChevronDown size={15} />
                       </button>
                     </div>
                   </div>
@@ -432,12 +479,15 @@ export function Goals() {
 
                 {/* Target Date Footer */}
                 <div className="goal-card-footer">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar size={14} />
-                    Target: {formatDate(goal.targetDate)}
+                  <span className="goal-footer-date">
+                    <Calendar size={13} />
+                    <span>Target: {formatDate(goal.targetDate)}</span>
                   </span>
-                  <span className="text-xs text-secondary">
-                    {isCompleted ? 'Status: 100% Completed' : `${effectiveProgress}% Complete`}
+                  <span
+                    className="goal-footer-status"
+                    style={{ color: deadlineInfo.color }}
+                  >
+                    {deadlineInfo.text}
                   </span>
                 </div>
               </div>
