@@ -1,14 +1,27 @@
 import { getTodayDateString, parseDate, formatTime } from './dateUtils';
 import { getEffectiveStatus } from './taskUtils';
 
+// Helper to format YYYY-MM-DD to a clean "Nov 9"
+export function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const m = months[parseInt(parts[1], 10) - 1] || parts[1];
+    const d = parseInt(parts[2], 10);
+    return `${m} ${d}`;
+  }
+  return dateStr;
+}
+
 /**
  * Red Flag & Behavioral Lag Analytics Engine
  *
  * Core Principles:
- * 1. Identifies repeated time slots missed across multiple dates (e.g. 10:00 - 11:00 missed across days).
- * 2. Identifies categories and goals tasks repeatedly avoided/stalled.
+ * 1. Identifies repeated time slots missed across past dates (never flags future scheduled slots).
+ * 2. Identifies categories and goals repeatedly avoided.
  * 3. Recovery marks are calculated 100% AUTOMATICALLY from tasks completed in those slots/categories
- *    (e.g., missed 5 days -> requires 10 days of active completions in that slot to reach 100% full marks).
+ *    (e.g., missed across 5 days -> requires 10 days of completed slots to reach 100% full marks).
  * 4. Zero manual resolution buttons — recovery strictly measures actual completed work.
  * 5. Users can explicitly click "Avoid" to acknowledge or mark an avoidance pattern.
  */
@@ -22,6 +35,9 @@ export function analyzeRedFlags({
 }) {
   const todayStr = getTodayDateString();
   const evalDate = targetDate || todayStr;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const slotFlags = [];
   const categoryFlags = [];
@@ -54,27 +70,40 @@ export function analyzeRedFlags({
     const completedDates = [];
 
     dateMap.forEach((dayTasksInSlot, dateStr) => {
+      // Check if slot has occurred: strictly past date, or today after end time
+      const isPast = dateStr < todayStr;
+      const isToday = dateStr === todayStr;
+
+      let isSlotPassed = isPast;
+      if (isToday && dayTasksInSlot[0]?.endTime) {
+        const [eh, em] = dayTasksInSlot[0].endTime.split(':').map(Number);
+        const endMin = (eh || 0) * 60 + (em || 0);
+        isSlotPassed = currentMinutes >= endMin;
+      }
+
       const hasCompleted = dayTasksInSlot.some(
         (t) => getEffectiveStatus(t) === 'completed'
       );
+
       if (hasCompleted) {
         completedDates.push(dateStr);
       } else {
-        // Check if any work session took place for this slot
-        const hasSession = workSessions.some(
-          (s) => s.date === dateStr && s.startTime === dayTasksInSlot[0]?.startTime
-        );
-        if (hasSession) {
-          completedDates.push(dateStr);
-        } else {
-          missedDates.push(dateStr);
+        // Only count as missed if slot has already passed! Never count future tasks as missed!
+        if (isSlotPassed) {
+          const hasSession = workSessions.some(
+            (s) => s.date === dateStr && s.startTime === dayTasksInSlot[0]?.startTime
+          );
+          if (hasSession) {
+            completedDates.push(dateStr);
+          } else {
+            missedDates.push(dateStr);
+          }
         }
       }
     });
 
-    // Detect if this time slot is missed repeatedly (at least 1 missed date, prioritized if >= 2)
+    // Detect if this time slot was missed (only if at least 1 actual past missed date exists)
     if (missedDates.length > 0) {
-      // Sort missed dates chronologically
       missedDates.sort();
       completedDates.sort();
 
@@ -92,40 +121,40 @@ export function analyzeRedFlags({
       const flagId = `slot-${slotKey.replace(/\s+/g, '')}`;
       const isAvoided = avoidedIds.has(flagId);
 
-      // Date range label
+      // Short clean date labels
+      const shortDates = missedDates.map(formatShortDate);
       let dateRangeLabel = `${missedDates.length} date(s)`;
       if (missedDates.length === 1) {
-        dateRangeLabel = missedDates[0];
+        dateRangeLabel = shortDates[0];
       } else if (missedDates.length <= 3) {
-        dateRangeLabel = missedDates.join(', ');
+        dateRangeLabel = shortDates.join(', ');
       } else {
-        dateRangeLabel = `${missedDates[0]} to ${missedDates[missedDates.length - 1]} (${missedDates.length} dates)`;
+        dateRangeLabel = `${shortDates[0]} to ${shortDates[shortDates.length - 1]} (${missedDates.length} dates)`;
       }
 
       slotFlags.push({
         id: flagId,
         type: 'time_slot',
-        typeLabel: 'Repeatedly Missed Time Slot',
-        title: `Slot ${slotKey} Missed Repeatedly`,
+        typeLabel: 'Missed Time Slot',
+        title: `Slot ${slotKey}`,
         slotKey,
         area: `Time Slot: ${slotKey}`,
         missedDates,
+        shortDates,
         dateRangeLabel,
         completedDates,
         requiredRecoveryDays,
         completedDaysCount,
         avoidedTasksCount: slotTasks.filter((t) => getEffectiveStatus(t) !== 'completed').length,
-        taskTitles: [...new Set(slotTasks.map((t) => t.title))].slice(0, 4),
+        taskTitles: [...new Set(slotTasks.map((t) => t.title))].slice(0, 3),
         severity: missedDates.length >= 3 ? 'critical' : 'high',
         recoveryProgress,
         recoveryStatus: isRecovered
-          ? '100% Full Marks (Recovered)'
-          : completedDaysCount > 0
-          ? `${recoveryProgress}% Recovering (${completedDaysCount}/${requiredRecoveryDays} days completed)`
-          : `0% Unrecovered (${completedDaysCount}/${requiredRecoveryDays} recovery days completed)`,
+          ? '100% Full Marks'
+          : `${recoveryProgress}% Recovering (${completedDaysCount}/${requiredRecoveryDays} days)`,
         isRecovered,
         isAvoided,
-        explanation: `Scheduled in ${slotKey} but missed across ${missedDates.length} date(s). Complete tasks in this slot to earn automatic recovery marks.`,
+        explanation: `Missed across ${missedDates.length} past date(s). Complete tasks in this slot to automatically earn recovery marks.`,
       });
     }
   });
@@ -145,13 +174,15 @@ export function analyzeRedFlags({
 
     const overdueTasks = catTasks.filter((t) => getEffectiveStatus(t) === 'overdue');
     const completedTasks = catTasks.filter((t) => getEffectiveStatus(t) === 'completed');
-    const incompleteTasks = catTasks.filter((t) => getEffectiveStatus(t) !== 'completed');
+    const pastIncompleteTasks = catTasks.filter(
+      (t) => getEffectiveStatus(t) !== 'completed' && t.date && t.date <= todayStr
+    );
 
-    // Dates with missed/uncompleted tasks in this category
-    const missedDates = [...new Set(incompleteTasks.map((t) => t.date).filter(Boolean))].sort();
+    // Only past dates where tasks were missed
+    const missedDates = [...new Set(pastIncompleteTasks.map((t) => t.date))].sort();
 
-    // Trigger avoidance flag if overdue tasks exist or multiple missed dates
-    if (overdueTasks.length >= 1 || (incompleteTasks.length >= 2 && missedDates.length >= 2)) {
+    // Trigger avoidance flag if overdue tasks exist or multiple past missed dates
+    if (overdueTasks.length >= 1 || missedDates.length >= 1) {
       const requiredRecoveryDays = Math.max(5, missedDates.length * 2);
       const completedDays = [...new Set(completedTasks.map((t) => t.date).filter(Boolean))];
       const completionRatio = completedTasks.length / (catTasks.length || 1);
@@ -166,26 +197,28 @@ export function analyzeRedFlags({
       const flagId = `cat-${cat.id}`;
       const isAvoided = avoidedIds.has(flagId);
 
-      let dateRangeLabel = `${missedDates.length} dates with pending tasks`;
+      const shortDates = missedDates.map(formatShortDate);
+      let dateRangeLabel = `${missedDates.length} past dates pending`;
       if (missedDates.length > 0 && missedDates.length <= 3) {
-        dateRangeLabel = missedDates.join(', ');
+        dateRangeLabel = shortDates.join(', ');
       } else if (missedDates.length > 3) {
-        dateRangeLabel = `${missedDates[0]} to ${missedDates[missedDates.length - 1]} (${missedDates.length} dates)`;
+        dateRangeLabel = `${shortDates[0]} to ${shortDates[shortDates.length - 1]} (${missedDates.length} dates)`;
       }
 
       categoryFlags.push({
         id: flagId,
         type: 'category',
-        typeLabel: 'Repeatedly Avoided Category',
-        title: `Category '${cat.name}' Repeatedly Avoided`,
+        typeLabel: 'Avoided Category',
+        title: `Category: ${cat.name}`,
         area: `Category: ${cat.name}`,
         categoryId: cat.id,
         categoryName: cat.name,
         categoryColor: cat.color || '#F59E0B',
         missedDates,
+        shortDates,
         dateRangeLabel,
         overdueCount: overdueTasks.length,
-        incompleteCount: incompleteTasks.length,
+        incompleteCount: pastIncompleteTasks.length,
         completedCount: completedTasks.length,
         totalTasks: catTasks.length,
         requiredRecoveryDays,
@@ -193,11 +226,11 @@ export function analyzeRedFlags({
         severity: overdueTasks.length >= 3 ? 'critical' : 'high',
         recoveryProgress,
         recoveryStatus: isRecovered
-          ? '100% Fully Recovered'
-          : `${recoveryProgress}% Recovering (${completedTasks.length}/${catTasks.length} tasks completed)`,
+          ? '100% Recovered'
+          : `${recoveryProgress}% Velocity (${completedTasks.length}/${catTasks.length} tasks)`,
         isRecovered,
         isAvoided,
-        explanation: `${incompleteTasks.length} task(s) avoided across ${missedDates.length} dates. Completing tasks in ${cat.name} automatically increases recovery marks.`,
+        explanation: `${pastIncompleteTasks.length} task(s) uncompleted across ${missedDates.length} date(s).`,
       });
     }
   });
@@ -237,8 +270,8 @@ export function analyzeRedFlags({
       goalFlags.push({
         id: flagId,
         type: 'goal',
-        typeLabel: 'Repeatedly Avoided Goal',
-        title: `Goal '${goal.title}' Stalled & Avoided`,
+        typeLabel: 'Avoided Goal',
+        title: `Goal: ${goal.title}`,
         area: `Goal: ${goal.title}`,
         goalId: goal.id,
         goalTitle: goal.title,
@@ -247,15 +280,15 @@ export function analyzeRedFlags({
         severity: daysRemaining !== null && daysRemaining < 0 ? 'critical' : 'high',
         recoveryProgress,
         recoveryStatus: isRecovered
-          ? '100% Goal Completed'
+          ? '100% Completed'
           : `${recoveryProgress}% Milestone Progress`,
         isRecovered,
         isAvoided,
         explanation:
           daysRemaining !== null && daysRemaining < 0
-            ? `Past target deadline by ${Math.abs(daysRemaining)} days with progress frozen at ${progress}%.`
+            ? `Past deadline by ${Math.abs(daysRemaining)} days (${progress}% completed).`
             : daysRemaining !== null
-            ? `Only ${daysRemaining} days left with progress stalled at ${progress}%.`
+            ? `${daysRemaining} days left with ${progress}% completion.`
             : `Goal has 0% progress recorded.`,
       });
     }

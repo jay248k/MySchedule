@@ -9,12 +9,12 @@ import {
   Check,
   Sparkles,
   ShieldAlert,
-  Calendar,
-  Layers,
-  TrendingUp,
+  Search,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { getTodayDateString, formatDate } from '../utils/dateUtils';
+import { getTodayDateString } from '../utils/dateUtils';
 import { analyzeRedFlags } from '../utils/redFlagEngine';
 import { cookieUtils } from '../utils/cookieUtils';
 import '../styles/pages/redflags.css';
@@ -34,8 +34,14 @@ export function RedFlagPage() {
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
 
-  // Active filter tab: 'all' | 'slots' | 'categories' | 'goals' | 'avoided'
+  // View state: 'cards' | 'dense'
+  const [viewMode, setViewMode] = useState('cards');
+
+  // Filter tab: 'all' | 'slots' | 'categories' | 'goals' | 'avoided'
   const [activeTab, setActiveTab] = useState('all');
+
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Avoided IDs stored exclusively in Cookies (NO localStorage)
   const [avoidedIds, setAvoidedIds] = useState(() => {
@@ -47,7 +53,7 @@ export function RedFlagPage() {
     }
   });
 
-  // Toggle Avoid button handler
+  // Toggle Avoid button handler (The only button allowed on this page)
   const handleToggleAvoid = (flagId) => {
     setAvoidedIds((prev) => {
       const next = new Set(prev);
@@ -57,19 +63,18 @@ export function RedFlagPage() {
         next.delete(flagId);
         showToast({
           type: 'info',
-          title: 'Avoidance Removed',
-          message: 'This pattern is no longer marked as avoided.',
+          title: 'Avoidance Cleared',
+          message: 'Flag removed from avoided patterns.',
         });
       } else {
         next.add(flagId);
         showToast({
           type: 'warning',
           title: 'Marked as Avoided',
-          message: 'Flag marked as an acknowledged/deliberate avoidance pattern.',
+          message: 'Flag acknowledged as intentional avoidance.',
         });
       }
 
-      // Persist strictly to cookies
       cookieUtils.setJSON(AVOIDED_STORAGE_KEY, Array.from(next), 365);
       return next;
     });
@@ -93,54 +98,56 @@ export function RedFlagPage() {
     categoryFlags,
     goalFlags,
     avoidedList,
-    totalCount,
     avgRecovery,
     avoidedCount,
   } = analysis;
 
-  // Filter flags based on active tab
+  // Filter flags based on active tab and search query
   const displayedFlags = useMemo(() => {
-    switch (activeTab) {
-      case 'slots':
-        return slotFlags;
-      case 'categories':
-        return categoryFlags;
-      case 'goals':
-        return goalFlags;
-      case 'avoided':
-        return avoidedList;
-      case 'all':
-      default:
-        return allFlags;
-    }
-  }, [activeTab, allFlags, slotFlags, categoryFlags, goalFlags, avoidedList]);
+    let list = allFlags;
+    if (activeTab === 'slots') list = slotFlags;
+    else if (activeTab === 'categories') list = categoryFlags;
+    else if (activeTab === 'goals') list = goalFlags;
+    else if (activeTab === 'avoided') list = avoidedList;
 
-  // Find most repeatedly missed slot
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (f) =>
+          (f.title || '').toLowerCase().includes(q) ||
+          (f.slotKey || '').toLowerCase().includes(q) ||
+          (f.categoryName || '').toLowerCase().includes(q) ||
+          (f.taskTitles && f.taskTitles.some((t) => t.toLowerCase().includes(q)))
+      );
+    }
+
+    return list;
+  }, [activeTab, searchQuery, allFlags, slotFlags, categoryFlags, goalFlags, avoidedList]);
+
   const topMissedSlot = slotFlags.length > 0 ? slotFlags[0] : null;
 
   return (
     <div className="redflag-page-container">
-      {/* 1. Header Card */}
+      {/* 1. Compact Header */}
       <div className="redflag-header-card card">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="redflag-title-wrap">
             <span className="redflag-title-tag">
-              <ShieldAlert size={12} />
+              <ShieldAlert size={11} />
               Behavioral Avoidance Hub
             </span>
-            <span className="text-xs text-muted">
-              Schedule Lag & Repeated Misses
-            </span>
+            <h1 className="redflag-header-title">
+              Red Flag & Schedule Lag Analytics
+            </h1>
           </div>
-          <h1 className="redflag-header-title">
-            Red Flag & Schedule Lag Analytics
-          </h1>
           <p className="redflag-header-sub">
-            Shows repeatedly missed time slots, stalled categories, and avoided goals.
-            Recovery marks calculate <strong>100% automatically from your completed tasks</strong> in those slots — without manual buttons.
+            Shows repeatedly missed time slots, stalled categories, and avoided goals. Recovery marks calculate <strong>100% automatically from your completed tasks</strong> in those slots.
           </p>
         </div>
+      </div>
 
+      {/* 2. Controls & Filter Bar */}
+      <div className="redflag-controls-bar">
         {/* Filter Tabs */}
         <div className="redflag-tabs-wrap">
           <button
@@ -155,37 +162,69 @@ export function RedFlagPage() {
             className={`redflag-tab-btn ${activeTab === 'slots' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('slots')}
           >
-            <Clock size={13} />
-            Missed Time Slots ({slotFlags.length})
+            <Clock size={12} />
+            Missed Slots ({slotFlags.length})
           </button>
           <button
             type="button"
             className={`redflag-tab-btn ${activeTab === 'categories' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('categories')}
           >
-            <Tags size={13} />
-            Avoided Categories ({categoryFlags.length})
+            <Tags size={12} />
+            Categories ({categoryFlags.length})
           </button>
           <button
             type="button"
             className={`redflag-tab-btn ${activeTab === 'goals' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('goals')}
           >
-            <Target size={13} />
-            Avoided Goals ({goalFlags.length})
+            <Target size={12} />
+            Goals ({goalFlags.length})
           </button>
           <button
             type="button"
             className={`redflag-tab-btn ${activeTab === 'avoided' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('avoided')}
           >
-            <EyeOff size={13} />
-            Marked as Avoided ({avoidedCount})
+            <EyeOff size={12} />
+            Avoided ({avoidedCount})
           </button>
+        </div>
+
+        {/* Search & View Switcher */}
+        <div className="redflag-right-tools">
+          <div className="redflag-search-box">
+            <Search size={12} color="var(--text-muted)" />
+            <input
+              type="text"
+              placeholder="Search patterns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="redflag-view-toggle">
+            <button
+              type="button"
+              className={`redflag-view-btn ${viewMode === 'cards' ? 'is-active' : ''}`}
+              onClick={() => setViewMode('cards')}
+              title="Compact Cards View"
+            >
+              <LayoutGrid size={13} />
+            </button>
+            <button
+              type="button"
+              className={`redflag-view-btn ${viewMode === 'dense' ? 'is-active' : ''}`}
+              onClick={() => setViewMode('dense')}
+              title="Dense List View"
+            >
+              <List size={13} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 2. Executive KPI Metrics Ribbon */}
+      {/* 3. Compact KPI Ribbon */}
       <div className="redflag-kpi-grid">
         <div className="card redflag-kpi-card kpi-slots">
           <div className="redflag-kpi-label">Repeatedly Missed Slots</div>
@@ -193,7 +232,7 @@ export function RedFlagPage() {
             {slotFlags.length}
           </div>
           <div className="redflag-kpi-sub">
-            {topMissedSlot ? `Top slot: ${topMissedSlot.slotKey} (${topMissedSlot.missedDates.length} days missed)` : 'Zero recurring slot misses'}
+            {topMissedSlot ? `Top: ${topMissedSlot.slotKey} (${topMissedSlot.missedDates.length}d missed)` : 'Zero recurring slot misses'}
           </div>
         </div>
 
@@ -203,7 +242,7 @@ export function RedFlagPage() {
             {categoryFlags.length + goalFlags.length}
           </div>
           <div className="redflag-kpi-sub">
-            {categoryFlags.length} categories · {goalFlags.length} goals stalled
+            {categoryFlags.length} categories · {goalFlags.length} goals
           </div>
         </div>
 
@@ -218,45 +257,45 @@ export function RedFlagPage() {
             {avgRecovery}%
           </div>
           <div className="redflag-kpi-sub">
-            Calculated strictly from completed tasks
+            Strictly measures completed tasks
           </div>
         </div>
 
         <div className="card redflag-kpi-card kpi-avoided">
-          <div className="redflag-kpi-label">Marked As Avoided</div>
+          <div className="redflag-kpi-label">Marked as Avoided</div>
           <div className="redflag-kpi-val text-purple-400">
             {avoidedCount}
           </div>
           <div className="redflag-kpi-sub">
-            User acknowledged avoidance patterns
+            User acknowledged patterns
           </div>
         </div>
       </div>
 
-      {/* 3. Cards Grid */}
+      {/* 4. Content Area: Cards or Dense List */}
       {displayedFlags.length === 0 ? (
         <div className="redflag-empty-state card">
-          <CheckCircle2 size={42} color="#10B981" className="mx-auto mb-3" />
-          <h3 className="text-base font-extrabold text-primary m-0">
+          <CheckCircle2 size={32} color="#10B981" className="mx-auto mb-2" />
+          <h3 className="text-sm font-extrabold text-primary m-0">
             {activeTab === 'avoided'
               ? 'No Avoided Patterns'
               : 'Zero Avoidance Patterns Detected!'}
           </h3>
-          <p className="text-xs text-secondary mt-1 max-w-md mx-auto">
+          <p className="text-xs text-secondary mt-1 max-w-sm mx-auto">
             {activeTab === 'avoided'
-              ? 'You have not marked any time slots or categories as avoided. Click the "Avoid" button on any card to tag it.'
-              : 'You have no recurring missed time slots or stalled categories. All scheduled work is completed on pace.'}
+              ? 'You have not marked any time slots or categories as avoided.'
+              : 'No recurring missed time slots or stalled categories detected. All scheduled work is completed on pace.'}
           </p>
         </div>
-      ) : (
-        <div className="redflag-cards-grid">
+      ) : viewMode === 'dense' ? (
+        /* ========================================================================= */
+        /* VIEW A: DENSE SINGLE-LINE LIST VIEW (Maximum Space-Efficiency)            */
+        /* ========================================================================= */
+        <div className="redflag-dense-list">
           {displayedFlags.map((flag) => {
             const isSlot = flag.type === 'time_slot';
             const isCategory = flag.type === 'category';
-            const isGoal = flag.type === 'goal';
             const isAvoided = Boolean(flag.isAvoided);
-
-            // Dynamic progress bar color
             const barColor =
               flag.recoveryProgress >= 100
                 ? '#10B981'
@@ -267,122 +306,153 @@ export function RedFlagPage() {
             return (
               <div
                 key={flag.id}
-                className={`redflag-item-card ${flag.isRecovered ? 'is-recovered' : ''} ${
-                  isAvoided ? 'is-avoided-card' : ''
-                }`}
+                className={`redflag-dense-row ${flag.isRecovered ? 'is-recovered' : ''}`}
               >
-                {/* Card Header */}
-                <div className="redflag-card-header">
-                  <div className="redflag-card-icon-title">
-                    <div className={`redflag-card-icon-box ${flag.type}`}>
-                      {isSlot ? (
-                        <Clock size={20} />
-                      ) : isCategory ? (
-                        <Tags size={20} />
-                      ) : (
-                        <Target size={20} />
-                      )}
+                <div className="redflag-dense-left">
+                  <div className={`redflag-mini-icon ${flag.type}`}>
+                    {isSlot ? <Clock size={14} /> : isCategory ? <Tags size={14} /> : <Target size={14} />}
+                  </div>
+                  <span className="redflag-dense-title">{flag.title}</span>
+                  {flag.missedDates && (
+                    <span className="redflag-chip-missed">
+                      {flag.missedDates.length}d missed
+                    </span>
+                  )}
+                </div>
+
+                <div className="redflag-dense-mid">
+                  {flag.shortDates && flag.shortDates.length > 0 && (
+                    <span className="text-xs text-muted truncate max-w-[200px]">
+                      Missed: {flag.shortDates.slice(0, 3).join(', ')}
+                      {flag.shortDates.length > 3 && ` +${flag.shortDates.length - 3}`}
+                    </span>
+                  )}
+                  {flag.taskTitles && flag.taskTitles[0] && (
+                    <span className="redflag-task-inline">
+                      • {flag.taskTitles[0]}
+                    </span>
+                  )}
+                </div>
+
+                <div className="redflag-dense-right">
+                  <div className="redflag-dense-bar-wrap">
+                    <div className="redflag-slim-track">
+                      <div
+                        className="redflag-slim-fill"
+                        style={{ width: `${flag.recoveryProgress}%`, background: barColor }}
+                      />
                     </div>
-                    <div>
-                      <h3 className="redflag-card-title">{flag.title}</h3>
-                      <div className="redflag-card-meta">
-                        <span>{flag.typeLabel}</span>
-                        <span>•</span>
-                        <span
-                          className="font-extrabold uppercase px-1.5 py-0.2 rounded"
-                          style={{
-                            background:
-                              flag.severity === 'critical'
-                                ? 'rgba(239, 68, 68, 0.18)'
-                                : 'rgba(245, 158, 11, 0.18)',
-                            color: flag.severity === 'critical' ? '#EF4444' : '#F59E0B',
-                            fontSize: '0.68rem',
-                          }}
-                        >
-                          {flag.severity}
-                        </span>
-                      </div>
-                    </div>
+                    <span
+                      style={{
+                        color: barColor,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        width: '32px',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {flag.recoveryProgress}%
+                    </span>
                   </div>
 
-                  {/* ONLY ONE ACTION BUTTON: AVOID BUTTON */}
+                  {/* ONLY ACTION BUTTON: AVOID BUTTON */}
                   <button
                     type="button"
                     onClick={() => handleToggleAvoid(flag.id)}
-                    className={`btn-avoid-toggle ${isAvoided ? 'is-avoided' : ''}`}
-                    title={
-                      isAvoided
-                        ? 'Click to remove avoided status'
-                        : 'Mark this pattern as deliberately avoided'
-                    }
+                    className={`btn-avoid-compact ${isAvoided ? 'is-avoided' : ''}`}
+                    title={isAvoided ? 'Remove avoided status' : 'Mark as avoided'}
                   >
-                    {isAvoided ? <Check size={13} /> : <EyeOff size={13} />}
+                    {isAvoided ? <Check size={11} /> : <EyeOff size={11} />}
                     {isAvoided ? 'Avoided' : 'Avoid'}
                   </button>
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* ========================================================================= */
+        /* VIEW B: COMPACT STREAMLINED CARDS (Sleek ~110px Cards)                   */
+        /* ========================================================================= */
+        <div className="redflag-cards-grid">
+          {displayedFlags.map((flag) => {
+            const isSlot = flag.type === 'time_slot';
+            const isCategory = flag.type === 'category';
+            const isAvoided = Boolean(flag.isAvoided);
 
-                {/* Avoidance Details Box */}
-                <div className="redflag-detail-box">
-                  <div className="redflag-detail-label">
-                    {isSlot
-                      ? 'Missed Dates History'
-                      : isCategory
-                      ? 'Avoided Category Details'
-                      : 'Milestone Status'}
-                  </div>
+            const barColor =
+              flag.recoveryProgress >= 100
+                ? '#10B981'
+                : flag.recoveryProgress >= 40
+                ? '#38BDF8'
+                : '#EF4444';
 
-                  {/* Missed Dates Chip List */}
-                  {flag.missedDates && flag.missedDates.length > 0 && (
-                    <div className="redflag-chips-list">
-                      {flag.missedDates.slice(0, 8).map((dStr, idx) => (
-                        <span key={idx} className="redflag-date-chip">
-                          {dStr}
-                        </span>
-                      ))}
-                      {flag.missedDates.length > 8 && (
-                        <span className="text-xs text-muted font-bold self-center">
-                          +{flag.missedDates.length - 8} more
-                        </span>
-                      )}
+            return (
+              <div
+                key={flag.id}
+                className={`redflag-compact-card ${flag.isRecovered ? 'is-recovered' : ''} ${
+                  isAvoided ? 'is-avoided-card' : ''
+                }`}
+              >
+                {/* Row 1: Header + Avoid Button */}
+                <div className="redflag-row-header">
+                  <div className="redflag-row-title-area">
+                    <div className={`redflag-mini-icon ${flag.type}`}>
+                      {isSlot ? <Clock size={14} /> : isCategory ? <Tags size={14} /> : <Target size={14} />}
                     </div>
-                  )}
-
-                  <div className="text-xs text-secondary mt-0.5">
-                    {flag.explanation}
-                  </div>
-
-                  {/* Associated Task Titles (if time slot) */}
-                  {flag.taskTitles && flag.taskTitles.length > 0 && (
-                    <div className="mt-1 flex flex-col gap-1">
-                      <span className="text-[11px] font-bold text-muted">
-                        Associated Tasks Avoided in this Slot:
+                    <span className="redflag-title-text" title={flag.title}>
+                      {flag.title}
+                    </span>
+                    {flag.missedDates && (
+                      <span className="redflag-chip-missed">
+                        {flag.missedDates.length}d missed
                       </span>
-                      {flag.taskTitles.map((tTitle, idx) => (
-                        <div key={idx} className="redflag-task-item">
-                          <span className="text-red-400">•</span>
-                          <span className="truncate">{tTitle}</span>
-                        </div>
-                      ))}
-                    </div>
+                    )}
+                  </div>
+
+                  <div className="redflag-row-actions">
+                    <span className="redflag-recovery-badge" style={{ color: barColor }}>
+                      {flag.recoveryProgress}% {flag.isRecovered ? 'Marks' : ''}
+                    </span>
+
+                    {/* ONLY ONE ACTION BUTTON: AVOID BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAvoid(flag.id)}
+                      className={`btn-avoid-compact ${isAvoided ? 'is-avoided' : ''}`}
+                      title={isAvoided ? 'Remove avoided status' : 'Mark as avoided'}
+                    >
+                      {isAvoided ? <Check size={11} /> : <EyeOff size={11} />}
+                      {isAvoided ? 'Avoided' : 'Avoid'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 2: Missed Dates Streak & Task Context */}
+                <div className="redflag-row-details">
+                  <span className="redflag-streak-label">Dates:</span>
+                  {flag.shortDates && flag.shortDates.slice(0, 4).map((dStr, idx) => (
+                    <span key={idx} className="redflag-mini-chip">
+                      {dStr}
+                    </span>
+                  ))}
+                  {flag.shortDates && flag.shortDates.length > 4 && (
+                    <span className="text-[11px] text-muted font-bold">
+                      +{flag.shortDates.length - 4} more
+                    </span>
+                  )}
+                  {flag.taskTitles && flag.taskTitles[0] && (
+                    <span className="redflag-task-inline" title={flag.taskTitles.join(', ')}>
+                      • {flag.taskTitles[0]}
+                    </span>
                   )}
                 </div>
 
-                {/* Automated Recovery Progress (Strictly measures real completed work) */}
-                <div className="redflag-recovery-section">
-                  <div className="redflag-recovery-head">
-                    <span className="redflag-recovery-title">
-                      <Sparkles size={13} color={barColor} />
-                      Automated Recovery Progress
-                    </span>
-                    <span className="redflag-recovery-percent" style={{ color: barColor }}>
-                      {flag.recoveryProgress}% {flag.isRecovered ? '• FULL MARKS' : ''}
-                    </span>
-                  </div>
-
-                  {/* Visual Progress Bar */}
-                  <div className="redflag-progress-track">
+                {/* Row 3: Slim Recovery Track & Micro-status */}
+                <div className="redflag-row-recovery">
+                  <div className="redflag-slim-track">
                     <div
-                      className="redflag-progress-fill"
+                      className="redflag-slim-fill"
                       style={{
                         width: `${flag.recoveryProgress}%`,
                         background:
@@ -395,34 +465,19 @@ export function RedFlagPage() {
                     />
                   </div>
 
-                  <div className="redflag-recovery-caption">
-                    {isSlot ? (
-                      flag.isRecovered ? (
-                        <span className="text-emerald-400 font-bold">
-                          ✓ Full marks achieved: completed tasks across {flag.completedDaysCount} days in this slot.
-                        </span>
+                  <div className="redflag-status-line">
+                    <span>
+                      {isSlot ? (
+                        flag.isRecovered ? (
+                          <span className="text-emerald-400 font-bold">✓ 100% full recovery marks</span>
+                        ) : (
+                          `${flag.completedDaysCount}/${flag.requiredRecoveryDays} recovery days completed`
+                        )
                       ) : (
-                        <span>
-                          {flag.completedDaysCount} of {flag.requiredRecoveryDays} recovery days completed.
-                          Work {flag.requiredRecoveryDays - flag.completedDaysCount} more days in this {flag.slotKey} slot to earn 100% full recovery marks.
-                        </span>
-                      )
-                    ) : isCategory ? (
-                      flag.isRecovered ? (
-                        <span className="text-emerald-400 font-bold">
-                          ✓ Category fully recovered: healthy velocity achieved.
-                        </span>
-                      ) : (
-                        <span>
-                          {flag.completedCount} of {flag.totalTasks} tasks completed in {flag.categoryName}.
-                          Complete remaining tasks to advance recovery.
-                        </span>
-                      )
-                    ) : (
-                      <span>
-                        Milestone progress is at {flag.progress}%. Complete milestone tasks to clear flag.
-                      </span>
-                    )}
+                        flag.recoveryStatus
+                      )}
+                    </span>
+                    <span>⚡ Auto-calculated from completed tasks</span>
                   </div>
                 </div>
               </div>
