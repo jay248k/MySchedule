@@ -25,6 +25,7 @@ import {
   List,
   GitBranch,
   X,
+  MoreVertical,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -68,6 +69,17 @@ export function KnowledgePage() {
   const [editNextLessonId, setEditNextLessonId] = useState('');
   const [editTableData, setEditTableData] = useState({ headers: ['Column 1'], rows: [['']] });
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // 3-Dots Action Dropdown Menu State
+  const [menuOpenId, setMenuOpenId] = useState(null);
+
+  useEffect(() => {
+    const handleDocClick = () => setMenuOpenId(null);
+    if (menuOpenId) {
+      document.addEventListener('click', handleDocClick);
+      return () => document.removeEventListener('click', handleDocClick);
+    }
+  }, [menuOpenId]);
 
   const fetchItems = async () => {
     try {
@@ -900,32 +912,69 @@ export function KnowledgePage() {
                     }}
                     className={`knowledge-pc-tile ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
                   >
-                    {/* Action Bar: Pin, Edit, Delete */}
-                    <div className="knowledge-tile-actions" onClick={(e) => e.stopPropagation()}>
+                    {/* Top-Left: Pin Indicator if pinned */}
+                    {item.isPinned && (
+                      <div className="knowledge-tile-pin-indicator" title="Pinned to top">
+                        <Pin size={11} fill="#F59E0B" color="#F59E0B" />
+                      </div>
+                    )}
+
+                    {/* Top-Right: 3-Dots Button & Options Dropdown (Pin/Unpin, Edit, Delete) */}
+                    <div className="knowledge-tile-menu-wrap" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={(e) => handleTogglePin(item, e)}
-                        title={item.isPinned ? 'Pinned to top' : 'Click to pin'}
-                        className={`knowledge-tile-btn ${item.isPinned ? 'pinned' : ''}`}
-                      >
-                        <Pin size={11} fill={item.isPinned ? '#F59E0B' : 'none'} />
-                      </button>
-                      <button
+                        type="button"
+                        className={`knowledge-tile-more-btn ${menuOpenId === item.id ? 'is-active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleOpenEditModal(item);
+                          setMenuOpenId(menuOpenId === item.id ? null : item.id);
                         }}
-                        title={`Edit ${item.type}`}
-                        className="knowledge-tile-btn edit"
+                        title="More options"
                       >
-                        <Edit2 size={11} />
+                        <MoreVertical size={14} />
                       </button>
-                      <button
-                        onClick={(e) => handleDeleteItem(item.id, e)}
-                        title={`Delete ${item.type}`}
-                        className="knowledge-tile-btn delete"
-                      >
-                        <Trash2 size={11} />
-                      </button>
+
+                      {menuOpenId === item.id && (
+                        <div className="knowledge-tile-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="knowledge-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpenId(null);
+                              handleTogglePin(item, e);
+                            }}
+                          >
+                            <Pin size={13} fill={item.isPinned ? '#F59E0B' : 'none'} color={item.isPinned ? '#F59E0B' : 'currentColor'} />
+                            <span>{item.isPinned ? 'Unpin' : 'Pin to top'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="knowledge-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpenId(null);
+                              handleOpenEditModal(item);
+                            }}
+                          >
+                            <Edit2 size={13} />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="knowledge-menu-item is-delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpenId(null);
+                              handleDeleteItem(item.id, e);
+                            }}
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Icon Container (Folder, Document, Spreadsheet) */}
@@ -1064,34 +1113,69 @@ export function KnowledgePage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={(e) => handleTogglePin(item, e)}
-                        title={item.isPinned ? 'Unpin' : 'Pin to top'}
-                        className="btn-icon p-1"
-                        style={{
-                          color: item.isPinned ? '#F59E0B' : 'var(--text-muted)',
-                        }}
-                      >
-                        <Pin size={13} fill={item.isPinned ? '#F59E0B' : 'none'} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEditModal(item);
-                        }}
-                        title={`Edit ${item.type}`}
-                        className="btn-icon p-1 text-primary opacity-70 hover:opacity-100"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteItem(item.id, e)}
-                        title="Delete item"
-                        className="btn-icon p-1 text-red-500 opacity-60 hover:opacity-100"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                    <div className="flex items-center gap-1.5 relative">
+                      {item.isPinned && (
+                        <span title="Pinned to top" className="text-amber-500">
+                          <Pin size={13} fill="#F59E0B" />
+                        </span>
+                      )}
+
+                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className={`btn-icon p-1 ${menuOpenId === item.id ? 'text-primary' : 'text-secondary'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpenId(menuOpenId === item.id ? null : item.id);
+                          }}
+                          title="More options"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+
+                        {menuOpenId === item.id && (
+                          <div className="knowledge-tile-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              className="knowledge-menu-item"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuOpenId(null);
+                                handleTogglePin(item, e);
+                              }}
+                            >
+                              <Pin size={13} fill={item.isPinned ? '#F59E0B' : 'none'} color={item.isPinned ? '#F59E0B' : 'currentColor'} />
+                              <span>{item.isPinned ? 'Unpin' : 'Pin to top'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="knowledge-menu-item"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuOpenId(null);
+                                handleOpenEditModal(item);
+                              }}
+                            >
+                              <Edit2 size={13} />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="knowledge-menu-item is-delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuOpenId(null);
+                                handleDeleteItem(item.id, e);
+                              }}
+                            >
+                              <Trash2 size={13} />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
