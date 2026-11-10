@@ -768,7 +768,7 @@ export function WorkTracker() {
 
                   <div className="worktracker-session-right">
                     <span className="worktracker-session-duration" style={{ fontSize: '0.9rem', color: '#10B981' }}>
-                      {activeElapsedMins}m {activeElapsedSecs}s
+                      {activeHrs > 0 ? `${activeHrs}h ` : ''}{activeMins}m {activeSecs}s
                     </span>
                     <button
                       type="button"
