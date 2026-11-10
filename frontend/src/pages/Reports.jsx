@@ -63,6 +63,7 @@ import { TaskItem } from '../components/tasks/TaskItem';
 import { ExcelReportTable } from '../components/reports/ExcelReportTable';
 import { analyzeRedFlags } from '../utils/redFlagEngine';
 import { getEffectiveStatus } from '../utils/taskUtils';
+import '../styles/pages/reports-archive.css';
 
 export function Reports() {
   const navigate = useNavigate();
@@ -119,6 +120,20 @@ export function Reports() {
       setSelectedReportDate(selectedDate);
     }
   }, [selectedDate]);
+
+  // Completed works on selected date dropdown state
+  const [isCompletedWorksDropdownOpen, setIsCompletedWorksDropdownOpen] = useState(false);
+  const [selectedCompletedWorkIds, setSelectedCompletedWorkIds] = useState(new Set());
+
+  // Completed works for selected date
+  const completedWorksForDate = useMemo(() => {
+    return tasks.filter((t) => t.date === selectedReportDate && (t.status === 'completed' || t.completed));
+  }, [tasks, selectedReportDate]);
+
+  // Whenever completed works change for date, select all by default
+  useEffect(() => {
+    setSelectedCompletedWorkIds(new Set(completedWorksForDate.map((t) => t.id)));
+  }, [completedWorksForDate]);
 
   // Filter for tasks checklist on selected date: 'all', 'completed', 'pending'
   const [taskFilter, setTaskFilter] = useState('all');
@@ -394,6 +409,88 @@ export function Reports() {
       title: 'Daily Report Saved',
       message: `Report for ${formattedSelectedDay} saved successfully!`,
     });
+  };
+
+  // Auto-Generate & Submit Today's Work Report with Work Timers and Completed Works
+  const handleAutoGenerateAndSubmitReport = (targetDate = todayStr, andSave = true) => {
+    const dayTasks = tasks.filter((t) => t.date === targetDate);
+    const doneTasks = dayTasks.filter((t) => t.status === 'completed' || t.completed);
+
+    // Collect work timer sessions
+    const daySessions = (workSessions || []).filter(
+      (s) => s.date === targetDate || s.startTime?.startsWith(targetDate)
+    );
+
+    let sessionSummary = '';
+    let totalSessionMins = 0;
+    if (daySessions.length > 0) {
+      const parts = daySessions.map((s, idx) => {
+        const start = s.startTime ? (s.startTime.includes('T') ? s.startTime.split('T')[1].substring(0, 5) : s.startTime) : 'Start';
+        const end = s.endTime ? (s.endTime.includes('T') ? s.endTime.split('T')[1].substring(0, 5) : s.endTime) : 'Now';
+        const durationMins = s.durationMinutes || (s.durationSeconds ? Math.round(s.durationSeconds / 60) : 60);
+        totalSessionMins += durationMins;
+        return `Timer #${idx + 1}: ${start} – ${end} (${Math.floor(durationMins / 60)}h ${durationMins % 60}m)`;
+      });
+      sessionSummary = parts.join('; ');
+    } else if (activeWorkSession?.isRunning) {
+      const start = activeWorkSession.startTime || 'Active';
+      sessionSummary = `Active focus session running from ${start}`;
+    }
+
+    const calculatedHours = totalSessionMins > 0
+      ? Number((totalSessionMins / 60).toFixed(1))
+      : (doneTasks.length > 0 ? Number((doneTasks.length * 0.9).toFixed(1)) : 7.0);
+
+    const completedBullets = doneTasks.length > 0
+      ? doneTasks.map((t) => {
+          const time = t.startTime ? ` (${t.startTime}${t.endTime ? ` - ${t.endTime}` : ''})` : '';
+          const cat = categories.find((c) => c.id === t.categoryId)?.name || 'General';
+          return `• ${t.title}${time} [${cat}]`;
+        }).join('\n')
+      : '• Completed routine development deliverables.';
+
+    const nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const autoReportText = [
+      `Completed today's scheduled tasks: ${doneTasks.length}/${dayTasks.length} works finished (${dayTasks.length > 0 ? Math.round((doneTasks.length / dayTasks.length) * 100) : 100}% velocity).`,
+      sessionSummary ? `Work Timer Sessions: ${sessionSummary} | Total Logged: ${calculatedHours} hrs.` : `Total Logged Hours: ${calculatedHours} hrs.`,
+      `Accomplished Deliverables:\n${completedBullets}`,
+      `Impediments & Blockers: None. Steady progress without major impediments.`,
+    ].join('\n\n');
+
+    setReportingTime(nowTimeStr);
+    setDailyReportText(autoReportText);
+    setAccomplishments(completedBullets);
+    setHoursLogged(String(calculatedHours));
+
+    if (andSave) {
+      saveDailyReport({
+        date: targetDate,
+        reportingTime: nowTimeStr,
+        dailyReportText: autoReportText,
+        title: `Daily Work Report - ${formatDate(targetDate)}`,
+        accomplishments: autoReportText,
+        highlights: `Delivered ${doneTasks.length}/${dayTasks.length} works on schedule.`,
+        blockers: 'None. Steady progress without major impediments.',
+        tomorrowPlan: 'Continue development on scheduled milestones.',
+        hoursLogged: calculatedHours,
+        mood: doneTasks.length >= Math.ceil(dayTasks.length * 0.7) ? 'fire' : 'rocket',
+        tasksCompletedCount: doneTasks.length,
+        tasksTotalCount: dayTasks.length,
+      });
+
+      showToast({
+        type: 'success',
+        title: 'Report Auto-Generated & Submitted! 🚀',
+        message: `Submitted report for ${formatDate(targetDate)} with ${doneTasks.length} completed work(s) and timer logs.`,
+      });
+    } else {
+      showToast({
+        type: 'info',
+        title: 'Report Draft Auto-Generated',
+        message: `Populated draft with ${doneTasks.length} completed work(s) and work timers.`,
+      });
+    }
   };
 
   // Copy Standup to Clipboard (Markdown formatted)
@@ -1213,6 +1310,26 @@ export function Reports() {
           <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Work Reporting & Export Hub
           </h1>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm btn-no-print"
+            style={{
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              borderColor: '#059669',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              marginLeft: '6px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+            }}
+            onClick={() => handleAutoGenerateAndSubmitReport(todayStr, true)}
+            title="Auto-generates report with today's timer start-stops & completed works, and submits it immediately"
+          >
+            <Sparkles size={13} /> ⚡ Auto-Create Today's Work Report
+          </button>
         </div>
 
         {/* Date Range Selector & Presets (Only displayed for range tabs) */}
@@ -1932,9 +2049,29 @@ export function Reports() {
                     <button
                       type="button"
                       className="btn btn-primary btn-sm btn-no-print"
+                      onClick={() => handleAutoGenerateAndSubmitReport(selectedReportDate, true)}
+                      style={{
+                        padding: '7px 16px',
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                        borderColor: '#059669',
+                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                      }}
+                      title="Auto-generates report with today's timer start-stops & completed works, and saves it immediately"
+                    >
+                      <Sparkles size={15} /> ⚡ Auto-Create Report
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm btn-no-print"
                       onClick={handleSaveReport}
                       style={{
-                        padding: '7px 18px',
+                        padding: '7px 16px',
                         fontSize: '0.84rem',
                         fontWeight: 800,
                         display: 'flex',
@@ -1984,9 +2121,19 @@ export function Reports() {
 
                   {/* Reporting Time */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      <Clock size={13} color="#10B981" />
-                      Reporting Time
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} color="#10B981" />
+                        Reporting Time
+                      </span>
+                      <button
+                        type="button"
+                        className="text-xs text-primary font-bold bg-transparent border-none cursor-pointer p-0"
+                        onClick={() => setReportingTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}
+                        title="Set to current local time"
+                      >
+                        Set to Now
+                      </button>
                     </div>
                     <input
                       type="text"
@@ -2007,6 +2154,140 @@ export function Reports() {
                   </div>
                 </div>
 
+                {/* Dropdown: Completed Works on That Day */}
+                <div className="completed-works-dropdown-card">
+                  <div
+                    className="completed-works-dropdown-header"
+                    onClick={() => setIsCompletedWorksDropdownOpen((prev) => !prev)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} color="#10B981" />
+                      <span className="font-extrabold text-sm text-primary">
+                        Completed Works on this Day
+                      </span>
+                      <span className="badge badge-success text-xs px-2 py-0.5 font-bold">
+                        {completedWorksForDate.length} completed
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted">
+                        {isCompletedWorksDropdownOpen ? 'Click to collapse' : 'Click to inspect & insert completed works'}
+                      </span>
+                      <button type="button" className="btn-icon p-0 bg-transparent border-none">
+                        {isCompletedWorksDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isCompletedWorksDropdownOpen && (
+                    <div className="completed-works-dropdown-body">
+                      {completedWorksForDate.length === 0 ? (
+                        <div className="p-3 text-xs text-muted text-center">
+                          No tasks were marked as completed for {formattedSelectedDay}.
+                        </div>
+                      ) : (
+                        <div className="completed-works-list">
+                          <div className="flex justify-between items-center pb-2 border-b border-color text-xs text-secondary font-bold">
+                            <span>Select works to compile into report text:</span>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs text-xs text-primary font-bold p-0 bg-transparent border-none cursor-pointer"
+                                onClick={() => setSelectedCompletedWorkIds(new Set(completedWorksForDate.map((t) => t.id)))}
+                              >
+                                Select All
+                              </button>
+                              <span className="text-muted">·</span>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs text-xs text-muted font-bold p-0 bg-transparent border-none cursor-pointer"
+                                onClick={() => setSelectedCompletedWorkIds(new Set())}
+                              >
+                                Clear Selection
+                              </button>
+                            </div>
+                          </div>
+
+                          {completedWorksForDate.map((task) => {
+                            const isSelected = selectedCompletedWorkIds.has(task.id);
+                            const cat = categories.find((c) => c.id === task.categoryId);
+                            return (
+                              <div
+                                key={task.id}
+                                className={`completed-work-item-row ${isSelected ? 'selected' : ''}`}
+                                onClick={() => {
+                                  setSelectedCompletedWorkIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(task.id)) next.delete(task.id);
+                                    else next.add(task.id);
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="custom-checkbox shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-xs text-primary truncate">
+                                    {task.title}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
+                                    {task.startTime && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock size={11} /> {task.startTime} - {task.endTime || 'Done'}
+                                      </span>
+                                    )}
+                                    {cat && (
+                                      <span className="badge badge-neutral text-xs px-1.5 py-0.2">
+                                        {cat.name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <CheckCircle2 size={14} color="#10B981" />
+                              </div>
+                            );
+                          })}
+
+                          <div className="pt-2 flex justify-between items-center border-t border-color mt-2 flex-wrap gap-2">
+                            <span className="text-xs text-muted">
+                              {selectedCompletedWorkIds.size} of {completedWorksForDate.length} works selected
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm text-xs font-bold"
+                              onClick={() => {
+                                const selectedTasks = completedWorksForDate.filter((t) => selectedCompletedWorkIds.has(t.id));
+                                if (selectedTasks.length === 0) {
+                                  showToast({ type: 'warning', title: 'None Selected', message: 'Please select at least one completed task.' });
+                                  return;
+                                }
+                                const bulletList = selectedTasks.map((t) => {
+                                  const time = t.startTime ? ` (${t.startTime}${t.endTime ? ` - ${t.endTime}` : ''})` : '';
+                                  const cat = categories.find((c) => c.id === t.categoryId)?.name || 'General';
+                                  return `• ${t.title}${time} [${cat}]`;
+                                }).join('\n');
+
+                                const compiledText = `Completed ${selectedTasks.length} scheduled deliverable(s) for the day:\n${bulletList}\n\nWork executed on time with steady progress.`;
+                                setDailyReportText(compiledText);
+                                setAccomplishments(bulletList);
+                                setIsCompletedWorksDropdownOpen(false);
+                                showToast({ type: 'success', title: 'Applied to Report', message: `Inserted ${selectedTasks.length} completed work(s) into report text.` });
+                              }}
+                            >
+                              <Sparkles size={13} /> Insert Selected Works into Report Text
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* 3. The One Single Paragraph Box */}
                 <div
                   style={{
@@ -2025,44 +2306,28 @@ export function Reports() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm btn-no-print"
-                      onClick={() => {
-                        const dayTasks = tasks.filter((t) => t.date === selectedReportDate);
-                        const doneTasks = dayTasks.filter((t) => t.status === 'completed');
-                        if (doneTasks.length > 0) {
-                          const taskSummary = doneTasks.map((t) => t.title).join(', ');
-                          setDailyReportText(`Completed today's scheduled tasks: ${taskSummary}. Work delivered on time with steady progress.`);
-                          showToast({
-                            type: 'info',
-                            title: 'Synced from Tasks',
-                            message: `Auto-populated summary with ${doneTasks.length} completed task(s).`,
-                          });
-                        } else {
-                          showToast({
-                            type: 'info',
-                            title: 'No Completed Tasks',
-                            message: 'Mark tasks as completed in the left column to auto-populate.',
-                          });
-                        }
-                      }}
-                      style={{
-                        fontSize: '0.76rem',
-                        padding: '5px 12px',
-                        color: 'var(--primary-color)',
-                        background: 'var(--page-bg)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontWeight: 600,
-                      }}
-                      title="Auto-populate paragraph from completed tasks"
-                    >
-                      <Sparkles size={13} /> Auto-fill from Today's Tasks
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm btn-no-print"
+                        onClick={() => handleAutoGenerateAndSubmitReport(selectedReportDate, false)}
+                        style={{
+                          fontSize: '0.76rem',
+                          padding: '5px 12px',
+                          color: '#10B981',
+                          background: 'rgba(16, 185, 129, 0.08)',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          borderRadius: 'var(--radius-md)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontWeight: 700,
+                        }}
+                        title="Auto-generate draft text with timer start-stops & completed works"
+                      >
+                        <Sparkles size={13} /> ⚡ Auto-Generate Report Draft
+                      </button>
+                    </div>
                   </div>
 
                   <textarea

@@ -46,8 +46,84 @@ function parseBulletPoints(text) {
 
 export function ReportsArchive() {
   const navigate = useNavigate();
-  const { dailyReports = [], deleteDailyReport, showToast } = useApp();
+  const {
+    dailyReports = [],
+    saveDailyReport,
+    deleteDailyReport,
+    tasks = [],
+    categories = [],
+    workSessions = [],
+    activeWorkSession,
+    showToast,
+  } = useApp();
   const todayStr = getTodayDateString();
+
+  const handleAutoCreateTodayReport = () => {
+    const dayTasks = tasks.filter((t) => t.date === todayStr);
+    const doneTasks = dayTasks.filter((t) => t.status === 'completed' || t.completed);
+
+    const daySessions = (workSessions || []).filter(
+      (s) => s.date === todayStr || s.startTime?.startsWith(todayStr)
+    );
+
+    let sessionSummary = '';
+    let totalSessionMins = 0;
+    if (daySessions.length > 0) {
+      const parts = daySessions.map((s, idx) => {
+        const start = s.startTime ? (s.startTime.includes('T') ? s.startTime.split('T')[1].substring(0, 5) : s.startTime) : 'Start';
+        const end = s.endTime ? (s.endTime.includes('T') ? s.endTime.split('T')[1].substring(0, 5) : s.endTime) : 'Now';
+        const durationMins = s.durationMinutes || (s.durationSeconds ? Math.round(s.durationSeconds / 60) : 60);
+        totalSessionMins += durationMins;
+        return `Timer #${idx + 1}: ${start} – ${end} (${Math.floor(durationMins / 60)}h ${durationMins % 60}m)`;
+      });
+      sessionSummary = parts.join('; ');
+    } else if (activeWorkSession?.isRunning) {
+      const start = activeWorkSession.startTime || 'Active';
+      sessionSummary = `Active session running from ${start}`;
+    }
+
+    const calculatedHours = totalSessionMins > 0
+      ? Number((totalSessionMins / 60).toFixed(1))
+      : (doneTasks.length > 0 ? Number((doneTasks.length * 0.9).toFixed(1)) : 7.0);
+
+    const completedBullets = doneTasks.length > 0
+      ? doneTasks.map((t) => {
+          const time = t.startTime ? ` (${t.startTime}${t.endTime ? ` - ${t.endTime}` : ''})` : '';
+          const cat = categories.find((c) => c.id === t.categoryId)?.name || 'General';
+          return `• ${t.title}${time} [${cat}]`;
+        }).join('\n')
+      : '• Completed scheduled sprint deliverables.';
+
+    const nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const autoReportText = [
+      `Completed today's scheduled tasks: ${doneTasks.length}/${dayTasks.length} works finished (${dayTasks.length > 0 ? Math.round((doneTasks.length / dayTasks.length) * 100) : 100}% velocity).`,
+      sessionSummary ? `Work Timer Sessions: ${sessionSummary} | Total Logged: ${calculatedHours} hrs.` : `Total Logged Hours: ${calculatedHours} hrs.`,
+      `Accomplished Deliverables:\n${completedBullets}`,
+      `Impediments & Blockers: None. Steady progress without major impediments.`,
+    ].join('\n\n');
+
+    saveDailyReport({
+      date: todayStr,
+      reportingTime: nowTimeStr,
+      dailyReportText: autoReportText,
+      title: `Daily Work Report - ${formatDate(todayStr)}`,
+      accomplishments: autoReportText,
+      highlights: `Delivered ${doneTasks.length}/${dayTasks.length} works on schedule.`,
+      blockers: 'None. Steady progress without major impediments.',
+      tomorrowPlan: 'Continue development on scheduled milestones.',
+      hoursLogged: calculatedHours,
+      mood: doneTasks.length >= Math.ceil(dayTasks.length * 0.7) ? 'fire' : 'rocket',
+      tasksCompletedCount: doneTasks.length,
+      tasksTotalCount: dayTasks.length,
+    });
+
+    showToast({
+      type: 'success',
+      title: 'Report Auto-Generated & Submitted! 🚀',
+      message: `Submitted report for ${formatDate(todayStr)} with ${doneTasks.length} completed work(s) and timer logs.`,
+    });
+  };
 
   const [archiveView, setArchiveView] = useState('cards'); // 'cards', 'table', 'timeline'
   const [archiveSearch, setArchiveSearch] = useState('');
@@ -136,6 +212,25 @@ export function ReportsArchive() {
         <div className="archive-header-actions">
           <button
             type="button"
+            className="btn btn-primary btn-sm btn-no-print"
+            style={{
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              borderColor: '#059669',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+            }}
+            onClick={handleAutoCreateTodayReport}
+            title="Auto-generates report with today's timer start-stops & completed works, and submits it immediately"
+          >
+            <Sparkles size={14} /> ⚡ Auto-Create Today's Report
+          </button>
+
+          <button
+            type="button"
             className="btn btn-ghost btn-sm"
             onClick={() => setShowKPIs(!showKPIs)}
             title={showKPIs ? 'Hide summary statistics' : 'Show summary statistics'}
@@ -154,7 +249,7 @@ export function ReportsArchive() {
 
           <button
             type="button"
-            className="btn btn-primary btn-sm"
+            className="btn btn-secondary btn-sm"
             onClick={() => navigate('/reports')}
             title="Return to today's report editor"
           >
