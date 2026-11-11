@@ -36,9 +36,20 @@ const REASON_CATEGORIES = [
   { id: 'Other', label: '❓ Other Reason', color: '#64748B' },
 ];
 
+const getSafeReasonLabel = (reason) => {
+  if (!reason) return 'Deviation Event';
+  if (typeof reason === 'object' && reason !== null) {
+    return reason.name || reason.label || reason.id || 'Deviation Event';
+  }
+  return String(reason);
+};
+
 const cleanRootCause = (rc) => {
   if (!rc) return '';
-  const parts = rc.split(';').map((s) => s.trim()).filter(Boolean);
+  if (typeof rc === 'object') {
+    return JSON.stringify(rc);
+  }
+  const parts = String(rc).split(';').map((s) => s.trim()).filter(Boolean);
   return Array.from(new Set(parts)).join('; ');
 };
 
@@ -80,7 +91,7 @@ export function DeviationsPage() {
     endTime: '11:00',
     plannedAction: '',
     actualAction: '',
-    reasonCategory: 'Deviation',
+    reasonCategory: 'Social Media / Browsing',
     rootCause: '',
     lessonLearned: '',
     deviationType: 'unproductive',
@@ -117,7 +128,7 @@ export function DeviationsPage() {
       endTime: task?.endTime || '11:00',
       plannedAction: task?.title || '',
       actualAction: '',
-      reasonCategory: task?.category || 'Deviation',
+      reasonCategory: 'Social Media / Browsing',
       rootCause: '',
       lessonLearned: '',
       deviationType: 'unproductive',
@@ -128,15 +139,16 @@ export function DeviationsPage() {
 
   const handleOpenEditModal = (dev) => {
     setEditingId(dev.id);
+    const safeReason = getSafeReasonLabel(dev.reasonCategory);
     setForm({
       date: dev.date,
       startTime: dev.startTime,
       endTime: dev.endTime,
       plannedAction: dev.plannedAction,
       actualAction: dev.actualAction,
-      reasonCategory: dev.reasonCategory || 'Deviation',
-      rootCause: dev.rootCause || '',
-      lessonLearned: dev.lessonLearned || '',
+      reasonCategory: safeReason,
+      rootCause: typeof dev.rootCause === 'object' && dev.rootCause !== null ? JSON.stringify(dev.rootCause) : (dev.rootCause || ''),
+      lessonLearned: typeof dev.lessonLearned === 'object' && dev.lessonLearned !== null ? JSON.stringify(dev.lessonLearned) : (dev.lessonLearned || ''),
       deviationType: dev.deviationType || 'unproductive',
       taskId: dev.taskId || '',
     });
@@ -147,6 +159,7 @@ export function DeviationsPage() {
     e.preventDefault();
     const payload = {
       ...form,
+      reasonCategory: getSafeReasonLabel(form.reasonCategory),
       durationMinutes: formDurationMinutes,
     };
 
@@ -381,10 +394,12 @@ export function DeviationsPage() {
               const h = Math.floor(durM / 60);
               const m = durM % 60;
               const durationLabel = h > 0 ? `${h}h ${m}m` : `${m}m`;
-              const categoryMatch = REASON_CATEGORIES.find((c) => c.id === dev.reasonCategory) || {
-                label: dev.reasonCategory || 'Deviation Event',
-                color: '#EF4444',
+              const safeReason = getSafeReasonLabel(dev.reasonCategory);
+              const categoryMatch = REASON_CATEGORIES.find((c) => c.id === safeReason) || {
+                label: safeReason,
+                color: (typeof dev.reasonCategory === 'object' && dev.reasonCategory?.color) || '#EF4444',
               };
+              const displayCategoryLabel = getSafeReasonLabel(categoryMatch.label);
               const rootCauseClean = cleanRootCause(dev.rootCause);
 
               return (
@@ -420,7 +435,7 @@ export function DeviationsPage() {
                           color: categoryMatch.color,
                         }}
                       >
-                        {categoryMatch.label}
+                        {displayCategoryLabel}
                       </span>
                     </div>
 
@@ -556,7 +571,7 @@ export function DeviationsPage() {
                   value={form.taskId || ''}
                   onChange={(selectedId) => {
                     if (!selectedId) {
-                      setForm((prev) => ({ ...prev, taskId: '', plannedAction: '', reasonCategory: 'Deviation' }));
+                      setForm((prev) => ({ ...prev, taskId: '', plannedAction: '' }));
                       return;
                     }
                     const t = selectableTasks.find((item) => item.id === selectedId);
@@ -565,7 +580,6 @@ export function DeviationsPage() {
                         ...prev,
                         plannedAction: t.title,
                         taskId: t.id,
-                        reasonCategory: t.category || 'Deviation',
                         ...(t.startTime && { startTime: t.startTime }),
                         ...(t.endTime && { endTime: t.endTime }),
                         ...(t.date && { date: t.date }),
@@ -577,12 +591,16 @@ export function DeviationsPage() {
                   isClearable={true}
                   options={[
                     { value: '', label: '-- Choose a scheduled task or write manually --' },
-                    ...selectableTasks.map((t) => ({
-                      value: t.id,
-                      label: t.title,
-                      description: `${t.startTime || 'No time'}${t.endTime ? ` - ${t.endTime}` : ''} • ${t.category || 'Task'}`,
-                      color: t.color || '#3B82F6',
-                    })),
+                    ...selectableTasks.map((t) => {
+                      const catName = typeof t.category === 'object' && t.category !== null ? t.category.name : (t.category || 'Task');
+                      const catColor = (typeof t.category === 'object' && t.category !== null ? t.category.color : null) || t.color || '#3B82F6';
+                      return {
+                        value: t.id,
+                        label: t.title,
+                        description: `${t.startTime || 'No time'}${t.endTime ? ` - ${t.endTime}` : ''} • ${catName}`,
+                        color: catColor,
+                      };
+                    }),
                   ]}
                 />
               </div>
@@ -641,6 +659,39 @@ export function DeviationsPage() {
                   <span className="deviation-duration-val">
                     {Math.floor(formDurationMinutes / 60) > 0 ? `${Math.floor(formDurationMinutes / 60)}h ` : ''}{formDurationMinutes % 60}m ({formDurationMinutes} mins)
                   </span>
+                </div>
+              </div>
+
+              {/* Reason Category Selector */}
+              <div className="deviation-form-section">
+                <label className="deviation-label-with-icon">
+                  <Flame size={14} color="#EF4444" />
+                  <span>Reason Category / Trigger</span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                  {REASON_CATEGORIES.map((cat) => {
+                    const isSelected = form.reasonCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, reasonCategory: cat.id }))}
+                        style={{
+                          background: isSelected ? `${cat.color}25` : 'rgba(255, 255, 255, 0.05)',
+                          border: `1.5px solid ${isSelected ? cat.color : 'rgba(255, 255, 255, 0.12)'}`,
+                          color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          fontSize: '0.8rem',
+                          fontWeight: isSelected ? '700' : '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

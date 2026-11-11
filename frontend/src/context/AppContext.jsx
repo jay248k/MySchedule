@@ -85,7 +85,17 @@ export function AppProvider({ children }) {
   const [workSessions, setWorkSessions] = useState(() => storageService.getWorkSessions());
   const [activeWorkSession, setActiveWorkSession] = useState(() => storageService.getActiveWorkSession());
   const [isStopModalOpen, setIsStopModalOpen] = useState(false);
-  const [deviations, setDeviations] = useState(() => storageService.getDeviations());
+  const [deviations, setDeviations] = useState(() => {
+    const raw = storageService.getDeviations();
+    if (!Array.isArray(raw)) return [];
+    return raw.map((d) => {
+      let rc = d.reasonCategory;
+      if (typeof rc === 'object' && rc !== null) {
+        rc = rc.name || rc.label || rc.id || 'Distraction';
+      }
+      return { ...d, reasonCategory: rc || 'Distraction' };
+    });
+  });
   const [requests, setRequests] = useState(() => storageService.getRequests());
   const [importHistory, setImportHistory] = useState(() => storageService.getImportHistory());
   const [workChains, setWorkChains] = useState(() => storageService.getWorkChains());
@@ -241,7 +251,13 @@ export function AppProvider({ children }) {
         const serverIds = new Set(deviationsRes.data.map((d) => d.id));
         const stored = storageService.getDeviations();
         const localDeviations = (Array.isArray(stored) ? stored : []).filter((d) => !serverIds.has(d.id));
-        const combined = [...deviationsRes.data, ...localDeviations];
+        const combined = [...deviationsRes.data, ...localDeviations].map((d) => {
+          let rc = d.reasonCategory;
+          if (typeof rc === 'object' && rc !== null) {
+            rc = rc.name || rc.label || rc.id || 'Distraction';
+          }
+          return { ...d, reasonCategory: rc || 'Distraction' };
+        });
         setDeviations(combined);
         storageService.saveDeviations(combined);
       }
@@ -1542,18 +1558,24 @@ export function AppProvider({ children }) {
   // Schedule Deviations Handlers (Planned vs Actual / Mistakes)
   const addDeviation = useCallback(
     async (deviationData) => {
+      let safeReason = deviationData.reasonCategory;
+      if (typeof safeReason === 'object' && safeReason !== null) {
+        safeReason = safeReason.name || safeReason.label || safeReason.id || 'Distraction';
+      }
+      safeReason = safeReason || 'Distraction';
+
       const payload = {
-        id: `dev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: deviationData.id || `dev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         date: deviationData.date || getTodayDateString(),
         startTime: deviationData.startTime || '10:00',
         endTime: deviationData.endTime || '11:00',
         durationMinutes: Number(deviationData.durationMinutes) || 60,
-        plannedAction: deviationData.plannedAction || '',
-        actualAction: deviationData.actualAction || '',
-        reasonCategory: deviationData.reasonCategory || 'Distraction',
-        rootCause: deviationData.rootCause || '',
-        lessonLearned: deviationData.lessonLearned || '',
-        deviationType: deviationData.deviationType || 'unproductive',
+        plannedAction: String(deviationData.plannedAction || ''),
+        actualAction: String(deviationData.actualAction || ''),
+        reasonCategory: String(safeReason),
+        rootCause: typeof deviationData.rootCause === 'object' && deviationData.rootCause !== null ? JSON.stringify(deviationData.rootCause) : String(deviationData.rootCause || ''),
+        lessonLearned: typeof deviationData.lessonLearned === 'object' && deviationData.lessonLearned !== null ? JSON.stringify(deviationData.lessonLearned) : String(deviationData.lessonLearned || ''),
+        deviationType: typeof deviationData.deviationType === 'string' ? deviationData.deviationType : 'unproductive',
         taskId: deviationData.taskId || null,
       };
 
@@ -1566,8 +1588,14 @@ export function AppProvider({ children }) {
       try {
         const res = await api.createDeviation(payload);
         if (res?.data) {
+          const serverDev = {
+            ...res.data,
+            reasonCategory: typeof res.data.reasonCategory === 'object' && res.data.reasonCategory !== null
+              ? (res.data.reasonCategory.name || res.data.reasonCategory.id || 'Distraction')
+              : (res.data.reasonCategory || 'Distraction'),
+          };
           setDeviations((prev) =>
-            prev.map((d) => (d.id === payload.id ? res.data : d))
+            prev.map((d) => (d.id === payload.id ? serverDev : d))
           );
         }
       } catch (e) {
@@ -1585,14 +1613,23 @@ export function AppProvider({ children }) {
 
   const updateDeviation = useCallback(
     async (id, updates) => {
+      const safeUpdates = { ...updates };
+      if (safeUpdates.reasonCategory !== undefined) {
+        if (typeof safeUpdates.reasonCategory === 'object' && safeUpdates.reasonCategory !== null) {
+          safeUpdates.reasonCategory = safeUpdates.reasonCategory.name || safeUpdates.reasonCategory.label || safeUpdates.reasonCategory.id || 'Distraction';
+        } else {
+          safeUpdates.reasonCategory = String(safeUpdates.reasonCategory || 'Distraction');
+        }
+      }
+
       setDeviations((prev) => {
-        const updated = prev.map((d) => (d.id === id ? { ...d, ...updates } : d));
+        const updated = prev.map((d) => (d.id === id ? { ...d, ...safeUpdates } : d));
         storageService.saveDeviations(updated);
         return updated;
       });
 
       try {
-        await api.updateDeviation(id, updates);
+        await api.updateDeviation(id, safeUpdates);
       } catch (e) {
         console.warn('Updated deviation locally:', e);
       }
