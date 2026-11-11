@@ -76,20 +76,22 @@ export function ThoughtsPage() {
   const categories = useMemo(() => {
     const set = new Set(['Motivation', 'Discipline', 'Mindset', 'Productivity', 'Wisdom']);
     thoughts.forEach((t) => {
-      if (t.category) set.add(t.category);
+      const catName = typeof t.category === 'object' ? t.category?.name : t.category;
+      if (catName) set.add(catName);
     });
     return Array.from(set);
   }, [thoughts]);
 
   const filteredThoughts = useMemo(() => {
     const list = thoughts.filter((t) => {
-      if (selectedCategory !== 'all' && t.category !== selectedCategory) {
+      const catName = typeof t.category === 'object' ? t.category?.name : t.category;
+      if (selectedCategory !== 'all' && catName !== selectedCategory) {
         return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchText = (t.text || '').toLowerCase().includes(q);
-        const matchCategory = (t.category || '').toLowerCase().includes(q);
+        const matchCategory = (catName || '').toLowerCase().includes(q);
         if (!matchText && !matchCategory) return false;
       }
       return true;
@@ -269,7 +271,7 @@ export function ThoughtsPage() {
               <div>
                 <div className="thought-card-header">
                   <span className="thought-category-badge">
-                    {item.category || 'General'}
+                    {typeof item.category === 'object' ? item.category?.name : (item.category || 'General')}
                   </span>
                   <div className="thought-card-actions">
                     <button
@@ -280,7 +282,7 @@ export function ThoughtsPage() {
                       <Pin size={14} fill={item.isPinned ? '#F59E0B' : 'none'} />
                     </button>
                     <button
-                      onClick={() => handleCopy(`"${item.text}" — ${item.author}`, item.id)}
+                      onClick={() => handleCopy(item.text, item.id)}
                       title="Copy quote"
                       className={`thought-action-btn thought-btn-copy ${copiedId === item.id ? 'copied' : ''}`}
                     >

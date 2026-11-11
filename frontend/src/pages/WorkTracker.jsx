@@ -400,9 +400,8 @@ export function WorkTracker() {
           MISSION CONTROL FOCUS COCKPIT DECK (COMPACT INTEGRATED HEADER)
          ========================================================================== */}
       <div
-        className={`focus-cockpit-deck ${
-          isRunning ? 'is-running' : isPaused ? 'is-paused' : isFinished ? 'is-finished' : 'is-idle'
-        }`}
+        className={`focus-cockpit-deck ${isRunning ? 'is-running' : isPaused ? 'is-paused' : isFinished ? 'is-finished' : 'is-idle'
+          }`}
       >
         {/* Cockpit Status Bar, Day Stepper & Inline Micro-Stats */}
         <div className="cockpit-top-bar">
@@ -679,27 +678,7 @@ export function WorkTracker() {
               <Square size={16} fill="currentColor" />
               <span>Stop Work & Enter Remarks</span>
             </button>
-          ) : isPaused ? (
-            <>
-              <button
-                type="button"
-                onClick={handleStartSession}
-                id="btn-tracker-start-session"
-                className="btn-resume-focus"
-              >
-                <Play size={16} fill="currentColor" />
-                <span>Resume Focus ({activeTimerDisplay})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => finishDayWorkSession(activeDate)}
-                className="btn-finish-day"
-              >
-                <Flag size={14} />
-                <span>Finish Day</span>
-              </button>
-            </>
-          ) : (
+          ) : isPaused ? null : (
             <>
               <button
                 type="button"
@@ -777,6 +756,14 @@ export function WorkTracker() {
               const reasonMeta = getReasonMeta(item.reason, isWork);
               const linkedTask = item.taskId ? tasks.find((t) => t.id === item.taskId) : null;
 
+              const linkedCategoryName = typeof linkedTask?.category === 'object'
+                ? linkedTask.category?.name
+                : linkedTask?.category;
+              const linkedCategoryColor = (typeof linkedTask?.category === 'object' ? linkedTask.category?.color : null)
+                || linkedTask?.categoryColor
+                || linkedTask?.color
+                || '#3B82F6';
+
               if (isLive) {
                 return (
                   <div key={item.id} className="stream-node-wrapper">
@@ -799,18 +786,23 @@ export function WorkTracker() {
                               {item.taskTitle}
                             </span>
                             <span className="stream-badge-work is-live">
-                              <Activity size={11} className="animate-pulse" /> Recording
+                              <Activity size={10} className="animate-pulse" /> Live
                             </span>
+                            {linkedCategoryName && (
+                              <span className="stream-task-category-pill">
+                                <span
+                                  className="category-color-dot"
+                                  style={{ background: linkedCategoryColor }}
+                                />
+                                <span>{linkedCategoryName}</span>
+                              </span>
+                            )}
                           </div>
 
                           <div className="stream-node-meta">
                             <span className="stream-time-badge">
-                              <Clock size={12} className="text-emerald-400" />
+                              <Clock size={11} className="text-emerald-400" />
                               Started at {item.startTime}
-                            </span>
-                            <span className="meta-bullet">•</span>
-                            <span className="meta-context text-emerald-400">
-                              Real-time continuous focus tracking
                             </span>
                           </div>
                         </div>
@@ -818,16 +810,16 @@ export function WorkTracker() {
 
                       <div className="stream-node-right">
                         <div className="stream-node-duration is-live" style={{ color: '#34D399' }}>
-                          <Timer size={13} />
+                          <Timer size={12} />
                           <span>{item.durationStr}</span>
                         </div>
                         <button
                           type="button"
                           className="btn-stop-focus"
                           onClick={requestStopWorkSession}
-                          style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                          style={{ padding: '5px 12px', fontSize: '0.76rem' }}
                         >
-                          <Square size={12} fill="currentColor" /> Stop & Remarks
+                          <Square size={11} fill="currentColor" /> Stop
                         </button>
                       </div>
                     </div>
@@ -841,8 +833,8 @@ export function WorkTracker() {
                     <div className="stream-node-pin">
                       <div
                         style={{
-                          width: 7,
-                          height: 7,
+                          width: 6,
+                          height: 6,
                           borderRadius: '50%',
                           background: '#10B981',
                           boxShadow: '0 0 6px #10B981',
@@ -859,7 +851,7 @@ export function WorkTracker() {
                             border: '1px solid rgba(16, 185, 129, 0.35)',
                           }}
                         >
-                          <Zap size={18} color="#10B981" />
+                          <Zap size={15} color="#10B981" />
                         </div>
 
                         <div className="stream-node-details">
@@ -867,28 +859,24 @@ export function WorkTracker() {
                             <span className="stream-node-title">{item.taskTitle}</span>
 
                             <span className="stream-badge-work">
-                              <span className="stream-pulse-dot" /> Focus Segment
+                              <span className="stream-pulse-dot" /> Focus
                             </span>
 
-                            {linkedTask?.category && (
+                            {linkedCategoryName && (
                               <span className="stream-task-category-pill">
                                 <span
                                   className="category-color-dot"
-                                  style={{ background: linkedTask.categoryColor || '#3B82F6' }}
+                                  style={{ background: linkedCategoryColor }}
                                 />
-                                <span>{linkedTask.category}</span>
+                                <span>{linkedCategoryName}</span>
                               </span>
                             )}
                           </div>
 
                           <div className="stream-node-meta">
                             <span className="stream-time-badge">
-                              <Clock size={12} className="text-emerald-400" />
+                              <Clock size={11} className="text-emerald-400" />
                               {item.startTime} → {item.endTime}
-                            </span>
-                            <span className="meta-bullet">•</span>
-                            <span className="meta-context">
-                              {item.durationStr} focused session
                             </span>
                           </div>
                         </div>
@@ -896,7 +884,7 @@ export function WorkTracker() {
 
                       <div className="stream-node-right">
                         <div className="stream-node-duration">
-                          <Timer size={13} />
+                          <Timer size={12} />
                           <span>{item.durationStr}</span>
                         </div>
 
@@ -907,7 +895,7 @@ export function WorkTracker() {
                             onClick={() => setEditingSession(item.rawSession)}
                             title="Edit session details"
                           >
-                            <Edit2 size={13} />
+                            <Edit2 size={12} />
                           </button>
                           <button
                             type="button"
@@ -919,7 +907,7 @@ export function WorkTracker() {
                             }}
                             title="Delete session log"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={12} />
                           </button>
                         </div>
                       </div>
@@ -934,8 +922,8 @@ export function WorkTracker() {
                   <div className="stream-node-pin is-gap">
                     <div
                       style={{
-                        width: 7,
-                        height: 7,
+                        width: 6,
+                        height: 6,
                         borderRadius: '50%',
                         background: '#F59E0B',
                         boxShadow: '0 0 6px #F59E0B',
@@ -981,25 +969,18 @@ export function WorkTracker() {
                         </div>
 
                         <div className="stream-node-meta">
-                          <span className="stream-time-badge">
-                            <Clock size={12} className="text-amber-400" />
+                          <span className="stream-time-badge is-gap">
+                            <Clock size={11} className="text-amber-400" />
                             {item.startTime} → {item.endTime}
                           </span>
-                          <span className="meta-bullet">•</span>
-                          <span className="meta-context">
-                            {isOngoing
-                              ? `Paused since ${item.startTime} · Resumes automatically on click`
-                              : `${item.durationStr} break intermission`}
-                          </span>
-                        </div>
 
-                        {item.notes && item.notes.trim() !== '' && (
-                          <div className="stream-node-remarks-banner">
-                            <FileText size={13} className="text-amber-400" />
-                            <span className="remarks-tag">Stop Remarks:</span>
-                            <span className="remarks-text">"{item.notes}"</span>
-                          </div>
-                        )}
+                          {item.notes && item.notes.trim() !== '' && (
+                            <span className="stream-compact-remarks" title={item.notes}>
+                              <FileText size={11} className="text-amber-400" />
+                              <span className="remarks-inline-quote">"{item.notes}"</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1009,14 +990,14 @@ export function WorkTracker() {
                           type="button"
                           onClick={handleStartSession}
                           className="btn-resume-focus"
-                          style={{ padding: '7px 16px', fontSize: '0.78rem' }}
+                          style={{ padding: '5px 12px', fontSize: '0.76rem' }}
                         >
-                          <Play size={13} fill="currentColor" /> Resume Work
+                          <Play size={12} fill="currentColor" /> Resume Work
                         </button>
                       ) : (
                         <>
                           <div className="stream-node-duration is-gap">
-                            <Timer size={13} />
+                            <Timer size={12} />
                             <span>⚡ {item.durationStr}</span>
                           </div>
                           {item.rawSession && (
@@ -1027,7 +1008,7 @@ export function WorkTracker() {
                                 onClick={() => setEditingSession(item.rawSession)}
                                 title="Edit break reason & remarks"
                               >
-                                <Edit2 size={13} />
+                                <Edit2 size={12} />
                               </button>
                             </div>
                           )}
