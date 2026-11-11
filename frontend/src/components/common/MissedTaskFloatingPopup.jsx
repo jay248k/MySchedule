@@ -41,6 +41,17 @@ export default function MissedTaskFloatingPopup() {
   const [isDismissed, setIsDismissed] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
 
+  // Dynamic theme detection for Light vs Dark mode compatibility
+  const isDark = useMemo(() => {
+    if (typeof document !== 'undefined') {
+      const dataTheme = document.documentElement.getAttribute('data-theme');
+      if (dataTheme === 'dark' || dataTheme === 'oled') return true;
+      if (dataTheme === 'light' || dataTheme === 'paper') return false;
+      if (document.documentElement.classList.contains('dark-mode')) return true;
+    }
+    return settings?.theme === 'dark' || settings?.theme === 'oled';
+  }, [settings?.theme]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
@@ -215,12 +226,18 @@ export default function MissedTaskFloatingPopup() {
               zIndex: 9999,
               width: '320px',
               maxWidth: 'calc(100vw - 32px)',
-              background: 'linear-gradient(135deg, rgba(20, 27, 45, 0.97) 0%, rgba(11, 17, 32, 0.98) 100%)',
+              background: isDark
+                ? 'linear-gradient(135deg, rgba(20, 27, 45, 0.97) 0%, rgba(11, 17, 32, 0.98) 100%)'
+                : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              border: isDark
+                ? '1px solid rgba(255, 255, 255, 0.12)'
+                : '1px solid #E2E8F0',
               borderRadius: '14px',
               padding: '11px 13px',
-              boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(239, 68, 68, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+              boxShadow: isDark
+                ? '0 20px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(239, 68, 68, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                : '0 16px 36px -6px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
@@ -236,7 +253,9 @@ export default function MissedTaskFloatingPopup() {
                 width: '120px',
                 height: '120px',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, transparent 70%)',
+                background: isDark
+                  ? 'radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, transparent 70%)'
+                  : 'radial-gradient(circle, rgba(239, 68, 68, 0.08) 0%, transparent 70%)',
                 pointerEvents: 'none',
               }}
             />
@@ -259,17 +278,31 @@ export default function MissedTaskFloatingPopup() {
                     gap: '4px',
                     padding: '2px 8px',
                     borderRadius: '9999px',
-                    background: currentItem.isWorkPaused
-                      ? 'rgba(245, 158, 11, 0.2)'
-                      : currentItem.isRequest
-                      ? 'rgba(245, 158, 11, 0.16)'
-                      : 'rgba(239, 68, 68, 0.16)',
-                    border: currentItem.isWorkPaused
-                      ? '1px solid rgba(245, 158, 11, 0.55)'
-                      : currentItem.isRequest
-                      ? '1px solid rgba(245, 158, 11, 0.35)'
-                      : '1px solid rgba(239, 68, 68, 0.35)',
-                    color: currentItem.isWorkPaused ? '#FBBF24' : currentItem.isRequest ? '#FBBF24' : '#F87171',
+                    background: isDark
+                      ? (currentItem.isWorkPaused
+                        ? 'rgba(245, 158, 11, 0.2)'
+                        : currentItem.isRequest
+                        ? 'rgba(245, 158, 11, 0.16)'
+                        : 'rgba(239, 68, 68, 0.16)')
+                      : (currentItem.isWorkPaused
+                        ? '#FEF3C7'
+                        : currentItem.isRequest
+                        ? '#FEF3C7'
+                        : '#FEE2E2'),
+                    border: isDark
+                      ? (currentItem.isWorkPaused
+                        ? '1px solid rgba(245, 158, 11, 0.55)'
+                        : currentItem.isRequest
+                        ? '1px solid rgba(245, 158, 11, 0.35)'
+                        : '1px solid rgba(239, 68, 68, 0.35)')
+                      : (currentItem.isWorkPaused
+                        ? '1px solid #FCD34D'
+                        : currentItem.isRequest
+                        ? '1px solid #FCD34D'
+                        : '1px solid #FCA5A5'),
+                    color: isDark
+                      ? (currentItem.isWorkPaused ? '#FBBF24' : currentItem.isRequest ? '#FBBF24' : '#F87171')
+                      : (currentItem.isWorkPaused ? '#B45309' : currentItem.isRequest ? '#B45309' : '#DC2626'),
                     fontSize: '0.66rem',
                     fontWeight: 800,
                     letterSpacing: '0.04em',
@@ -301,14 +334,22 @@ export default function MissedTaskFloatingPopup() {
                       gap: '4px',
                       padding: '3px 9px',
                       borderRadius: '9999px',
-                      background: currentItem.isWorkPaused ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.22)',
-                      border: currentItem.isWorkPaused ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(239, 68, 68, 0.5)',
-                      color: currentItem.isWorkPaused ? '#FDE68A' : '#FECACA',
+                      background: isDark
+                        ? (currentItem.isWorkPaused ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.22)')
+                        : (currentItem.isWorkPaused ? '#FEF3C7' : '#FEE2E2'),
+                      border: isDark
+                        ? (currentItem.isWorkPaused ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(239, 68, 68, 0.5)')
+                        : (currentItem.isWorkPaused ? '1px solid #FCD34D' : '1px solid #FCA5A5'),
+                      color: isDark
+                        ? (currentItem.isWorkPaused ? '#FDE68A' : '#FECACA')
+                        : (currentItem.isWorkPaused ? '#B45309' : '#DC2626'),
                       fontSize: '0.68rem',
                       fontWeight: 800,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+                      boxShadow: isDark
+                        ? '0 2px 6px rgba(0, 0, 0, 0.25)'
+                        : '0 1px 3px rgba(0, 0, 0, 0.08)',
                     }}
                   >
                     <Layers size={11} strokeWidth={2.5} />
@@ -324,9 +365,9 @@ export default function MissedTaskFloatingPopup() {
                   }}
                   title="Close notification"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: 'rgba(255, 255, 255, 0.65)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                    color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#475569',
                     cursor: 'pointer',
                     width: '24px',
                     height: '24px',
@@ -350,7 +391,7 @@ export default function MissedTaskFloatingPopup() {
                     margin: 0,
                     fontSize: '0.94rem',
                     fontWeight: 800,
-                    color: '#FFFFFF',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
                     lineHeight: 1.35,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -367,7 +408,7 @@ export default function MissedTaskFloatingPopup() {
                     gap: '6px',
                     marginTop: '3px',
                     fontSize: '0.74rem',
-                    color: 'rgba(255, 255, 255, 0.75)',
+                    color: isDark ? 'rgba(255, 255, 255, 0.75)' : '#475569',
                     fontWeight: 500,
                   }}
                 >
@@ -378,13 +419,13 @@ export default function MissedTaskFloatingPopup() {
                     </span>
                   )}
                   {currentItem.accumulatedSeconds > 0 && (
-                    <span style={{ color: '#34D399', fontWeight: 700 }}>
+                    <span style={{ color: isDark ? '#34D399' : '#059669', fontWeight: 700 }}>
                       · {(currentItem.accumulatedSeconds / 3600).toFixed(1)}h logged
                     </span>
                   )}
                 </div>
                 {currentItem.remarks && currentItem.remarks !== currentItem.reason && (
-                  <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontStyle: 'italic', marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.72rem', color: isDark ? '#94A3B8' : '#64748B', fontStyle: 'italic', marginTop: '2px' }}>
                     "{currentItem.remarks}"
                   </div>
                 )}
@@ -401,7 +442,7 @@ export default function MissedTaskFloatingPopup() {
                     margin: 0,
                     fontSize: '0.94rem',
                     fontWeight: 800,
-                    color: '#FFFFFF',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
                     lineHeight: 1.35,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -418,7 +459,7 @@ export default function MissedTaskFloatingPopup() {
                     gap: '8px',
                     marginTop: '3px',
                     fontSize: '0.74rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
+                    color: isDark ? 'rgba(255, 255, 255, 0.6)' : '#64748B',
                     fontWeight: 500,
                   }}
                 >
@@ -491,7 +532,7 @@ export default function MissedTaskFloatingPopup() {
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      color: '#93C5FD',
+                      color: isDark ? '#93C5FD' : '#2563EB',
                       fontSize: '0.7rem',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -569,9 +610,9 @@ export default function MissedTaskFloatingPopup() {
                   style={{
                     padding: '6px 6px',
                     borderRadius: '8px',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    color: '#FCA5A5',
+                    border: isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #FECACA',
+                    background: isDark ? 'rgba(239, 68, 68, 0.12)' : '#FEF2F2',
+                    color: isDark ? '#FCA5A5' : '#DC2626',
                     fontSize: '0.72rem',
                     fontWeight: 700,
                     cursor: 'pointer',

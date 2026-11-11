@@ -9,6 +9,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import CancelRemarksModal from '../requests/CancelRemarksModal';
 import RescheduleRequestModal from '../requests/RescheduleRequestModal';
 
@@ -20,9 +21,20 @@ export default function AllMissedTasksModal({
   onReschedule,
   onCancel,
 }) {
+  const { settings } = useApp();
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'tasks', 'requests'
   const [cancellingItem, setCancellingItem] = useState(null);
   const [reschedulingItem, setReschedulingItem] = useState(null);
+
+  const isDark = useMemo(() => {
+    if (typeof document !== 'undefined') {
+      const dataTheme = document.documentElement.getAttribute('data-theme');
+      if (dataTheme === 'dark' || dataTheme === 'oled') return true;
+      if (dataTheme === 'light' || dataTheme === 'paper') return false;
+      if (document.documentElement.classList.contains('dark-mode')) return true;
+    }
+    return settings?.theme === 'dark' || settings?.theme === 'oled';
+  }, [settings?.theme]);
 
   const filteredItems = useMemo(() => {
     if (activeFilter === 'tasks') {
@@ -73,15 +85,19 @@ export default function AllMissedTasksModal({
       >
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(20, 27, 45, 0.98) 0%, rgba(11, 17, 32, 0.99) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(20, 27, 45, 0.98) 0%, rgba(11, 17, 32, 0.99) 100%)'
+              : '#FFFFFF',
+            border: isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #E2E8F0',
             borderRadius: '20px',
             width: '100%',
             maxWidth: '680px',
             maxHeight: '88vh',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 28px 60px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(239, 68, 68, 0.25)',
+            boxShadow: isDark
+              ? '0 28px 60px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(239, 68, 68, 0.25)'
+              : '0 24px 60px -10px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(239, 68, 68, 0.2)',
             overflow: 'hidden',
             animation: 'fadeIn 0.2s ease-out',
             position: 'relative',
@@ -97,7 +113,9 @@ export default function AllMissedTasksModal({
               width: '260px',
               height: '140px',
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, transparent 70%)',
+              background: isDark
+                ? 'radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, transparent 70%)'
+                : 'radial-gradient(circle, rgba(239, 68, 68, 0.08) 0%, transparent 70%)',
               pointerEvents: 'none',
             }}
           />
@@ -106,11 +124,11 @@ export default function AllMissedTasksModal({
           <div
             style={{
               padding: '18px 24px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'rgba(239, 68, 68, 0.06)',
+              background: isDark ? 'rgba(239, 68, 68, 0.06)' : '#FEF2F2',
               position: 'relative',
               zIndex: 2,
             }}
@@ -121,8 +139,8 @@ export default function AllMissedTasksModal({
                   width: '40px',
                   height: '40px',
                   borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.16)',
-                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  background: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
+                  border: isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #FCA5A5',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -133,7 +151,7 @@ export default function AllMissedTasksModal({
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.01em' }}>
                     All Overdue Notifications
                   </h3>
                   <span
@@ -142,9 +160,9 @@ export default function AllMissedTasksModal({
                       alignItems: 'center',
                       padding: '2px 8px',
                       borderRadius: '9999px',
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      border: '1px solid rgba(239, 68, 68, 0.4)',
-                      color: '#FCA5A5',
+                      background: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2',
+                      border: isDark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid #FCA5A5',
+                      color: isDark ? '#FCA5A5' : '#DC2626',
                       fontSize: '0.7rem',
                       fontWeight: 800,
                     }}
@@ -152,7 +170,7 @@ export default function AllMissedTasksModal({
                     {missedTasks.length} Pending
                   </span>
                 </div>
-                <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                <p style={{ margin: '3px 0 0 0', fontSize: '0.8rem', color: isDark ? 'rgba(255, 255, 255, 0.6)' : '#475569' }}>
                   All items arranged in chronological order. Mark completed, reschedule, or cancel each:
                 </p>
               </div>
@@ -162,9 +180,9 @@ export default function AllMissedTasksModal({
               onClick={onClose}
               title="Close modal"
               style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.7)',
+                background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#475569',
                 cursor: 'pointer',
                 width: '32px',
                 height: '32px',
@@ -184,10 +202,10 @@ export default function AllMissedTasksModal({
             <div
               style={{
                 padding: '10px 24px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                 display: 'flex',
                 gap: '8px',
-                background: 'rgba(0, 0, 0, 0.2)',
+                background: isDark ? 'rgba(0, 0, 0, 0.2)' : '#F8FAFC',
               }}
             >
               {[
@@ -203,9 +221,15 @@ export default function AllMissedTasksModal({
                     style={{
                       padding: '5px 12px',
                       borderRadius: '9999px',
-                      border: isActive ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
-                      background: isActive ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                      color: isActive ? '#38BDF8' : 'rgba(255, 255, 255, 0.6)',
+                      border: isActive
+                        ? '1px solid #38BDF8'
+                        : isDark
+                        ? '1px solid rgba(255, 255, 255, 0.08)'
+                        : '1px solid #E2E8F0',
+                      background: isActive
+                        ? (isDark ? 'rgba(56, 189, 248, 0.18)' : '#E0F2FE')
+                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF'),
+                      color: isActive ? '#0284C7' : (isDark ? 'rgba(255, 255, 255, 0.6)' : '#64748B'),
                       fontSize: '0.74rem',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -246,8 +270,8 @@ export default function AllMissedTasksModal({
                     width: '54px',
                     height: '54px',
                     borderRadius: '50%',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    background: isDark ? 'rgba(16, 185, 129, 0.15)' : '#DCFCE7',
+                    border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #86EFAC',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -257,10 +281,10 @@ export default function AllMissedTasksModal({
                 >
                   <CheckCircle2 size={28} />
                 </div>
-                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF' }}>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                   All Caught Up!
                 </h4>
-                <p style={{ margin: '6px 0 16px 0', fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.6)', maxWidth: '340px' }}>
+                <p style={{ margin: '6px 0 16px 0', fontSize: '0.82rem', color: isDark ? 'rgba(255, 255, 255, 0.6)' : '#64748B', maxWidth: '340px' }}>
                   There are no overdue tasks or pending requests remaining right now.
                 </p>
                 <button
@@ -288,8 +312,8 @@ export default function AllMissedTasksModal({
                   <div
                     key={item.id || idx}
                     style={{
-                      background: 'rgba(15, 23, 42, 0.85)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: isDark ? 'rgba(15, 23, 42, 0.85)' : '#F8FAFC',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                       borderRadius: '14px',
                       padding: '14px 16px',
                       display: 'flex',
@@ -308,9 +332,15 @@ export default function AllMissedTasksModal({
                             gap: '4px',
                             padding: '2px 8px',
                             borderRadius: '9999px',
-                            background: isReq ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.16)',
-                            border: isReq ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
-                            color: isReq ? '#FBBF24' : '#F87171',
+                            background: isReq
+                              ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7')
+                              : (isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2'),
+                            border: isReq
+                              ? (isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FCD34D')
+                              : (isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #FCA5A5'),
+                            color: isReq
+                              ? (isDark ? '#FBBF24' : '#B45309')
+                              : (isDark ? '#F87171' : '#DC2626'),
                             fontSize: '0.66rem',
                             fontWeight: 800,
                             letterSpacing: '0.03em',
@@ -324,7 +354,7 @@ export default function AllMissedTasksModal({
                         <span
                           style={{
                             fontSize: '0.68rem',
-                            color: 'rgba(255, 255, 255, 0.45)',
+                            color: isDark ? 'rgba(255, 255, 255, 0.45)' : '#64748B',
                             fontWeight: 700,
                           }}
                         >
@@ -332,15 +362,15 @@ export default function AllMissedTasksModal({
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.74rem', color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#475569' }}>
                         {timeString ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} color="#38BDF8" /> {timeString}
+                            <Clock size={12} color="#0284C7" /> {timeString}
                           </span>
                         ) : null}
                         {item.date && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Calendar size={12} color="#A78BFA" /> {item.date}
+                            <Calendar size={12} color="#7C3AED" /> {item.date}
                           </span>
                         )}
                       </div>
@@ -353,7 +383,7 @@ export default function AllMissedTasksModal({
                           margin: 0,
                           fontSize: '0.96rem',
                           fontWeight: 800,
-                          color: '#FFFFFF',
+                          color: isDark ? '#FFFFFF' : '#0F172A',
                           lineHeight: 1.35,
                         }}
                       >
@@ -365,10 +395,10 @@ export default function AllMissedTasksModal({
                             marginTop: '6px',
                             padding: '6px 10px',
                             borderRadius: '8px',
-                            background: 'rgba(245, 158, 11, 0.1)',
+                            background: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7',
                             borderLeft: '3px solid #F59E0B',
                             fontSize: '0.76rem',
-                            color: '#FDE68A',
+                            color: isDark ? '#FDE68A' : '#92400E',
                             lineHeight: 1.4,
                           }}
                         >
@@ -385,7 +415,7 @@ export default function AllMissedTasksModal({
                         gridTemplateColumns: '1.2fr 1.25fr 0.95fr',
                         gap: '8px',
                         paddingTop: '8px',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                       }}
                     >
                       <button
@@ -439,9 +469,9 @@ export default function AllMissedTasksModal({
                         style={{
                           padding: '7px 8px',
                           borderRadius: '8px',
-                          border: '1px solid rgba(239, 68, 68, 0.35)',
-                          background: 'rgba(239, 68, 68, 0.12)',
-                          color: '#FCA5A5',
+                          border: isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #FECACA',
+                          background: isDark ? 'rgba(239, 68, 68, 0.12)' : '#FEF2F2',
+                          color: isDark ? '#FCA5A5' : '#DC2626',
                           fontSize: '0.76rem',
                           fontWeight: 700,
                           cursor: 'pointer',
