@@ -28,6 +28,8 @@ import {
   X,
   MoreVertical,
   Clipboard,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -42,6 +44,8 @@ export function KnowledgePage() {
   const [breadcrumbs, setBreadcrumbs] = useState([]); // [{ id, title }]
   const [searchQuery, setSearchQuery] = useState('');
   const [activeItem, setActiveItem] = useState(null); // Previewing item (lesson or table)
+  const [isTableFullPage, setIsTableFullPage] = useState(true); // Default to fullpage for tables
+  const [tableSearchQuery, setTableSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('pc-grid'); // 'pc-grid' | 'cards' | 'chain'
 
   // Creation Modals
@@ -870,44 +874,107 @@ export function KnowledgePage() {
     }
   };
 
-  const renderTableContent = (tData) => {
+  const renderTableContent = (tData, isFullPage = false) => {
     try {
       const parsed = typeof tData === 'string' ? JSON.parse(tData) : tData;
       const headers = parsed?.headers || [];
-      const rows = parsed?.rows || [];
+      const rawRows = parsed?.rows || [];
+
+      // Filter rows if user typed in search query
+      const query = (tableSearchQuery || '').trim().toLowerCase();
+      const filteredRows = query
+        ? rawRows.filter((r) => r.some((c) => String(c).toLowerCase().includes(query)))
+        : rawRows;
 
       return (
-        <div className="knowledge-table-wrapper">
-          <table className="knowledge-table-element">
-            <thead className="knowledge-table-head">
-              <tr>
-                <th style={{ width: '40px', padding: '10px 14px' }}>#</th>
-                {headers.map((h, i) => (
-                  <th key={i}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rIdx) => (
-                <tr
-                  key={rIdx}
-                  style={{
-                    borderBottom: '1px solid var(--border-subtle)',
-                    background: rIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                  }}
-                >
-                  <td className="knowledge-table-cell-idx">
-                    {rIdx + 1}
-                  </td>
-                  {row.map((cell, cIdx) => (
-                    <td key={cIdx} className="knowledge-table-cell">
-                      {cell}
-                    </td>
+        <div className={`knowledge-table-wrapper ${isFullPage ? 'is-fullpage' : ''}`}>
+          {isFullPage && (
+            <div className="knowledge-table-toolbar">
+              <div className="knowledge-table-meta-pills">
+                <span className="knowledge-table-pill count">
+                  <TableIcon size={12} />
+                  <span>
+                    {query ? `${filteredRows.length} of ${rawRows.length} rows` : `${rawRows.length} rows`}
+                  </span>
+                </span>
+                <span className="knowledge-table-pill cols">
+                  <span>{headers.length} columns</span>
+                </span>
+              </div>
+
+              <div className="knowledge-table-search-box">
+                <Search size={13} className="text-secondary" />
+                <input
+                  type="text"
+                  placeholder="Filter table rows..."
+                  value={tableSearchQuery}
+                  onChange={(e) => setTableSearchQuery(e.target.value)}
+                  className="knowledge-table-search-input"
+                />
+                {tableSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTableSearchQuery('')}
+                    className="btn-icon"
+                    title="Clear filter"
+                    style={{ width: '20px', height: '20px' }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="knowledge-table-scroll-container">
+            <table className="knowledge-table-element">
+              <thead className="knowledge-table-head">
+                <tr>
+                  <th className="knowledge-th-idx">#</th>
+                  {headers.map((h, i) => (
+                    <th key={i} className="knowledge-th-cell">
+                      <span>{h}</span>
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="knowledge-table-body">
+                {filteredRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={headers.length + 1}
+                      style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}
+                    >
+                      {query ? `No rows match "${query}"` : 'This table has no rows.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRows.map((row, rIdx) => (
+                    <tr
+                      key={rIdx}
+                      className="knowledge-table-row"
+                    >
+                      <td className="knowledge-table-cell-idx">
+                        {rIdx + 1}
+                      </td>
+                      {row.map((cell, cIdx) => (
+                        <td key={cIdx} className="knowledge-table-cell">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {isFullPage && filteredRows.length > 0 && (
+            <div className="knowledge-table-footer-status">
+              <span>Showing {filteredRows.length} {filteredRows.length === 1 ? 'row' : 'rows'} across {headers.length} columns</span>
+              {query && <span>Filtered by &ldquo;{query}&rdquo;</span>}
+            </div>
+          )}
         </div>
       );
     } catch {
@@ -1045,7 +1112,200 @@ export function KnowledgePage() {
       </div>
 
       {/* Main Content Area */}
-      <div className={`knowledge-main-grid ${activeItem ? 'with-preview' : 'no-preview'}`}>
+      {activeItem && isTableFullPage ? (
+        /* ========================================================================= */
+        /* FULLPAGE VIEW: Dedicated, Spacious Full Width Viewer with Back to Folder  */
+        /* ========================================================================= */
+        <div className="knowledge-fullpage-container card">
+          {/* Top Bar: Back Button, Breadcrumbs, & Actions */}
+          <div className="knowledge-fullpage-topbar">
+            <div className="knowledge-fullpage-nav">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveItem(null);
+                  setTableSearchQuery('');
+                }}
+                className="knowledge-fullpage-back-btn"
+                title="Go back to folder view"
+              >
+                <ArrowLeft size={16} />
+                <span>Back to {currentFolder ? currentFolder.title : 'Folder'}</span>
+              </button>
+
+              <div className="knowledge-fullpage-breadcrumbs">
+                <span
+                  onClick={() => {
+                    setActiveItem(null);
+                    handleNavigateBreadcrumb(-1);
+                  }}
+                  className="breadcrumb-step link"
+                >
+                  Knowledge Base
+                </span>
+                {breadcrumbs.map((b, i) => (
+                  <React.Fragment key={b.id || i}>
+                    <ChevronRight size={13} className="breadcrumb-chevron" />
+                    <span
+                      onClick={() => {
+                        setActiveItem(null);
+                        handleNavigateBreadcrumb(i);
+                      }}
+                      className="breadcrumb-step link"
+                    >
+                      {b.title}
+                    </span>
+                  </React.Fragment>
+                ))}
+                <ChevronRight size={13} className="breadcrumb-chevron" />
+                <span className="breadcrumb-step current">
+                  {activeItem.title}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons Right */}
+            <div className="knowledge-fullpage-actions">
+              {activeItem.type === 'table' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadExcel(activeItem.title, activeItem.content)}
+                    className="btn btn-secondary btn-sm"
+                    title="Download table as Microsoft Excel (.xlsx)"
+                  >
+                    <Download size={14} /> Export Excel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadCSV(activeItem.title, activeItem.content)}
+                    className="btn btn-ghost btn-sm"
+                    title="Download table as CSV"
+                  >
+                    <Download size={14} /> CSV
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsTableFullPage(false)}
+                className="btn btn-ghost btn-sm"
+                title="Switch to Split View"
+              >
+                <Minimize2 size={14} /> Split View
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTogglePin(activeItem)}
+                className="btn btn-ghost btn-sm"
+                style={{ color: activeItem.isPinned ? '#F59E0B' : 'var(--text-secondary)' }}
+                title={activeItem.isPinned ? 'Unpin' : 'Pin to top'}
+              >
+                <Pin size={14} fill={activeItem.isPinned ? '#F59E0B' : 'none'} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenEditModal(activeItem)}
+                className="btn btn-ghost btn-sm text-primary"
+                title="Edit item"
+              >
+                <Edit2 size={14} /> Edit
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  handleDeleteItem(activeItem.id, e);
+                  setActiveItem(null);
+                }}
+                className="btn btn-ghost btn-sm text-red-500 hover:text-red-400"
+                title="Delete item"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveItem(null);
+                  setTableSearchQuery('');
+                }}
+                className="btn btn-ghost btn-sm"
+                title="Close viewer"
+              >
+                <X size={16} /> Close
+              </button>
+            </div>
+          </div>
+
+          {/* Header Banner */}
+          <div className="knowledge-fullpage-header">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className={`knowledge-preview-type-badge ${activeItem.type}`}>
+                  {activeItem.type === 'table' ? (
+                    <>
+                      <TableIcon size={12} /> Structured Data Table
+                    </>
+                  ) : (
+                    <>
+                      <BookOpen size={12} /> Knowledge Lesson
+                    </>
+                  )}
+                </span>
+                {activeItem.tags && (
+                  <span className="text-xs text-muted">
+                    🏷️ {activeItem.tags}
+                  </span>
+                )}
+              </div>
+              <h1 className="knowledge-fullpage-title">
+                {activeItem.title}
+              </h1>
+            </div>
+          </div>
+
+          {/* Optional Lesson Chaining Selector */}
+          {activeItem.type === 'lesson' && (
+            <div className="knowledge-chain-picker">
+              <LinkIcon size={14} color="#10B981" />
+              <span className="text-xs font-bold text-secondary">
+                Chain to next lesson:
+              </span>
+              <select
+                value={activeItem.nextLessonId || ''}
+                onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
+                className="form-input text-xs py-1 px-2"
+              >
+                <option value="">(None - End of chain)</option>
+                {lessonsInFolder
+                  .filter((l) => l.id !== activeItem.id)
+                  .map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.title}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
+          {/* Content Display */}
+          <div className="knowledge-fullpage-content">
+            {activeItem.type === 'table' ? (
+              renderTableContent(activeItem.content, true)
+            ) : (
+              <div className="knowledge-lesson-notes-content is-fullpage">
+                {activeItem.content || 'No content notes written for this lesson.'}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* STANDARD EXPLORER / SPLIT VIEW */
+        <div className={`knowledge-main-grid ${activeItem ? 'with-preview' : 'no-preview'}`}>
         <div className="knowledge-left-pane">
           {currentFolder && (
             <button
@@ -1398,6 +1658,14 @@ export function KnowledgePage() {
                 </h2>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsTableFullPage(true)}
+                  className="btn btn-secondary btn-sm"
+                  title="Expand to Full Page"
+                >
+                  <Maximize2 size={13} /> Full Page
+                </button>
                 {activeItem.type === 'table' && (
                   <>
                     <button
@@ -1470,7 +1738,7 @@ export function KnowledgePage() {
 
             {/* Content Display */}
             {activeItem.type === 'table' ? (
-              renderTableContent(activeItem.content)
+              renderTableContent(activeItem.content, false)
             ) : (
               <div className="knowledge-lesson-notes-content">
                 {activeItem.content || 'No content notes written for this lesson.'}
@@ -1479,6 +1747,7 @@ export function KnowledgePage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Creation Modal */}
       {modalMode && (
