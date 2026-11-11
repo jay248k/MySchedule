@@ -120,18 +120,18 @@ function getReasonMeta(reason, isWork = false) {
 
 function parseTimeToSeconds(timeStr) {
   if (!timeStr) return null;
-  if (timeStr.includes('T')) {
-    const d = new Date(timeStr);
+  const str = String(timeStr).trim();
+  if (str.includes('T')) {
+    const d = new Date(str);
     if (!isNaN(d.getTime())) return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
   }
-  const isPM = /pm/i.test(timeStr);
-  const isAM = /am/i.test(timeStr);
-  const cleanStr = timeStr.replace(/\s*(am|pm)/i, '').trim();
-  const parts = cleanStr.split(':').map((p) => parseInt(p, 10));
-  if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-    let hours = parts[0];
-    const mins = parts[1];
-    const secs = parts[2] || 0;
+  const isPM = /pm/i.test(str);
+  const isAM = /am/i.test(str);
+  const match = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    const secs = match[3] ? parseInt(match[3], 10) : 0;
     if (isPM && hours < 12) hours += 12;
     if (isAM && hours === 12) hours = 0;
     return hours * 3600 + mins * 60 + secs;
@@ -285,7 +285,7 @@ export function WorkTracker() {
 
       // 2. Break / Intermission Card (from stop time of this session to start time of next session or activeWorkSession)
       const nextSession = sorted[i + 1];
-      const nextStartTime = nextSession?.startTime || (isRunning && isToday ? activeWorkSession?.startTime : null);
+      const nextStartTime = nextSession?.startTime || (isRunning && (isToday || activeWorkSession?.date === activeDate) ? activeWorkSession?.startTime : null);
 
       if (sess.endTime && nextStartTime) {
         const gapSeconds = calculateTimeDiff(sess.endTime, nextStartTime);
@@ -307,15 +307,15 @@ export function WorkTracker() {
           sessionId: sess.id,
           rawSession: sess,
         });
-      } else if (sess.endTime && i === sorted.length - 1 && isPaused && isToday) {
-        // Tracker is currently paused / taking a break right now!
+      } else if (sess.endTime && i === sorted.length - 1 && !isRunning) {
+        // Last session and not currently tracking work -> Ongoing / Paused Break!
         stream.push({
           id: `break-ongoing-${sess.id}`,
           type: 'gap',
           isOngoing: true,
           startTime: sess.endTime,
           endTime: 'Ongoing Break',
-          reason: sess.stopReason || todayChain?.lastPauseReason || 'Personal Break',
+          reason: sess.stopReason || todayChain?.lastPauseReason || 'Break',
           notes: sess.notes || todayChain?.lastPauseRemarks || '',
           sessionId: sess.id,
           rawSession: sess,
@@ -324,7 +324,7 @@ export function WorkTracker() {
     }
 
     // 3. If currently running, add the Live Work Segment card at the end
-    if (isRunning && isToday && activeWorkSession) {
+    if (isRunning && (isToday || activeWorkSession?.date === activeDate) && activeWorkSession) {
       stream.push({
         id: 'active-live-work',
         type: 'work',
