@@ -297,7 +297,7 @@ export function ThoughtsPage() {
                 </div>
 
                 <div className="thought-body-quote">
-                  "{item.text}"
+                  {item.text}
                 </div>
               </div>
             </div>
