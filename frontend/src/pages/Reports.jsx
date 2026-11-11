@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   Timer,
   Coffee,
+  Sliders,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -84,7 +85,33 @@ export function Reports() {
     selectedDate,
     setSelectedDate,
     workChains = {},
+    settings = {},
   } = useApp();
+
+  // Dynamic ordering support for Reports sub-tabs from settings.reportsOrder
+  const sortedReportTabs = useMemo(() => {
+    const defaultTabs = [
+      { key: 'today-report', path: '/reports', label: 'Daily Standup & Work Report', shortLabel: 'Daily Standup', icon: FileText, color: '#38BDF8' },
+      { key: 'pending', path: '/reports/pending', label: 'Pending Tasks Report', shortLabel: 'Pending Tasks', icon: Clock, color: '#F59E0B' },
+      { key: 'completed', path: '/reports/completed', label: 'Completed Tasks Report', shortLabel: 'Completed Tasks', icon: CheckCircle2, color: '#10B981' },
+      { key: 'missed', path: '/reports/missed', label: 'Missed & Overdue Report', shortLabel: 'Missed & Overdue', icon: AlertTriangle, color: '#EF4444' },
+      { key: 'goals', path: '/reports/goals', label: 'Goal Progression & Milestones', shortLabel: 'Goal Progression', icon: Target, color: '#A855F7' },
+      { key: 'red-flags', path: '/reports/red-flags', label: 'Red Flag Diagnostic Report', shortLabel: 'Red Flag Report', icon: Flag, color: '#DC2626' },
+      { key: 'tracker-logs', path: '/reports/tracker-logs', label: 'Tracker & Gap Logs', shortLabel: 'Tracker & Gap Logs', icon: Timer, color: '#06B6D4' },
+    ];
+    let order = settings?.reportsOrder;
+    if (typeof order === 'string') {
+      try { order = JSON.parse(order); } catch { order = null; }
+    }
+    if (!Array.isArray(order) || order.length === 0) {
+      return defaultTabs;
+    }
+    return [...defaultTabs].sort((a, b) => {
+      const idxA = order.indexOf(a.path) !== -1 ? order.indexOf(a.path) : (order.indexOf(a.key) !== -1 ? order.indexOf(a.key) : 999);
+      const idxB = order.indexOf(b.path) !== -1 ? order.indexOf(b.path) : (order.indexOf(b.key) !== -1 ? order.indexOf(b.key) : 999);
+      return idxA - idxB;
+    });
+  }, [settings?.reportsOrder]);
 
   // Active view: sync with route param if present ('pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics')
   const [activeTab, setActiveTab] = useState(() => {
@@ -624,6 +651,7 @@ export function Reports() {
         id: t.id,
         title: t.title,
         category: cat?.name || 'General',
+        categoryColor: cat?.color || '#38BDF8',
         date: t.date || '-',
         timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || 'Flexible'),
         priority: (t.priority || 'medium').toUpperCase(),
@@ -653,9 +681,9 @@ export function Reports() {
       sortable: true,
       width: '280px',
       render: (val, row) => (
-        <div>
-          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {row.id?.slice?.(0, 8) || row.id}</div>
+        <div className="table-task-cell">
+          <div className="table-task-title">{val}</div>
+          <div className="table-task-id-badge">ID: {row.id?.slice?.(0, 8) || row.id}</div>
         </div>
       ),
     },
@@ -663,40 +691,102 @@ export function Reports() {
       key: 'category',
       label: 'Category',
       sortable: true,
-      width: '140px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+      width: '160px',
+      render: (val, row) => {
+        const color = row.categoryColor || '#38BDF8';
+        return (
+          <span
+            className="table-category-badge"
+            style={{
+              '--cat-color': color,
+              '--cat-bg': `${color}18`,
+              '--cat-border': `${color}40`,
+            }}
+          >
+            <span className="table-category-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'date', label: 'Scheduled Date', sortable: true, width: '130px' },
-    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '130px' },
+    {
+      key: 'date',
+      label: 'Scheduled Date',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-date">
+          <Calendar size={12} color="#38BDF8" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'timeSlot',
+      label: 'Time Slot',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-time">
+          <Clock size={12} color="#A78BFA" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
     {
       key: 'priority',
       label: 'Priority',
       sortable: true,
-      width: '110px',
-      render: (val) => (
-        <span
-          className={`badge ${val === 'HIGH' ? 'badge-danger' : val === 'MEDIUM' ? 'badge-warning' : 'badge-primary'
-            }`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
-        </span>
-      ),
+      width: '115px',
+      render: (val) => {
+        const pri = (val || 'medium').toLowerCase();
+        return (
+          <span className={`table-priority-badge ${pri}`}>
+            <span className="table-priority-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'goal', label: 'Linked Goal', sortable: true, width: '160px' },
+    {
+      key: 'goal',
+      label: 'Linked Goal',
+      sortable: true,
+      width: '190px',
+      render: (val) => {
+        if (!val || val === 'None' || val === '-') {
+          return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+        }
+        return (
+          <span className="table-chip-goal" title={val}>
+            <Target size={12} color="#C084FC" />
+            <span>{val}</span>
+          </span>
+        );
+      },
+    },
     {
       key: 'estimatedHours',
       label: 'Est. Hours',
       sortable: true,
-      width: '100px',
-      render: (val) => `${val}h`,
+      width: '110px',
+      render: (val) => (
+        <span className="table-hours-chip">
+          <Timer size={12} color="#818CF8" />
+          <span>{val}h</span>
+        </span>
+      ),
     },
     {
       key: 'status',
       label: 'Status',
       sortable: true,
-      width: '110px',
-      render: () => <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Pending</span>,
+      width: '115px',
+      render: () => (
+        <span className="table-status-pill pending">
+          <Clock size={11} /> Pending
+        </span>
+      ),
     },
   ], []);
 
@@ -713,6 +803,7 @@ export function Reports() {
         id: t.id,
         title: t.title,
         category: cat?.name || 'General',
+        categoryColor: cat?.color || '#10B981',
         date: t.date || '-',
         completedAt: t.completedAt ? formatDate(t.completedAt) : (t.date || '-'),
         timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || '-'),
@@ -742,10 +833,13 @@ export function Reports() {
       label: 'Task Title',
       sortable: true,
       width: '280px',
-      render: (val) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <CheckCircle2 size={16} color="var(--success)" />
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+      render: (val, row) => (
+        <div className="table-task-cell">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} color="#10B981" />
+            <span className="table-task-title">{val}</span>
+          </div>
+          <div className="table-task-id-badge">ID: {row.id?.slice?.(0, 8) || row.id}</div>
         </div>
       ),
     },
@@ -753,39 +847,102 @@ export function Reports() {
       key: 'category',
       label: 'Category',
       sortable: true,
-      width: '140px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+      width: '160px',
+      render: (val, row) => {
+        const color = row.categoryColor || '#10B981';
+        return (
+          <span
+            className="table-category-badge"
+            style={{
+              '--cat-color': color,
+              '--cat-bg': `${color}18`,
+              '--cat-border': `${color}40`,
+            }}
+          >
+            <span className="table-category-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'date', label: 'Scheduled Date', sortable: true, width: '130px' },
-    { key: 'completedAt', label: 'Completed Date', sortable: true, width: '130px' },
+    {
+      key: 'date',
+      label: 'Scheduled Date',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-date">
+          <Calendar size={12} color="#38BDF8" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'completedAt',
+      label: 'Completed Date',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-date">
+          <Calendar size={12} color="#10B981" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
     {
       key: 'priority',
       label: 'Priority',
       sortable: true,
-      width: '110px',
-      render: (val) => (
-        <span
-          className={`badge ${val === 'HIGH' ? 'badge-danger' : 'badge-primary'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
-        </span>
-      ),
+      width: '115px',
+      render: (val) => {
+        const pri = (val || 'medium').toLowerCase();
+        return (
+          <span className={`table-priority-badge ${pri}`}>
+            <span className="table-priority-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'goal', label: 'Linked Goal', sortable: true, width: '160px' },
+    {
+      key: 'goal',
+      label: 'Linked Goal',
+      sortable: true,
+      width: '190px',
+      render: (val) => {
+        if (!val || val === 'None' || val === '-') {
+          return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+        }
+        return (
+          <span className="table-chip-goal" title={val}>
+            <Target size={12} color="#C084FC" />
+            <span>{val}</span>
+          </span>
+        );
+      },
+    },
     {
       key: 'hoursLogged',
       label: 'Hours',
       sortable: true,
-      width: '90px',
-      render: (val) => `${val}h`,
+      width: '100px',
+      render: (val) => (
+        <span className="table-hours-chip">
+          <Timer size={12} color="#818CF8" />
+          <span>{val}h</span>
+        </span>
+      ),
     },
     {
       key: 'status',
       label: 'Status',
       sortable: true,
-      width: '110px',
-      render: () => <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>Completed</span>,
+      width: '120px',
+      render: () => (
+        <span className="table-status-pill completed">
+          <CheckCircle2 size={11} /> Completed
+        </span>
+      ),
     },
   ], []);
 
@@ -806,6 +963,7 @@ export function Reports() {
         id: t.id,
         title: t.title,
         category: cat?.name || 'General',
+        categoryColor: cat?.color || '#EF4444',
         date: t.date || '-',
         timeSlot: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || 'Scheduled'),
         daysDelayed,
@@ -838,10 +996,13 @@ export function Reports() {
       label: 'Missed Task',
       sortable: true,
       width: '280px',
-      render: (val) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <AlertTriangle size={16} color="var(--danger)" />
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+      render: (val, row) => (
+        <div className="table-task-cell">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} color="#EF4444" />
+            <span className="table-task-title">{val}</span>
+          </div>
+          <div className="table-task-id-badge">ID: {row.id?.slice?.(0, 8) || row.id}</div>
         </div>
       ),
     },
@@ -849,43 +1010,83 @@ export function Reports() {
       key: 'category',
       label: 'Category',
       sortable: true,
-      width: '140px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+      width: '160px',
+      render: (val, row) => {
+        const color = row.categoryColor || '#EF4444';
+        return (
+          <span
+            className="table-category-badge"
+            style={{
+              '--cat-color': color,
+              '--cat-bg': `${color}18`,
+              '--cat-border': `${color}40`,
+            }}
+          >
+            <span className="table-category-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'date', label: 'Due Date', sortable: true, width: '120px' },
-    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '120px' },
+    {
+      key: 'date',
+      label: 'Due Date',
+      sortable: true,
+      width: '130px',
+      render: (val) => (
+        <span className="table-chip-date">
+          <Calendar size={12} color="#EF4444" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'timeSlot',
+      label: 'Time Slot',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-time">
+          <Clock size={12} color="#A78BFA" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
     {
       key: 'daysDelayed',
       label: 'Days Delayed',
       sortable: true,
-      width: '110px',
-      render: (val) => <span style={{ color: 'var(--danger)', fontWeight: 700 }}>+{val} day{val > 1 ? 's' : ''}</span>,
+      width: '120px',
+      render: (val) => (
+        <span style={{ color: '#EF4444', fontWeight: 800, background: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+          +{val} day{val > 1 ? 's' : ''}
+        </span>
+      ),
     },
     {
       key: 'priority',
       label: 'Priority',
       sortable: true,
-      width: '100px',
-      render: (val) => (
-        <span
-          className={`badge ${val === 'HIGH' ? 'badge-danger' : 'badge-warning'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
-        </span>
-      ),
+      width: '115px',
+      render: (val) => {
+        const pri = (val || 'medium').toLowerCase();
+        return (
+          <span className={`table-priority-badge ${pri}`}>
+            <span className="table-priority-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
     {
       key: 'riskLevel',
       label: 'Risk Level',
       sortable: true,
-      width: '110px',
+      width: '120px',
       render: (val) => (
-        <span
-          className={`badge ${val === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
+        <span className={`table-priority-badge ${val === 'CRITICAL' ? 'high' : 'medium'}`}>
+          <span className="table-priority-dot" />
+          <span>{val}</span>
         </span>
       ),
     },
@@ -893,8 +1094,12 @@ export function Reports() {
       key: 'status',
       label: 'Status',
       sortable: true,
-      width: '130px',
-      render: () => <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>Overdue</span>,
+      width: '125px',
+      render: () => (
+        <span className="table-status-pill overdue">
+          <AlertTriangle size={11} /> Overdue
+        </span>
+      ),
     },
   ], []);
 
@@ -910,6 +1115,7 @@ export function Reports() {
         id: goal.id,
         title: goal.title,
         category: cat?.name || 'General',
+        categoryColor: cat?.color || '#8B5CF6',
         targetDate: goal.targetDate || goal.deadline || 'Ongoing',
         progress,
         totalTasks: linkedTasks.length,
@@ -937,11 +1143,11 @@ export function Reports() {
       key: 'title',
       label: 'Goal Title',
       sortable: true,
-      width: '260px',
+      width: '270px',
       render: (val) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Target size={16} color="var(--primary-color)" />
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+          <Target size={16} color="#A855F7" />
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{val}</span>
         </div>
       ),
     },
@@ -949,10 +1155,36 @@ export function Reports() {
       key: 'category',
       label: 'Category',
       sortable: true,
-      width: '140px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.78rem' }}>{val}</span>,
+      width: '160px',
+      render: (val, row) => {
+        const color = row.categoryColor || '#8B5CF6';
+        return (
+          <span
+            className="table-category-badge"
+            style={{
+              '--cat-color': color,
+              '--cat-bg': `${color}18`,
+              '--cat-border': `${color}40`,
+            }}
+          >
+            <span className="table-category-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
-    { key: 'targetDate', label: 'Target Date', sortable: true, width: '130px' },
+    {
+      key: 'targetDate',
+      label: 'Target Date',
+      sortable: true,
+      width: '140px',
+      render: (val) => (
+        <span className="table-chip-date">
+          <Calendar size={12} color="#A855F7" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
     {
       key: 'progress',
       label: 'Progression',
@@ -962,10 +1194,18 @@ export function Reports() {
         <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '3px' }}>
             <span>Progress</span>
-            <span>{val}%</span>
+            <span style={{ color: val >= 100 ? '#10B981' : '#38BDF8' }}>{val}%</span>
           </div>
-          <div style={{ width: '100%', height: '7px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: `${val}%`, height: '100%', background: val >= 100 ? 'var(--success)' : 'var(--primary-color)', borderRadius: '4px' }} />
+          <div style={{ width: '100%', height: '7px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${val}%`,
+                height: '100%',
+                background: val >= 100 ? 'linear-gradient(90deg, #10B981 0%, #34D399 100%)' : 'linear-gradient(90deg, #38BDF8 0%, #818CF8 100%)',
+                borderRadius: '4px',
+                transition: 'width 0.4s ease',
+              }}
+            />
           </div>
         </div>
       ),
@@ -976,28 +1216,29 @@ export function Reports() {
       label: 'Done',
       sortable: true,
       width: '80px',
-      render: (val) => <span style={{ color: 'var(--success)', fontWeight: 600 }}>{val}</span>,
+      render: (val) => <span style={{ color: '#10B981', fontWeight: 700 }}>{val}</span>,
     },
     {
       key: 'pendingTasks',
       label: 'Pending',
       sortable: true,
       width: '80px',
-      render: (val) => <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{val}</span>,
+      render: (val) => <span style={{ color: '#F59E0B', fontWeight: 700 }}>{val}</span>,
     },
     {
       key: 'status',
       label: 'Status',
       sortable: true,
       width: '140px',
-      render: (val) => (
-        <span
-          className={`badge ${val === 'Completed' ? 'badge-success' : val === 'On Track' ? 'badge-primary' : 'badge-danger'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
-        </span>
-      ),
+      render: (val) => {
+        const cls = val === 'Completed' ? 'completed' : val === 'On Track' ? 'on-track' : 'attention';
+        return (
+          <span className={`table-status-pill ${cls}`}>
+            {val === 'Completed' ? <CheckCircle2 size={11} /> : val === 'On Track' ? <Sparkles size={11} /> : <AlertTriangle size={11} />}
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
   ], []);
 
@@ -1040,15 +1281,15 @@ export function Reports() {
       key: 'title',
       label: 'Lag Area / Task',
       sortable: true,
-      width: '250px',
+      width: '260px',
       render: (val, row) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Flag
             size={16}
-            color={row.status.includes('Recovered') ? 'var(--success)' : 'var(--danger)'}
-            fill={row.status.includes('Recovered') ? 'var(--success)' : 'var(--danger)'}
+            color={row.status.includes('Recovered') ? '#10B981' : '#EF4444'}
+            fill={row.status.includes('Recovered') ? '#10B981' : '#EF4444'}
           />
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{val}</span>
         </div>
       ),
     },
@@ -1056,10 +1297,33 @@ export function Reports() {
       key: 'type',
       label: 'Lag Type',
       sortable: true,
-      width: '130px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>{val}</span>,
+      width: '140px',
+      render: (val) => (
+        <span
+          className="table-category-badge"
+          style={{
+            '--cat-color': '#F59E0B',
+            '--cat-bg': 'rgba(245, 158, 11, 0.12)',
+            '--cat-border': 'rgba(245, 158, 11, 0.3)',
+          }}
+        >
+          <span className="table-category-dot" />
+          <span>{val}</span>
+        </span>
+      ),
     },
-    { key: 'timeSlot', label: 'Time Slot', sortable: true, width: '120px' },
+    {
+      key: 'timeSlot',
+      label: 'Time Slot',
+      sortable: true,
+      width: '130px',
+      render: (val) => (
+        <span className="table-chip-time">
+          <Clock size={12} color="#A78BFA" />
+          <span>{val || 'N/A'}</span>
+        </span>
+      ),
+    },
     {
       key: 'reason',
       label: 'Lag Diagnostic Reason',
@@ -1071,15 +1335,16 @@ export function Reports() {
       key: 'severity',
       label: 'Severity',
       sortable: true,
-      width: '100px',
-      render: (val) => (
-        <span
-          className={`badge ${val === 'CRITICAL' ? 'badge-danger' : val === 'HIGH' ? 'badge-danger' : 'badge-warning'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
-        </span>
-      ),
+      width: '115px',
+      render: (val) => {
+        const isCrit = val === 'CRITICAL' || val === 'HIGH';
+        return (
+          <span className={`table-priority-badge ${isCrit ? 'high' : 'medium'}`}>
+            <span className="table-priority-dot" />
+            <span>{val}</span>
+          </span>
+        );
+      },
     },
     {
       key: 'recoveryProgress',
@@ -1090,14 +1355,14 @@ export function Reports() {
         <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '3px' }}>
             <span>Catch-up</span>
-            <span style={{ color: val >= 100 ? 'var(--success)' : 'var(--primary-color)' }}>{val}%</span>
+            <span style={{ color: val >= 100 ? '#10B981' : '#38BDF8' }}>{val}%</span>
           </div>
-          <div style={{ width: '100%', height: '7px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: '7px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${val}%`,
                 height: '100%',
-                background: val >= 100 ? 'var(--success)' : 'var(--primary-color)',
+                background: val >= 100 ? 'linear-gradient(90deg, #10B981 0%, #34D399 100%)' : 'linear-gradient(90deg, #38BDF8 0%, #818CF8 100%)',
                 borderRadius: '4px',
                 transition: 'width 0.4s ease',
               }}
@@ -1110,13 +1375,11 @@ export function Reports() {
       key: 'status',
       label: 'Status',
       sortable: true,
-      width: '160px',
+      width: '170px',
       render: (val) => (
-        <span
-          className={`badge ${val.includes('Recovered') ? 'badge-success' : 'badge-danger'}`}
-          style={{ fontSize: '0.75rem' }}
-        >
-          {val}
+        <span className={`table-status-pill ${val.includes('Recovered') ? 'completed' : 'overdue'}`}>
+          {val.includes('Recovered') ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />}
+          <span>{val}</span>
         </span>
       ),
     },
@@ -1227,7 +1490,7 @@ export function Reports() {
           ) : (
             <Coffee size={16} color="#F59E0B" />
           )}
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{val}</span>
         </div>
       ),
     },
@@ -1237,24 +1500,45 @@ export function Reports() {
       sortable: true,
       width: '140px',
       render: (val) => (
-        <span
-          className={`badge ${val === 'Work Session' ? 'badge-success' : 'badge-warning'}`}
-          style={{ fontSize: '0.74rem' }}
-        >
-          {val}
+        <span className={`table-status-pill ${val === 'Work Session' ? 'completed' : 'pending'}`}>
+          {val === 'Work Session' ? <Timer size={11} /> : <Coffee size={11} />}
+          <span>{val}</span>
         </span>
       ),
     },
-    { key: 'startTime', label: 'Start Time', sortable: true, width: '120px' },
-    { key: 'endTime', label: 'End Time', sortable: true, width: '120px' },
+    {
+      key: 'startTime',
+      label: 'Start Time',
+      sortable: true,
+      width: '120px',
+      render: (val) => (
+        <span className="table-chip-time">
+          <Clock size={12} color="#38BDF8" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'endTime',
+      label: 'End Time',
+      sortable: true,
+      width: '120px',
+      render: (val) => (
+        <span className="table-chip-time">
+          <Clock size={12} color="#A78BFA" />
+          <span>{val || '-'}</span>
+        </span>
+      ),
+    },
     {
       key: 'durationFormatted',
       label: 'Duration',
       sortable: true,
-      width: '110px',
+      width: '115px',
       render: (val, row) => (
-        <span style={{ fontWeight: 700, color: row.type === 'Work Session' ? '#10B981' : '#F59E0B' }}>
-          {val}
+        <span className="table-hours-chip" style={{ color: row.type === 'Work Session' ? '#34D399' : '#FBBF24' }}>
+          <Timer size={12} color={row.type === 'Work Session' ? '#10B981' : '#F59E0B'} />
+          <span>{val}</span>
         </span>
       ),
     },
@@ -1263,7 +1547,11 @@ export function Reports() {
       label: 'Stop / Gap Reason',
       sortable: true,
       width: '200px',
-      render: (val) => <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>{val}</span>,
+      render: (val) => (
+        <span className="table-category-badge" style={{ '--cat-color': '#94A3B8', '--cat-bg': 'rgba(255,255,255,0.04)', '--cat-border': 'rgba(255,255,255,0.08)' }}>
+          <span>{val}</span>
+        </span>
+      ),
     },
     {
       key: 'notes',
@@ -1407,8 +1695,40 @@ export function Reports() {
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* VIEW: PENDING TASKS EXCEL REPORT                                          */}
+      {/* 2. Resequenced Reports Tab Navigation Strip */}
+      <div className="reports-tabs-strip">
+        <div className="reports-tabs-scroll">
+          {sortedReportTabs.map((tab) => {
+            const TabIcon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={`reports-nav-tab-btn ${isActive ? 'active' : ''}`}
+                onClick={() => handleTabChange(tab.key)}
+                style={{
+                  '--tab-color': tab.color,
+                }}
+              >
+                <TabIcon size={14} className="reports-tab-icon" />
+                <span>{tab.shortLabel || tab.label}</span>
+                {isActive && <span className="reports-tab-indicator" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="reports-tab-settings-btn"
+          onClick={() => navigate('/settings?tab=reports-tabs')}
+          title="Open Settings to resequence reports tabs"
+        >
+          <Sliders size={13} />
+          <span>Resequence Tabs in Settings</span>
+        </button>
+      </div>
       {/* ========================================================================= */}
       {activeTab === 'pending' && (
         <ExcelReportTable

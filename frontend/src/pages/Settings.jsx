@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Palette,
   Sliders,
@@ -31,6 +32,13 @@ import {
   Layout,
   Cpu,
   Info,
+  FileSpreadsheet,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  Target,
+  Flag,
+  Timer,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COLOR_COMBINATIONS } from '../utils/themeUtils';
@@ -61,10 +69,21 @@ export function Settings() {
     bulkImportTasks,
   } = useApp();
 
-  // Active category tab for navigation
-  const [activeTab, setActiveTab] = useState('appearance');
+  // URL query parameter synchronization (e.g. /settings?tab=reports-tabs)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(() => tabParam || 'appearance');
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [draggedNavIdx, setDraggedNavIdx] = useState(null);
   const [dragOverNavIdx, setDragOverNavIdx] = useState(null);
+  const [draggedReportIdx, setDraggedReportIdx] = useState(null);
+  const [dragOverReportIdx, setDragOverReportIdx] = useState(null);
 
   const handleUpdate = (key, value) => {
     const updated = {
@@ -130,6 +149,7 @@ export function Settings() {
   const TABS = [
     { id: 'appearance', label: 'Appearance & Themes', icon: Palette, desc: 'Color palettes, OLED, and styles' },
     { id: 'navigation', label: 'Sidebar Navigation Order', icon: Layers, desc: 'Reorder menu sequence & links' },
+    { id: 'reports-tabs', label: 'Reports Tab Sequence', icon: FileSpreadsheet, desc: 'Reorder reports sub-tabs & view order' },
     { id: 'scheduling', label: 'Scheduling & Calendar', icon: Sliders, desc: 'Work hours, calendar views, format' },
     { id: 'focus', label: 'Focus Mode & Audio', icon: Headphones, desc: 'Pomodoro timer and soundscapes' },
     { id: 'notifications', label: 'Notifications & Alerts', icon: Bell, desc: 'Reminders, standup notifications' },
@@ -1155,8 +1175,212 @@ export function Settings() {
             </div>
           )}
 
-{/* ========================================================================= */}
-          {/* TAB 5: WORKSPACE & GENERAL SYSTEM                                         */}
+          {/* ========================================================================= */}
+          {/* TAB: REPORTS TAB SEQUENCE CUSTOMIZATION                                   */}
+          {/* ========================================================================= */}
+          {activeTab === 'reports-tabs' && (
+            <div className="card" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <FileSpreadsheet size={22} color="var(--primary-color)" />
+                  <div>
+                    <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Reports Tab Sequence & Layout</h2>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Reorder the reports tabs and sidebar submenu sequence to match your workflow. Changes save immediately.
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => {
+                      handleUpdate('reportsOrder', [
+                        '/reports',
+                        '/reports/pending',
+                        '/reports/completed',
+                        '/reports/missed',
+                        '/reports/goals',
+                        '/reports/red-flags',
+                        '/reports/tracker-logs',
+                      ]);
+                      showToast({
+                        type: 'info',
+                        title: 'Reset Reports Sequence',
+                        message: 'Reports tab sequence restored to default layout.',
+                      });
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <RotateCcw size={14} /> Reset Default Order
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '640px' }}>
+                {(() => {
+                  const ALL_REPORTS = [
+                    { path: '/reports', key: 'today-report', label: 'Daily Standup & Work Report', color: '#38BDF8', icon: FileText },
+                    { path: '/reports/pending', key: 'pending', label: 'Pending Tasks Report', color: '#F59E0B', icon: Clock },
+                    { path: '/reports/completed', key: 'completed', label: 'Completed Tasks Report', color: '#10B981', icon: CheckCircle2 },
+                    { path: '/reports/missed', key: 'missed', label: 'Missed & Overdue Report', color: '#EF4444', icon: AlertTriangle },
+                    { path: '/reports/goals', key: 'goals', label: 'Goal Progression & Milestones', color: '#A855F7', icon: Target },
+                    { path: '/reports/red-flags', key: 'red-flags', label: 'Red Flag Diagnostic Report', color: '#DC2626', icon: Flag },
+                    { path: '/reports/tracker-logs', key: 'tracker-logs', label: 'Tracker & Gap Logs', color: '#06B6D4', icon: Timer },
+                  ];
+
+                  let currentOrder = settings?.reportsOrder;
+                  if (typeof currentOrder === 'string') {
+                    try { currentOrder = JSON.parse(currentOrder); } catch { currentOrder = null; }
+                  }
+                  if (!Array.isArray(currentOrder) || currentOrder.length === 0) {
+                    currentOrder = ALL_REPORTS.map((i) => i.path);
+                  }
+
+                  // Order items according to currentOrder
+                  const sorted = [...ALL_REPORTS].sort((a, b) => {
+                    const idxA = currentOrder.indexOf(a.path) !== -1 ? currentOrder.indexOf(a.path) : (currentOrder.indexOf(a.key) !== -1 ? currentOrder.indexOf(a.key) : 99);
+                    const idxB = currentOrder.indexOf(b.path) !== -1 ? currentOrder.indexOf(b.path) : (currentOrder.indexOf(b.key) !== -1 ? currentOrder.indexOf(b.key) : 99);
+                    return idxA - idxB;
+                  });
+
+                  const moveItem = (index, direction) => {
+                    const newSorted = [...sorted];
+                    const targetIndex = index + direction;
+                    if (targetIndex < 0 || targetIndex >= newSorted.length) return;
+                    const temp = newSorted[index];
+                    newSorted[index] = newSorted[targetIndex];
+                    newSorted[targetIndex] = temp;
+                    const newPathOrder = newSorted.map((i) => i.path);
+                    handleUpdate('reportsOrder', newPathOrder);
+                  };
+
+                  return sorted.map((item, idx) => {
+                    const ItemIcon = item.icon;
+                    const isDragging = draggedReportIdx === idx;
+                    const isDragOver = dragOverReportIdx === idx;
+
+                    return (
+                      <div
+                        key={item.path}
+                        draggable={true}
+                        onDragStart={(e) => {
+                          setDraggedReportIdx(idx);
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dragOverReportIdx !== idx) setDragOverReportIdx(idx);
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverReportIdx === idx) setDragOverReportIdx(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedReportIdx === null || draggedReportIdx === idx) return;
+                          const newSorted = [...sorted];
+                          const draggedItem = newSorted.splice(draggedReportIdx, 1)[0];
+                          newSorted.splice(idx, 0, draggedItem);
+                          setDraggedReportIdx(null);
+                          setDragOverReportIdx(null);
+                          const newPathOrder = newSorted.map((i) => i.path);
+                          handleUpdate('reportsOrder', newPathOrder);
+                          showToast({
+                            type: 'success',
+                            title: 'Reports Tab Reordered',
+                            message: `Moved "${item.label}" to position #${idx + 1}.`,
+                          });
+                        }}
+                        onDragEnd={() => {
+                          setDraggedReportIdx(null);
+                          setDragOverReportIdx(null);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          background: isDragging
+                            ? 'rgba(23, 105, 255, 0.12)'
+                            : isDragOver
+                            ? 'rgba(16, 185, 129, 0.12)'
+                            : 'var(--page-bg)',
+                          border: isDragOver
+                            ? '2px dashed var(--primary-color)'
+                            : isDragging
+                            ? '1px solid var(--primary-color)'
+                            : '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          transition: 'all 0.15s ease',
+                          cursor: 'grab',
+                          transform: isDragging ? 'scale(0.98)' : 'none',
+                          opacity: isDragging ? 0.6 : 1,
+                        }}
+                        title="Drag and drop to reorder"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ color: 'var(--text-muted)', cursor: 'grab', display: 'flex', alignItems: 'center' }}>
+                            <GripVertical size={16} />
+                          </div>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
+                            #{idx + 1}
+                          </span>
+                          <div
+                            style={{
+                              width: '10px',
+                              height: '10px',
+                              borderRadius: '50%',
+                              background: item.color,
+                              boxShadow: `0 0 6px ${item.color}`,
+                            }}
+                          />
+                          <ItemIcon size={16} color={item.color} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {item.label}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                            ({item.path})
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            disabled={idx === 0}
+                            onClick={() => moveItem(idx, -1)}
+                            title="Move Up"
+                            style={{
+                              padding: '4px',
+                              opacity: idx === 0 ? 0.3 : 1,
+                              cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            <ArrowUp size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            disabled={idx === sorted.length - 1}
+                            onClick={() => moveItem(idx, 1)}
+                            title="Move Down"
+                            style={{
+                              padding: '4px',
+                              opacity: idx === sorted.length - 1 ? 0.3 : 1,
+                              cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            <ArrowDown size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
           {/* ========================================================================= */}
           {activeTab === 'workspace' && (
             <div className="card" style={{ padding: '24px' }}>

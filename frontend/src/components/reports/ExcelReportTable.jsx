@@ -618,24 +618,11 @@ export function ExcelReportTable({
         }}
       >
         {/* Navigation Toolbar: Pan Tip + Horizontal Scroll Controls */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px',
-            padding: '8px 16px',
-            background: 'var(--page-bg)',
-            borderBottom: '1px solid var(--border-color)',
-            fontSize: '0.78rem',
-            color: 'var(--text-secondary)',
-          }}
-        >
+        <div className="excel-table-nav-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Move size={14} color="var(--primary-color)" />
+            <Move size={14} color="#38BDF8" />
             <span>
-              <strong>Table Navigation:</strong> Drag to pan horizontally, or use column scroll controls:
+              <strong style={{ color: 'var(--text-primary)' }}>Table Navigation:</strong> Drag to pan horizontally, or use column scroll controls:
             </span>
           </div>
 
@@ -643,37 +630,34 @@ export function ExcelReportTable({
             {/* Left */}
             <button
               type="button"
-              className="btn btn-sm btn-ghost"
+              className="excel-nav-btn"
               onClick={() => scrollTable(-240)}
               title="Scroll Left"
-              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
               <ArrowLeft size={13} />
-              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Left</span>
+              <span>Left</span>
             </button>
 
             {/* Right */}
             <button
               type="button"
-              className="btn btn-sm btn-ghost"
+              className="excel-nav-btn"
               onClick={() => scrollTable(240)}
               title="Scroll Right"
-              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
-              <span style={{ fontSize: '0.72rem', marginRight: '4px' }}>Right</span>
+              <span>Right</span>
               <ArrowRight size={13} />
             </button>
 
             {/* Reset */}
             <button
               type="button"
-              className="btn btn-sm btn-ghost"
+              className="excel-nav-btn"
               onClick={resetTableScroll}
               title="Reset Table Position"
-              style={{ padding: '4px 8px', height: '28px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
             >
               <RotateCcw size={12} />
-              <span style={{ fontSize: '0.72rem', marginLeft: '4px' }}>Reset</span>
+              <span>Reset</span>
             </button>
           </div>
         </div>
@@ -702,25 +686,23 @@ export function ExcelReportTable({
           >
             <thead>
               <tr
+                className="excel-table-header-row"
                 style={{
-                  background: 'var(--table-header-bg, #0F172A)',
-                  color: '#FFFFFF',
                   position: 'sticky',
                   top: 0,
                   zIndex: 10,
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
                 }}
               >
-                <th style={{ width: '40px', padding: '10px 12px', textAlign: 'center', color: '#94A3B8' }}>
+                <th style={{ width: '40px', padding: '12px 14px', textAlign: 'center', color: '#94A3B8' }}>
                   #
                 </th>
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     style={{
-                      padding: '11px 14px',
+                      padding: '12px 16px',
                       fontWeight: 800,
-                      letterSpacing: '0.04em',
+                      letterSpacing: '0.05em',
                       textTransform: 'uppercase',
                       fontSize: '0.74rem',
                       cursor: col.sortable !== false ? 'pointer' : 'default',
@@ -767,34 +749,25 @@ export function ExcelReportTable({
                   return (
                     <tr
                       key={row.id || idx}
+                      className="excel-table-row"
                       onClick={() => onRowClick && onRowClick(row)}
                       style={{
-                        borderBottom: '1px solid var(--border-color)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                         background:
                           idx % 2 === 0
                             ? 'transparent'
-                            : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))',
+                            : 'rgba(255, 255, 255, 0.015)',
                         cursor: onRowClick ? 'pointer' : 'default',
-                        transition: 'background 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(23, 105, 255, 0.06))';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          idx % 2 === 0
-                            ? 'transparent'
-                            : 'var(--table-zebra-bg, rgba(255, 255, 255, 0.02))';
                       }}
                     >
                       <td
+                        className="excel-row-num"
                         style={{
-                          padding: '10px 12px',
+                          padding: '11px 14px',
                           textAlign: 'center',
-                          color: 'var(--text-muted)',
                           fontSize: '0.74rem',
-                          borderRight: '1px solid var(--border-color)',
-                          background: 'rgba(0, 0, 0, 0.05)',
+                          borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+                          background: 'rgba(0, 0, 0, 0.12)',
                         }}
                       >
                         {rowNum}
@@ -805,8 +778,8 @@ export function ExcelReportTable({
                           <td
                             key={col.key}
                             style={{
-                              padding: '10px 14px',
-                              borderRight: '1px solid var(--border-color)',
+                              padding: '11px 16px',
+                              borderRight: '1px solid rgba(255, 255, 255, 0.06)',
                               color: 'var(--text-primary)',
                               whiteSpace: col.wrap ? 'normal' : 'nowrap',
                               maxWidth: col.maxWidth || 'auto',

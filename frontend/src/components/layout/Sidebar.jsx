@@ -89,6 +89,31 @@ export function Sidebar() {
   const isReportsActive = location.pathname.startsWith('/reports');
   const [reportsSubmenuOpen, setReportsSubmenuOpen] = useState(isReportsActive);
 
+  // Dynamic ordering support for Reports sub-tabs from settings.reportsOrder
+  const sortedReportsSubItems = useMemo(() => {
+    const defaultSubItems = [
+      { name: 'Pending Tasks', path: '/reports/pending', icon: Clock, key: 'pending' },
+      { name: 'Completed Tasks', path: '/reports/completed', icon: CheckCircle2, key: 'completed' },
+      { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle, key: 'missed' },
+      { name: 'Goal Progression', path: '/reports/goals', icon: Target, key: 'goals' },
+      { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag, key: 'red-flags' },
+      { name: 'Tracker & Gap Logs', path: '/reports/tracker-logs', icon: Timer, key: 'tracker-logs' },
+      { name: 'Daily Standup', path: '/reports', icon: FileText, key: 'today-report' },
+    ];
+    let order = settings?.reportsOrder;
+    if (typeof order === 'string') {
+      try { order = JSON.parse(order); } catch { order = null; }
+    }
+    if (!Array.isArray(order) || order.length === 0) {
+      return defaultSubItems;
+    }
+    return [...defaultSubItems].sort((a, b) => {
+      const idxA = order.indexOf(a.path) !== -1 ? order.indexOf(a.path) : (order.indexOf(a.key) !== -1 ? order.indexOf(a.key) : 999);
+      const idxB = order.indexOf(b.path) !== -1 ? order.indexOf(b.path) : (order.indexOf(b.key) !== -1 ? order.indexOf(b.key) : 999);
+      return idxA - idxB;
+    });
+  }, [settings?.reportsOrder]);
+
   const allNavItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, iconColor: '#3B82F6' },
     {
@@ -150,15 +175,7 @@ export function Sidebar() {
       icon: BarChart3,
       iconColor: '#06B6D4',
       hasSubmenu: true,
-      subItems: [
-        { name: 'Pending Tasks', path: '/reports/pending', icon: Clock },
-        { name: 'Completed Tasks', path: '/reports/completed', icon: CheckCircle2 },
-        { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle },
-        { name: 'Goal Progression', path: '/reports/goals', icon: Target },
-        { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag },
-        { name: 'Tracker & Gap Logs', path: '/reports/tracker-logs', icon: Timer },
-        { name: 'Daily Standup', path: '/reports', icon: FileText },
-      ],
+      subItems: sortedReportsSubItems,
     },
     { name: 'Reports Archive', path: '/archive', icon: Archive, iconColor: '#64748B' },
     { name: 'Settings', path: '/settings', icon: Settings, iconColor: '#94A3B8' },
