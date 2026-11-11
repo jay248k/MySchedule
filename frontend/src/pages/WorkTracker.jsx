@@ -519,189 +519,182 @@ export function WorkTracker() {
           </div>
         </div>
 
-        {/* Center Stage: Sculpted 3D Digital Chronometer Pods */}
-        <div className="cockpit-chronometer-stage">
-          <div className="chronometer-pods-row">
-            {/* Hours Pod */}
-            <div className="chronometer-pod">
-              <span className="chronometer-pod-val">{String(activeHrs).padStart(2, '0')}</span>
-              <span className="chronometer-pod-label">HOURS</span>
+        {/* Core Cockpit Command Row (Compact Digital Chronometer + Target Selector + Action Controls) */}
+        <div className="cockpit-core-row">
+          {/* Left Wing: Sculpted Compact Digital Chronometer */}
+          <div className="cockpit-chronometer-stage">
+            <div className="chronometer-pods-row">
+              <div className="chronometer-pod">
+                <span className="chronometer-pod-val">{String(activeHrs).padStart(2, '0')}</span>
+                <span className="chronometer-pod-label">HRS</span>
+              </div>
+              <span className="chronometer-separator">:</span>
+              <div className="chronometer-pod">
+                <span className="chronometer-pod-val">{String(activeMins).padStart(2, '0')}</span>
+                <span className="chronometer-pod-label">MIN</span>
+              </div>
+              <span className="chronometer-separator">:</span>
+              <div className="chronometer-pod">
+                <span className="chronometer-pod-val">{String(activeSecs).padStart(2, '0')}</span>
+                <span className="chronometer-pod-label">SEC</span>
+              </div>
             </div>
 
-            <span className="chronometer-separator">:</span>
-
-            {/* Minutes Pod */}
-            <div className="chronometer-pod">
-              <span className="chronometer-pod-val">{String(activeMins).padStart(2, '0')}</span>
-              <span className="chronometer-pod-label">MINUTES</span>
-            </div>
-
-            <span className="chronometer-separator">:</span>
-
-            {/* Seconds Pod */}
-            <div className="chronometer-pod">
-              <span className="chronometer-pod-val">{String(activeSecs).padStart(2, '0')}</span>
-              <span className="chronometer-pod-label">SECONDS</span>
+            <div className="chronometer-sub-status">
+              {isRunning ? (
+                <>
+                  <Sparkles size={11} className="text-emerald-400" />
+                  <span>Tracking · Started {activeWorkSession.startTime}</span>
+                </>
+              ) : isPaused ? (
+                <>
+                  <Coffee size={11} className="text-amber-400" />
+                  <span>Holds at {activeTimerDisplay}</span>
+                </>
+              ) : totalRecordedForDate > 0 ? (
+                <>
+                  <Clock size={11} className="text-blue-400" />
+                  <span>Today: {activeTimerDisplay}</span>
+                </>
+              ) : (
+                <>
+                  <Target size={11} className="text-blue-400" />
+                  <span>Ready to start focus</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Subtitle Status Indicator */}
-          <div className="chronometer-sub-status">
-            {isRunning ? (
-              <>
-                <Sparkles size={13} className="text-emerald-400" />
-                <span>Focus timer ticking forward continuously · Started at {activeWorkSession.startTime}</span>
-              </>
-            ) : isPaused ? (
-              <>
-                <Coffee size={13} className="text-amber-400" />
-                <span>Timer holds steady at {activeTimerDisplay} · Resumes instantly on click</span>
-              </>
-            ) : totalRecordedForDate > 0 ? (
-              <>
-                <Clock size={13} className="text-blue-400" />
-                <span>Total accumulated focus holds at {activeTimerDisplay} · Launches next block on click</span>
-              </>
-            ) : (
-              <>
-                <Target size={13} className="text-blue-400" />
-                <span>Select a focus target below and click Launch to start tracking</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Task Focus Target Selector & Quick Chips */}
-        <div className="cockpit-target-section">
-          <div className="cockpit-target-row">
-            <div className="cockpit-target-label">
-              <Target size={15} className="text-blue-400" />
-              <span>Current Focus Target:</span>
-            </div>
-
-            {isRunning ? (
-              <div className="cockpit-task-locked-pill">
+          {/* Center Wing: Target Selector & Quick Pick */}
+          <div className="cockpit-center-wing">
+            {isPaused ? (
+              <div className="cockpit-paused-inline">
+                <div className="paused-coffee-badge">
+                  <Coffee size={16} />
+                </div>
+                <div className="paused-info-wrap">
+                  <div className="paused-title">Work Paused: {todayChain.lastPauseReason || 'Break'}</div>
+                  <div className="paused-sub">
+                    Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
+                    {todayChain.lastPauseRemarks && todayChain.lastPauseRemarks !== todayChain.lastPauseReason && (
+                      <span> · "{todayChain.lastPauseRemarks}"</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : isRunning ? (
+              <div className="cockpit-running-inline">
                 <span className="worktracker-recording-dot" />
-                <span>{activeWorkSession.taskTitle || 'General Focus Session'}</span>
+                <div className="running-info-wrap">
+                  <span className="running-label">CURRENT ACTIVE SESSION</span>
+                  <span className="running-task-title">{activeWorkSession.taskTitle || 'General Focus Session'}</span>
+                </div>
               </div>
             ) : (
-              <select
-                value={selectedTaskId}
-                onChange={(e) => setSelectedTaskId(e.target.value)}
-                className="cockpit-task-select"
-              >
-                <option value="">🎯 General Focus (No linked task)</option>
-                {dateTasks.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title} [{t.startTime || 'Scheduled'}]
-                  </option>
-                ))}
-              </select>
+              <div className="cockpit-target-picker">
+                <div className="cockpit-target-input-row">
+                  <label className="cockpit-target-inline-label">
+                    <Target size={13} className="text-blue-400" />
+                    <span>Target:</span>
+                  </label>
+                  <select
+                    value={selectedTaskId}
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="cockpit-task-select"
+                  >
+                    <option value="">🎯 General Focus (No linked task)</option>
+                    {dateTasks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title} [{t.startTime || 'Scheduled'}]
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!isRunning && dateTasks.length > 0 && (
+                  <div className="cockpit-quick-chips">
+                    <span className="quick-chips-label">Quick:</span>
+                    <div className="quick-chips-scroll">
+                      {dateTasks.slice(0, 6).map((t) => {
+                        const isSel = selectedTaskId === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setSelectedTaskId(isSel ? '' : t.id)}
+                            className={`quick-chip-btn ${isSel ? 'is-selected' : ''}`}
+                            title={t.title}
+                          >
+                            {isSel && <Check size={10} />}
+                            <span className="chip-text-truncate">{t.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Quick Task Chips for Scheduled Tasks */}
-          {!isRunning && dateTasks.length > 0 && (
-            <div className="cockpit-quick-chips">
-              <span className="quick-chips-label">Quick select scheduled task:</span>
-              {dateTasks.slice(0, 7).map((t) => {
-                const isSel = selectedTaskId === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setSelectedTaskId(isSel ? '' : t.id)}
-                    className={`quick-chip-btn ${isSel ? 'is-selected' : ''}`}
-                  >
-                    {isSel && <Check size={11} />}
-                    <span>{t.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Persistent "Work Paused" Alert Banner */}
-        {isPaused && (
-          <div className="cockpit-paused-banner">
-            <div className="paused-banner-left">
-              <div className="paused-coffee-badge">
-                <Coffee size={20} />
-              </div>
-              <div>
-                <div className="paused-banner-title">
-                  Work Paused: {todayChain.lastPauseReason || 'Break'}
-                </div>
-                <div className="paused-banner-sub">
-                  Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
-                  {todayChain.lastPauseRemarks && todayChain.lastPauseRemarks !== todayChain.lastPauseReason && (
-                    <span> · "{todayChain.lastPauseRemarks}"</span>
-                  )}
-                  {' '}· Focus timer holds steady at <strong className="text-emerald-400">{activeTimerDisplay}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
+          {/* Right Wing: Primary Action Controls */}
+          <div className="cockpit-actions-bar">
+            {isRunning ? (
               <button
                 type="button"
-                onClick={handleStartSession}
-                id="btn-tracker-resume-session"
-                className="btn-resume-focus"
+                onClick={requestStopWorkSession}
+                id="btn-tracker-stop-session"
+                className="btn-stop-focus"
               >
-                <Play size={15} fill="currentColor" />
-                <span>Resume Work</span>
+                <Square size={14} fill="currentColor" />
+                <span>Stop Work</span>
               </button>
-              <button
-                type="button"
-                onClick={() => finishDayWorkSession(activeDate)}
-                id="btn-tracker-finish-day"
-                className="btn-finish-day"
-              >
-                <Flag size={14} />
-                <span>Finish Day</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Primary Interactive Action Bar */}
-        <div className="cockpit-actions-bar">
-          {isRunning ? (
-            <button
-              type="button"
-              onClick={requestStopWorkSession}
-              id="btn-tracker-stop-session"
-              className="btn-stop-focus"
-            >
-              <Square size={16} fill="currentColor" />
-              <span>Stop Work & Enter Remarks</span>
-            </button>
-          ) : isPaused ? null : (
-            <>
-              <button
-                type="button"
-                onClick={handleStartSession}
-                id="btn-tracker-start-session"
-                className="btn-launch-focus"
-              >
-                <Play size={18} fill="currentColor" />
-                <span>Launch Focus Session</span>
-              </button>
-              {totalRecordedForDate > 0 && !isFinished && (
+            ) : isPaused ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartSession}
+                  id="btn-tracker-resume-session"
+                  className="btn-resume-focus"
+                >
+                  <Play size={14} fill="currentColor" />
+                  <span>Resume Work</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => finishDayWorkSession(activeDate)}
+                  id="btn-tracker-finish-day"
                   className="btn-finish-day"
-                  title="Conclude workday tracking"
                 >
-                  <Flag size={14} />
+                  <Flag size={13} />
                   <span>Finish Day</span>
                 </button>
-              )}
-            </>
-          )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartSession}
+                  id="btn-tracker-start-session"
+                  className="btn-launch-focus"
+                >
+                  <Play size={15} fill="currentColor" />
+                  <span>Launch Focus</span>
+                </button>
+                {totalRecordedForDate > 0 && !isFinished && (
+                  <button
+                    type="button"
+                    onClick={() => finishDayWorkSession(activeDate)}
+                    className="btn-finish-day"
+                    title="Conclude workday tracking"
+                  >
+                    <Flag size={13} />
+                    <span>Finish</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
