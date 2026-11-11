@@ -654,7 +654,7 @@ export function DeviationsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter planned task commitment..."
+                    placeholder="Enter planned task..."
                     className="form-input"
                     value={form.plannedAction}
                     onChange={(e) => setForm({ ...form, plannedAction: e.target.value })}
@@ -673,7 +673,7 @@ export function DeviationsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter what was done instead..."
+                    placeholder="Enter what was done..."
                     className="form-input"
                     value={form.actualAction}
                     onChange={(e) => setForm({ ...form, actualAction: e.target.value })}
@@ -694,7 +694,7 @@ export function DeviationsPage() {
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="Enter root cause or friction details..."
+                  placeholder="Enter root cause..."
                   value={form.rootCause}
                   onChange={(e) => setForm({ ...form, rootCause: e.target.value })}
                 />
@@ -709,7 +709,7 @@ export function DeviationsPage() {
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="Enter preventive rule or corrective step to stay on track next time..."
+                  placeholder="Enter lesson learned..."
                   value={form.lessonLearned}
                   onChange={(e) => setForm({ ...form, lessonLearned: e.target.value })}
                 />

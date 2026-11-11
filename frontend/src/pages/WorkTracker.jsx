@@ -118,6 +118,41 @@ function getReasonMeta(reason, isWork = false) {
   };
 }
 
+function parseTimeToSeconds(timeStr) {
+  if (!timeStr) return null;
+  if (timeStr.includes('T')) {
+    const d = new Date(timeStr);
+    if (!isNaN(d.getTime())) return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  }
+  const isPM = /pm/i.test(timeStr);
+  const isAM = /am/i.test(timeStr);
+  const cleanStr = timeStr.replace(/\s*(am|pm)/i, '').trim();
+  const parts = cleanStr.split(':').map((p) => parseInt(p, 10));
+  if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    let hours = parts[0];
+    const mins = parts[1];
+    const secs = parts[2] || 0;
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+    return hours * 3600 + mins * 60 + secs;
+  }
+  return null;
+}
+
+function calculateTimeDiff(startStr, endStr) {
+  const startSec = parseTimeToSeconds(startStr);
+  const endSec = parseTimeToSeconds(endStr);
+  if (startSec !== null && endSec !== null) {
+    if (endSec >= startSec) {
+      return endSec - startSec;
+    } else {
+      // Crossed midnight or wrap-around
+      return (86400 - startSec) + endSec;
+    }
+  }
+  return 0;
+}
+
 export function WorkTracker() {
   const {
     tasks = [],
@@ -212,6 +247,99 @@ export function WorkTracker() {
     const r = s.stopReason || 'Finished Work';
     reasonBreakdown[r] = (reasonBreakdown[r] || 0) + (Number(s.durationSeconds) || 0);
   });
+
+  // Chronological Session Stream Builder
+  // Alternating sequence: [Work 1: Start -> Stop] -> [Break 1: Stop -> Resume (Reason & Remarks)] -> [Work 2: Resume -> Stop/Live] -> ...
+  const chronologicalStream = useMemo(() => {
+    // 1. Sort all recorded sessions for this date chronologically
+    const sorted = [...dateSessions].sort((a, b) => {
+      const aSec = parseTimeToSeconds(a.startTime) ?? 0;
+      const bSec = parseTimeToSeconds(b.startTime) ?? 0;
+      return aSec - bSec;
+    });
+
+    const stream = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const sess = sorted[i];
+      const durSeconds = sess.durationSeconds || 0;
+      const durMin = Math.floor(durSeconds / 60);
+      const durSec = durSeconds % 60;
+      const durHours = Math.floor(durMin / 60);
+      const remainMin = durMin % 60;
+      const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
+
+      // 1. Work Session Card (Start to Stop)
+      stream.push({
+        id: sess.id || `work-${i}`,
+        type: 'work',
+        sessionId: sess.id,
+        taskId: sess.taskId,
+        taskTitle: sess.taskTitle || 'General Focus Session',
+        startTime: sess.startTime || 'Started',
+        endTime: sess.endTime || 'Completed',
+        durationSeconds: durSeconds,
+        durationStr: durStr,
+        rawSession: sess,
+      });
+
+      // 2. Break / Intermission Card (from stop time of this session to start time of next session or activeWorkSession)
+      const nextSession = sorted[i + 1];
+      const nextStartTime = nextSession?.startTime || (isRunning && isToday ? activeWorkSession?.startTime : null);
+
+      if (sess.endTime && nextStartTime) {
+        const gapSeconds = calculateTimeDiff(sess.endTime, nextStartTime);
+        const gapMin = Math.floor(gapSeconds / 60);
+        const gapSec = gapSeconds % 60;
+        const gapHours = Math.floor(gapMin / 60);
+        const gapRemainMin = gapMin % 60;
+        const gapDurStr = gapHours > 0 ? `${gapHours}h ${gapRemainMin}m` : `${gapMin}m ${gapSec}s`;
+
+        stream.push({
+          id: `break-${sess.id || i}`,
+          type: 'gap',
+          startTime: sess.endTime,
+          endTime: nextStartTime,
+          durationSeconds: gapSeconds,
+          durationStr: gapDurStr,
+          reason: sess.stopReason || 'Intermission',
+          notes: sess.notes || '',
+          sessionId: sess.id,
+          rawSession: sess,
+        });
+      } else if (sess.endTime && i === sorted.length - 1 && isPaused && isToday) {
+        // Tracker is currently paused / taking a break right now!
+        stream.push({
+          id: `break-ongoing-${sess.id}`,
+          type: 'gap',
+          isOngoing: true,
+          startTime: sess.endTime,
+          endTime: 'Ongoing Break',
+          reason: sess.stopReason || todayChain?.lastPauseReason || 'Personal Break',
+          notes: sess.notes || todayChain?.lastPauseRemarks || '',
+          sessionId: sess.id,
+          rawSession: sess,
+        });
+      }
+    }
+
+    // 3. If currently running, add the Live Work Segment card at the end
+    if (isRunning && isToday && activeWorkSession) {
+      stream.push({
+        id: 'active-live-work',
+        type: 'work',
+        isLive: true,
+        taskId: activeWorkSession.taskId,
+        taskTitle: activeWorkSession.taskTitle || 'Live Work Segment',
+        startTime: activeWorkSession.startTime || 'Now',
+        endTime: 'Tracking Live',
+        durationSeconds: currentLiveWorkSeconds,
+        durationStr: activeTimerDisplay,
+      });
+    }
+
+    return stream;
+  }, [dateSessions, activeWorkSession, isRunning, isPaused, isToday, currentLiveWorkSeconds, activeTimerDisplay, todayChain]);
 
   const handleStartSession = () => {
     const taskObj = dateTasks.find((t) => t.id === selectedTaskId);
@@ -608,19 +736,19 @@ export function WorkTracker() {
               <Link2 size={19} className="text-blue-400" />
               Work & Remarks Session Chain
             </h2>
-            {(todayChain?.chain?.length > 0 || dateSessions.length > 0) && (
+            {chronologicalStream.length > 0 && (
               <span className="focus-stream-counter">
-                {todayChain?.chain?.length || dateSessions.length} events logged
+                {chronologicalStream.length} blocks logged
               </span>
             )}
           </div>
           <span className="focus-stream-subhint">
             <Sparkles size={13} className="text-emerald-400" />
-            Auto-computes break gaps upon resuming
+            Chronological work & break intermission stream
           </span>
         </div>
 
-        {todayChain?.chain?.length === 0 && dateSessions.length === 0 && !isRunning && !isPaused ? (
+        {chronologicalStream.length === 0 ? (
           <div className="focus-stream-empty-deck">
             <div className="empty-sparkle-box">
               <Sparkles size={28} />
@@ -629,7 +757,7 @@ export function WorkTracker() {
               No focus sessions recorded yet for {isToday ? 'today' : formattedDateTitle}
             </div>
             <p className="empty-stream-desc">
-              Launch your first focus session above. When you pause for breaks, calls, or lunch, your remarks create an auto-calculated, continuous timeline stream.
+              Launch your first focus session above. When you stop for breaks, calls, or lunch, your remarks create an auto-calculated, continuous chronological chain.
             </p>
             <button
               type="button"
@@ -642,271 +770,274 @@ export function WorkTracker() {
           </div>
         ) : (
           <div className="focus-timeline-container">
-            {/* If Chain nodes exist, render the chronological chain; else fallback to dateSessions */}
-            {(todayChain?.chain?.length > 0 ? todayChain.chain : dateSessions).map((item, index) => {
-              const isChain = todayChain?.chain?.length > 0;
-              const isWork = isChain ? item.type === 'work' : true;
-              const durSeconds = item.durationSeconds || 0;
-              const durMin = Math.floor(durSeconds / 60);
-              const durSec = durSeconds % 60;
-              const durHours = Math.floor(durMin / 60);
-              const remainMin = durMin % 60;
-              const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
+            {chronologicalStream.map((item, index) => {
+              const isWork = item.type === 'work';
+              const isLive = item.isLive;
+              const isOngoing = item.isOngoing;
+              const reasonMeta = getReasonMeta(item.reason, isWork);
+              const linkedTask = item.taskId ? tasks.find((t) => t.id === item.taskId) : null;
 
-              const title = item.taskTitle || (isWork ? 'General Focus Session' : `Break / Intermission: ${item.reason || 'Pause'}`);
-              const stopReason = isChain ? (item.stopReason || item.reason || (isWork ? 'Focus Segment' : 'Intermission')) : (item.stopReason || 'Finished Work');
-              const notes = isChain ? (item.notes || item.remarks || '') : (item.notes || '');
-              const startTime = item.startTime || '';
-              const endTime = item.endTime || (isWork ? 'Completed' : '');
-              const sessionId = isChain ? (item.sessionId || item.id) : item.id;
-              const taskId = item.taskId;
+              if (isLive) {
+                return (
+                  <div key={item.id} className="stream-node-wrapper">
+                    <div className="stream-node-pin is-active">
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF' }} />
+                    </div>
 
-              const reasonMeta = getReasonMeta(stopReason, isWork);
-              const linkedTask = taskId ? tasks.find((t) => t.id === taskId) : null;
+                    <div className="stream-node-card is-active animate-pulse">
+                      <div className="stream-node-left">
+                        <div
+                          className="stream-node-icon-box"
+                          style={{ background: '#10B981', color: '#FFFFFF', boxShadow: '0 0 14px rgba(16, 185, 129, 0.4)' }}
+                        >
+                          <Timer size={18} />
+                        </div>
 
+                        <div className="stream-node-details">
+                          <div className="stream-node-title-row">
+                            <span className="stream-node-title">
+                              {item.taskTitle}
+                            </span>
+                            <span className="stream-badge-work is-live">
+                              <Activity size={11} className="animate-pulse" /> Recording
+                            </span>
+                          </div>
+
+                          <div className="stream-node-meta">
+                            <span className="stream-time-badge">
+                              <Clock size={12} className="text-emerald-400" />
+                              Started at {item.startTime}
+                            </span>
+                            <span className="meta-bullet">•</span>
+                            <span className="meta-context text-emerald-400">
+                              Real-time continuous focus tracking
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="stream-node-right">
+                        <div className="stream-node-duration is-live" style={{ color: '#34D399' }}>
+                          <Timer size={13} />
+                          <span>{item.durationStr}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-stop-focus"
+                          onClick={requestStopWorkSession}
+                          style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                        >
+                          <Square size={12} fill="currentColor" /> Stop & Remarks
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isWork) {
+                return (
+                  <div key={item.id || index} className="stream-node-wrapper">
+                    <div className="stream-node-pin">
+                      <div
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          background: '#10B981',
+                          boxShadow: '0 0 6px #10B981',
+                        }}
+                      />
+                    </div>
+
+                    <div className="stream-node-card is-work">
+                      <div className="stream-node-left">
+                        <div
+                          className="stream-node-icon-box"
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.16)',
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                          }}
+                        >
+                          <Zap size={18} color="#10B981" />
+                        </div>
+
+                        <div className="stream-node-details">
+                          <div className="stream-node-title-row">
+                            <span className="stream-node-title">{item.taskTitle}</span>
+
+                            <span className="stream-badge-work">
+                              <span className="stream-pulse-dot" /> Focus Segment
+                            </span>
+
+                            {linkedTask?.category && (
+                              <span className="stream-task-category-pill">
+                                <span
+                                  className="category-color-dot"
+                                  style={{ background: linkedTask.categoryColor || '#3B82F6' }}
+                                />
+                                <span>{linkedTask.category}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="stream-node-meta">
+                            <span className="stream-time-badge">
+                              <Clock size={12} className="text-emerald-400" />
+                              {item.startTime} → {item.endTime}
+                            </span>
+                            <span className="meta-bullet">•</span>
+                            <span className="meta-context">
+                              {item.durationStr} focused session
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="stream-node-right">
+                        <div className="stream-node-duration">
+                          <Timer size={13} />
+                          <span>{item.durationStr}</span>
+                        </div>
+
+                        <div className="stream-node-actions">
+                          <button
+                            type="button"
+                            className="stream-action-btn"
+                            onClick={() => setEditingSession(item.rawSession)}
+                            title="Edit session details"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className="stream-action-btn btn-delete"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this session log?')) {
+                                deleteWorkSession(item.sessionId);
+                              }
+                            }}
+                            title="Delete session log"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Intermission / Break Node (from Stop to Restart with reason & remarks)
               return (
                 <div key={item.id || index} className="stream-node-wrapper">
-                  {/* Spine Pin Dot */}
-                  <div className={`stream-node-pin ${!isWork ? 'is-gap' : ''}`}>
+                  <div className="stream-node-pin is-gap">
                     <div
                       style={{
                         width: 7,
                         height: 7,
                         borderRadius: '50%',
-                        background: isWork ? '#10B981' : '#F59E0B',
-                        boxShadow: isWork ? '0 0 6px #10B981' : '0 0 6px #F59E0B',
+                        background: '#F59E0B',
+                        boxShadow: '0 0 6px #F59E0B',
                       }}
                     />
                   </div>
 
-                  <div className={`stream-node-card ${!isWork ? 'is-gap' : 'is-work'}`}>
+                  <div className={`stream-node-card is-gap ${isOngoing ? 'is-ongoing-gap' : ''}`}>
                     <div className="stream-node-left">
-                      {/* Sculpted Dual-Layer Icon Pod */}
                       <div
                         className="stream-node-icon-box"
                         style={{
-                          background: isWork ? 'rgba(16, 185, 129, 0.16)' : reasonMeta.bg,
-                          border: `1px solid ${isWork ? 'rgba(16, 185, 129, 0.35)' : reasonMeta.borderColor}`,
+                          background: reasonMeta.bg,
+                          border: `1px solid ${reasonMeta.borderColor}`,
                         }}
                       >
-                        {isWork ? <Zap size={18} color="#10B981" /> : reasonMeta.icon}
+                        {reasonMeta.icon}
                       </div>
 
                       <div className="stream-node-details">
-                        {/* Title & Badges */}
                         <div className="stream-node-title-row">
-                          <span className="stream-node-title">{title}</span>
+                          <span className="stream-node-title">
+                            {isOngoing ? `Current Gap: ${item.reason}` : `Break: ${item.reason}`}
+                          </span>
 
-                          {isWork ? (
-                            <span className="stream-badge-work">
-                              <span className="stream-pulse-dot" /> Focus Segment
-                            </span>
-                          ) : (
-                            <span className="stream-badge-break">
-                              <Coffee size={11} /> Intermission
-                            </span>
-                          )}
+                          <span
+                            className="stream-reason-pill"
+                            style={{
+                              background: reasonMeta.bg,
+                              borderColor: reasonMeta.borderColor,
+                              color: reasonMeta.color,
+                            }}
+                          >
+                            {reasonMeta.icon}
+                            <span>{item.reason}</span>
+                          </span>
 
-                          {stopReason && (
-                            <span
-                              className="stream-reason-pill"
-                              style={{
-                                background: reasonMeta.bg,
-                                borderColor: reasonMeta.borderColor,
-                                color: reasonMeta.color,
-                              }}
-                            >
-                              {reasonMeta.icon}
-                              <span>{stopReason}</span>
-                            </span>
-                          )}
-
-                          {linkedTask?.category && (
-                            <span className="stream-task-category-pill">
-                              <span
-                                className="category-color-dot"
-                                style={{ background: linkedTask.categoryColor || '#3B82F6' }}
-                              />
-                              <span>{linkedTask.category}</span>
+                          {isOngoing && (
+                            <span className="stream-node-badge badge-amber">
+                              Paused
                             </span>
                           )}
                         </div>
 
-                        {/* Interval & Context */}
                         <div className="stream-node-meta">
                           <span className="stream-time-badge">
-                            <Clock size={12} className={isWork ? 'text-emerald-400' : 'text-amber-400'} />
-                            {startTime} → {endTime}
+                            <Clock size={12} className="text-amber-400" />
+                            {item.startTime} → {item.endTime}
                           </span>
                           <span className="meta-bullet">•</span>
                           <span className="meta-context">
-                            {isWork ? `${durStr} focused session` : `${durStr} break intermission`}
+                            {isOngoing
+                              ? `Paused since ${item.startTime} · Resumes automatically on click`
+                              : `${item.durationStr} break intermission`}
                           </span>
                         </div>
 
-                        {/* User Remarks Note Banner */}
-                        {notes && notes.trim() !== '' && (
+                        {item.notes && item.notes.trim() !== '' && (
                           <div className="stream-node-remarks-banner">
-                            <FileText size={13} className={isWork ? 'text-emerald-400' : 'text-amber-400'} />
-                            <span className="remarks-tag">Log Note:</span>
-                            <span className="remarks-text">"{notes}"</span>
+                            <FileText size={13} className="text-amber-400" />
+                            <span className="remarks-tag">Stop Remarks:</span>
+                            <span className="remarks-text">"{item.notes}"</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Right Side: Monospace Duration & Actions */}
                     <div className="stream-node-right">
-                      <div className={`stream-node-duration ${!isWork ? 'is-gap' : ''}`}>
-                        <Timer size={13} />
-                        <span>{durStr}</span>
-                      </div>
-
-                      <div className="stream-node-actions">
+                      {isOngoing ? (
                         <button
                           type="button"
-                          className="stream-action-btn"
-                          onClick={() => {
-                            const targetSession = isChain
-                              ? dateSessions.find((s) => s.id === sessionId || s.startTime === startTime) || {
-                                  id: sessionId,
-                                  startTime,
-                                  endTime,
-                                  durationSeconds: durSeconds,
-                                  stopReason,
-                                  notes,
-                                  taskId,
-                                  taskTitle: title,
-                                }
-                              : item;
-                            setEditingSession(targetSession);
-                          }}
-                          title="Edit remarks & details"
+                          onClick={handleStartSession}
+                          className="btn-resume-focus"
+                          style={{ padding: '7px 16px', fontSize: '0.78rem' }}
                         >
-                          <Edit2 size={13} />
+                          <Play size={13} fill="currentColor" /> Resume Work
                         </button>
-                        <button
-                          type="button"
-                          className="stream-action-btn btn-delete"
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this session log?')) {
-                              deleteWorkSession(sessionId);
-                            }
-                          }}
-                          title="Delete session log"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="stream-node-duration is-gap">
+                            <Timer size={13} />
+                            <span>⚡ {item.durationStr}</span>
+                          </div>
+                          {item.rawSession && (
+                            <div className="stream-node-actions">
+                              <button
+                                type="button"
+                                className="stream-action-btn"
+                                onClick={() => setEditingSession(item.rawSession)}
+                                title="Edit break reason & remarks"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
-
-            {/* Active Running Session Segment in the Timeline Stream */}
-            {isRunning && activeWorkSession?.date === activeDate && (
-              <div className="stream-node-wrapper">
-                <div className="stream-node-pin is-active">
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF' }} />
-                </div>
-
-                <div className="stream-node-card is-active animate-pulse">
-                  <div className="stream-node-left">
-                    <div
-                      className="stream-node-icon-box"
-                      style={{ background: '#10B981', color: '#FFFFFF', boxShadow: '0 0 14px rgba(16, 185, 129, 0.4)' }}
-                    >
-                      <Timer size={18} />
-                    </div>
-
-                    <div className="stream-node-details">
-                      <div className="stream-node-title-row">
-                        <span className="stream-node-title">
-                          {activeWorkSession?.taskTitle || 'Live Work Segment'}
-                        </span>
-                        <span className="stream-badge-work is-live">
-                          <Activity size={11} className="animate-pulse" /> Recording
-                        </span>
-                      </div>
-
-                      <div className="stream-node-meta">
-                        <span className="stream-time-badge">
-                          <Clock size={12} className="text-emerald-400" />
-                          Started at {activeWorkSession?.startTime || 'now'}
-                        </span>
-                        <span className="meta-bullet">•</span>
-                        <span className="meta-context text-emerald-400">
-                          Real-time continuous focus tracking
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stream-node-right">
-                    <div className="stream-node-duration is-live" style={{ color: '#34D399' }}>
-                      <Timer size={13} />
-                      <span>{activeHrs > 0 ? `${activeHrs}h ` : ''}{activeMins}m {activeSecs}s</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-stop-focus"
-                      onClick={requestStopWorkSession}
-                      style={{ padding: '6px 14px', fontSize: '0.78rem' }}
-                    >
-                      <Square size={12} fill="currentColor" /> Stop & Remarks
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* If currently paused, render the active pause node in the timeline stream */}
-            {isPaused && (
-              <div className="stream-node-wrapper">
-                <div className="stream-node-pin is-gap">
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
-                </div>
-
-                <div className="stream-node-card is-gap" style={{ borderStyle: 'dashed' }}>
-                  <div className="stream-node-left">
-                    <div className="stream-node-icon-box" style={{ background: 'rgba(245, 158, 11, 0.2)' }}>
-                      <Coffee size={18} color="#F59E0B" />
-                    </div>
-
-                    <div className="stream-node-details">
-                      <div className="stream-node-title-row">
-                        <span className="stream-node-title" style={{ color: '#FDE68A' }}>
-                          Current Gap: {todayChain.lastPauseReason || 'Pause'}
-                        </span>
-                        <span className="stream-node-badge badge-amber">
-                          Paused
-                        </span>
-                      </div>
-
-                      <div className="stream-node-meta">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} className="text-amber-400" />
-                          Paused since {todayChain.lastPausedTimeStr}
-                        </span>
-                        <span>· Auto-calculates duration upon resuming</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stream-node-right">
-                    <button
-                      type="button"
-                      onClick={handleStartSession}
-                      className="btn-resume-focus"
-                      style={{ padding: '7px 16px', fontSize: '0.78rem' }}
-                    >
-                      <Play size={13} fill="currentColor" /> Resume Work
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

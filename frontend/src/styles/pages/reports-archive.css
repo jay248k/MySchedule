@@ -937,8 +937,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -947,21 +947,24 @@
 }
 
 .table-priority-badge.high {
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(239, 68, 68, 0.38);
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.45);
   color: #F87171;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
 }
 
 .table-priority-badge.medium {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.45);
   color: #FBBF24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
 }
 
 .table-priority-badge.low {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.4);
   color: #38BDF8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
 }
 
 .table-priority-dot {

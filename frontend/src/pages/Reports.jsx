@@ -698,12 +698,12 @@ export function Reports() {
           <span
             className="table-category-badge"
             style={{
-              '--cat-color': color,
-              '--cat-bg': `${color}18`,
-              '--cat-border': `${color}40`,
+              background: 'rgba(56, 189, 248, 0.12)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              color: color,
             }}
           >
-            <span className="table-category-dot" />
+            <span className="table-category-dot" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
             <span>{val}</span>
           </span>
         );
@@ -854,12 +854,12 @@ export function Reports() {
           <span
             className="table-category-badge"
             style={{
-              '--cat-color': color,
-              '--cat-bg': `${color}18`,
-              '--cat-border': `${color}40`,
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              color: color,
             }}
           >
-            <span className="table-category-dot" />
+            <span className="table-category-dot" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
             <span>{val}</span>
           </span>
         );
@@ -1017,12 +1017,12 @@ export function Reports() {
           <span
             className="table-category-badge"
             style={{
-              '--cat-color': color,
-              '--cat-bg': `${color}18`,
-              '--cat-border': `${color}40`,
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: color,
             }}
           >
-            <span className="table-category-dot" />
+            <span className="table-category-dot" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
             <span>{val}</span>
           </span>
         );
