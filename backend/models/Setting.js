@@ -49,6 +49,11 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      hiddenNavigationItems: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '[]',
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,

@@ -181,23 +181,36 @@ export function Sidebar() {
     { name: 'Settings', path: '/settings', icon: Settings, iconColor: '#94A3B8' },
   ];
 
-  // Dynamic ordering support from settings.navigationOrder
+  // Dynamic ordering support from settings.navigationOrder and visibility filtering from settings.hiddenNavigationItems
   const visibleNavItems = useMemo(() => {
+    let hiddenPaths = settings?.hiddenNavigationItems;
+    if (typeof hiddenPaths === 'string') {
+      try { hiddenPaths = JSON.parse(hiddenPaths); } catch { hiddenPaths = []; }
+    }
+    const hiddenSet = new Set(Array.isArray(hiddenPaths) ? hiddenPaths : []);
+
     let order = settings?.navigationOrder;
     if (typeof order === 'string') {
       try { order = JSON.parse(order); } catch { order = null; }
     }
+
+    // Filter out items hidden by user (never hide /settings to prevent lockout)
+    const filtered = allNavItems.filter((item) => {
+      if (item.path === '/settings') return true;
+      return !hiddenSet.has(item.path);
+    });
+
     if (!Array.isArray(order) || order.length === 0) {
-      return allNavItems;
+      return filtered;
     }
     const orderMap = new Map();
     order.forEach((p, idx) => orderMap.set(p, idx));
-    return [...allNavItems].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const idxA = orderMap.has(a.path) ? orderMap.get(a.path) : 999;
       const idxB = orderMap.has(b.path) ? orderMap.get(b.path) : 999;
       return idxA - idxB;
     });
-  }, [allNavItems, settings?.navigationOrder]);
+  }, [allNavItems, settings?.navigationOrder, settings?.hiddenNavigationItems]);
 
   return (
     <>

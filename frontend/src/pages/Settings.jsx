@@ -29,6 +29,7 @@ import {
   HardDrive,
   RefreshCw,
   Eye,
+  EyeOff,
   Layout,
   Cpu,
   Info,
@@ -158,21 +159,30 @@ export function Settings() {
   ];
 
   // Helper toggle switch component
-  const ToggleSwitch = ({ checked, onChange, id }) => (
+  const ToggleSwitch = ({ checked, onChange, id, disabled, title }) => (
     <button
       type="button"
       id={id}
-      onClick={() => onChange(!checked)}
+      title={title}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled && onChange) onChange(!checked);
+      }}
       style={{
-        width: '46px',
+        width: '44px',
         height: '24px',
         borderRadius: '999px',
-        background: checked ? 'var(--primary-color)' : 'var(--border-color)',
+        background: disabled
+          ? 'rgba(100, 116, 139, 0.35)'
+          : checked
+          ? 'var(--primary-color)'
+          : 'var(--border-color)',
         position: 'relative',
         border: 'none',
-        cursor: 'pointer',
-        transition: 'background 0.2s ease',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background 0.2s ease, opacity 0.2s ease',
         flexShrink: 0,
+        opacity: disabled ? 0.55 : 1,
       }}
     >
       <div
@@ -183,7 +193,7 @@ export function Settings() {
           background: '#FFFFFF',
           position: 'absolute',
           top: '3px',
-          left: checked ? '24px' : '4px',
+          left: checked ? '22px' : '4px',
           transition: 'left 0.2s ease',
           boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         }}
@@ -968,7 +978,7 @@ export function Settings() {
                   <div>
                     <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Sidebar Menu Customization</h2>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      Reorder the sidebar navigation sequence to match your workflow. Changes save to your account.
+                      Reorder navigation or toggle items ON/OFF to control their visibility in the sidebar. Changes save automatically.
                     </span>
                   </div>
                 </div>
@@ -994,19 +1004,20 @@ export function Settings() {
                       '/archive',
                       '/settings',
                     ]);
+                    handleUpdate('hiddenNavigationItems', []);
                     showToast({
                       type: 'info',
                       title: 'Reset Navigation',
-                      message: 'Sidebar order restored to default layout.',
+                      message: 'Sidebar order and visibility restored to default.',
                     });
                   }}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <RotateCcw size={14} /> Reset Default Order
+                  <RotateCcw size={14} /> Reset Default
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '640px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '680px' }}>
                 {(() => {
                   const ALL_ITEMS = [
                     { path: '/', label: 'Dashboard', color: '#3B82F6' },
@@ -1034,6 +1045,26 @@ export function Settings() {
                     currentOrder = ALL_ITEMS.map((i) => i.path);
                   }
 
+                  let hiddenPaths = settings?.hiddenNavigationItems;
+                  if (typeof hiddenPaths === 'string') {
+                    try { hiddenPaths = JSON.parse(hiddenPaths); } catch { hiddenPaths = []; }
+                  }
+                  if (!Array.isArray(hiddenPaths)) hiddenPaths = [];
+
+                  const toggleVisibility = (path) => {
+                    if (path === '/settings') return;
+                    const isHidden = hiddenPaths.includes(path);
+                    const updated = isHidden
+                      ? hiddenPaths.filter((p) => p !== path)
+                      : [...hiddenPaths, path];
+                    handleUpdate('hiddenNavigationItems', updated);
+                    showToast({
+                      type: 'info',
+                      title: isHidden ? 'Menu Item Visible' : 'Menu Item Hidden',
+                      message: `"${path}" will ${isHidden ? 'now appear in' : 'be hidden from'} the sidebar.`,
+                    });
+                  };
+
                   // Order items according to currentOrder
                   const sorted = [...ALL_ITEMS].sort((a, b) => {
                     const idxA = currentOrder.indexOf(a.path);
@@ -1055,6 +1086,8 @@ export function Settings() {
                   return sorted.map((item, idx) => {
                     const isDragging = draggedNavIdx === idx;
                     const isDragOver = dragOverNavIdx === idx;
+                    const isHidden = hiddenPaths.includes(item.path);
+                    const isSettingsItem = item.path === '/settings';
 
                     return (
                     <div
@@ -1100,17 +1133,21 @@ export function Settings() {
                           ? 'rgba(23, 105, 255, 0.12)'
                           : isDragOver
                           ? 'rgba(16, 185, 129, 0.12)'
+                          : isHidden
+                          ? 'rgba(255, 255, 255, 0.02)'
                           : 'var(--page-bg)',
                         border: isDragOver
                           ? '2px dashed var(--primary-color)'
                           : isDragging
                           ? '1px solid var(--primary-color)'
+                          : isHidden
+                          ? '1px dashed var(--border-color)'
                           : '1px solid var(--border-color)',
                         borderRadius: '8px',
                         transition: 'all 0.15s ease',
                         cursor: 'grab',
                         transform: isDragging ? 'scale(0.98)' : 'none',
-                        opacity: isDragging ? 0.6 : 1,
+                        opacity: isDragging ? 0.6 : isHidden ? 0.65 : 1,
                       }}
                       title="Drag and drop to reorder"
                     >
@@ -1127,9 +1164,17 @@ export function Settings() {
                             height: '10px',
                             borderRadius: '50%',
                             background: item.color,
+                            opacity: isHidden ? 0.5 : 1,
                           }}
                         />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <span
+                          style={{
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            color: isHidden ? 'var(--text-muted)' : 'var(--text-primary)',
+                            textDecoration: isHidden ? 'line-through' : 'none',
+                          }}
+                        >
                           {item.label}
                         </span>
                         <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -1137,35 +1182,90 @@ export function Settings() {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          disabled={idx === 0}
-                          onClick={() => moveItem(idx, -1)}
-                          title="Move Up"
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* Visibility Toggle Button */}
+                        <div
                           style={{
-                            padding: '4px',
-                            opacity: idx === 0 ? 0.3 : 1,
-                            cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '3px 8px',
+                            borderRadius: '20px',
+                            background: isHidden
+                              ? 'rgba(239, 68, 68, 0.08)'
+                              : 'rgba(16, 185, 129, 0.08)',
+                            border: `1px solid ${isHidden ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
                           }}
+                          title={
+                            isSettingsItem
+                              ? 'Settings must remain visible'
+                              : isHidden
+                              ? 'Click toggle to show in sidebar'
+                              : 'Click toggle to hide from sidebar'
+                          }
                         >
-                          <ArrowUp size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          disabled={idx === sorted.length - 1}
-                          onClick={() => moveItem(idx, 1)}
-                          title="Move Down"
-                          style={{
-                            padding: '4px',
-                            opacity: idx === sorted.length - 1 ? 0.3 : 1,
-                            cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          <ArrowDown size={15} />
-                        </button>
+                          {isHidden ? (
+                            <EyeOff size={13} style={{ color: '#EF4444' }} />
+                          ) : (
+                            <Eye size={13} style={{ color: '#10B981' }} />
+                          )}
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: isHidden ? '#EF4444' : '#10B981',
+                              userSelect: 'none',
+                              minWidth: '42px',
+                            }}
+                          >
+                            {isHidden ? 'Hidden' : 'Visible'}
+                          </span>
+                          <ToggleSwitch
+                            id={`toggle-nav-${item.path.replace(/\//g, '') || 'root'}`}
+                            checked={!isHidden}
+                            disabled={isSettingsItem}
+                            title={
+                              isSettingsItem
+                                ? 'Settings must remain visible'
+                                : isHidden
+                                ? 'Show in sidebar'
+                                : 'Hide from sidebar'
+                            }
+                            onChange={() => toggleVisibility(item.path)}
+                          />
+                        </div>
+
+                        {/* Move Up / Down Reorder */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            disabled={idx === 0}
+                            onClick={() => moveItem(idx, -1)}
+                            title="Move Up"
+                            style={{
+                              padding: '4px',
+                              opacity: idx === 0 ? 0.3 : 1,
+                              cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            <ArrowUp size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            disabled={idx === sorted.length - 1}
+                            onClick={() => moveItem(idx, 1)}
+                            title="Move Down"
+                            style={{
+                              padding: '4px',
+                              opacity: idx === sorted.length - 1 ? 0.3 : 1,
+                              cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            <ArrowDown size={15} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                     );

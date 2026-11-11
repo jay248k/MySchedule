@@ -95,6 +95,9 @@ exports.updateSettings = async (req, res, next) => {
       ...(navigationOrder !== undefined && {
         navigationOrder: typeof navigationOrder === 'object' ? JSON.stringify(navigationOrder) : navigationOrder,
       }),
+      ...(req.body.hiddenNavigationItems !== undefined && {
+        hiddenNavigationItems: typeof req.body.hiddenNavigationItems === 'object' ? JSON.stringify(req.body.hiddenNavigationItems) : req.body.hiddenNavigationItems,
+      }),
     };
 
     await setting.update(updatePayload);
