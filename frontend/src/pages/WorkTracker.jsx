@@ -30,6 +30,7 @@ import {
   Code,
   Check,
   Flame,
+  X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
@@ -1019,29 +1020,96 @@ export function WorkTracker() {
       {isManualModalOpen && (
         <div
           className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            backgroundColor: 'rgba(0, 0, 0, 0.72)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsManualModalOpen(false);
           }}
         >
-          <div className="card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-color">
-            <div className="p-4 border-b border-color flex justify-between items-center">
-              <h3 className="text-sm font-extrabold m-0 text-primary flex items-center gap-2">
-                <Plus size={16} className="text-blue-400" />
-                Log Past Work Session
-              </h3>
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '480px',
+              background: 'var(--card-bg, #10192D)',
+              border: '1px solid rgba(23, 105, 255, 0.25)',
+              borderRadius: '16px',
+              boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 28px rgba(23, 105, 255, 0.12)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(180deg, rgba(23, 105, 255, 0.12) 0%, transparent 100%)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '9px',
+                    background: 'rgba(23, 105, 255, 0.15)',
+                    border: '1px solid rgba(23, 105, 255, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#60A5FA',
+                  }}
+                >
+                  <Plus size={16} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+                    Log Past Work Session
+                  </h3>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                    Manually add a completed focus interval
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="button"
-                className="btn-icon w-7 h-7"
+                className="btn-icon"
                 onClick={() => setIsManualModalOpen(false)}
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted, #64748B)',
+                  cursor: 'pointer',
+                }}
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveManualSession} className="p-4 flex flex-col gap-3">
+            <form onSubmit={handleSaveManualSession} style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Date:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Calendar size={13} style={{ color: '#60A5FA' }} />
+                  <span>Date:</span>
                 </label>
                 <input
                   type="date"
@@ -1049,13 +1117,23 @@ export function WorkTracker() {
                   value={manualForm.date}
                   onChange={(e) => setManualForm({ ...manualForm, date: e.target.value })}
                   required
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="text-xs font-semibold text-secondary block mb-1">
-                    Start Time:
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                    <Clock size={13} style={{ color: '#10B981' }} />
+                    <span>Start Time:</span>
                   </label>
                   <input
                     type="time"
@@ -1063,11 +1141,21 @@ export function WorkTracker() {
                     value={manualForm.startTime}
                     onChange={(e) => setManualForm({ ...manualForm, startTime: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '8px',
+                      background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                      border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                      color: 'var(--text-primary, #FFFFFF)',
+                      fontSize: '0.86rem',
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-secondary block mb-1">
-                    End Time:
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                    <Clock size={13} style={{ color: '#F59E0B' }} />
+                    <span>End Time:</span>
                   </label>
                   <input
                     type="time"
@@ -1075,13 +1163,23 @@ export function WorkTracker() {
                     value={manualForm.endTime}
                     onChange={(e) => setManualForm({ ...manualForm, endTime: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '8px',
+                      background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                      border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                      color: 'var(--text-primary, #FFFFFF)',
+                      fontSize: '0.86rem',
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Duration (Minutes):
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Timer size={13} style={{ color: '#10B981' }} />
+                  <span>Duration (Minutes):</span>
                 </label>
                 <input
                   type="number"
@@ -1091,17 +1189,36 @@ export function WorkTracker() {
                   value={manualForm.durationMinutes}
                   onChange={(e) => setManualForm({ ...manualForm, durationMinutes: e.target.value })}
                   required
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Reason for Stopping / Pause:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Coffee size={13} style={{ color: '#F59E0B' }} />
+                  <span>Reason for Stopping / Pause:</span>
                 </label>
                 <select
                   className="form-input"
                   value={manualForm.stopReason}
                   onChange={(e) => setManualForm({ ...manualForm, stopReason: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
                 >
                   <option value="Coffee / Tea Break">☕ Coffee / Tea Break</option>
                   <option value="Lunch / Dinner Break">🍱 Lunch / Dinner Break</option>
@@ -1117,13 +1234,23 @@ export function WorkTracker() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Linked Task (Optional):
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Target size={13} style={{ color: '#8B5CF6' }} />
+                  <span>Linked Task (Optional):</span>
                 </label>
                 <select
                   className="form-input"
                   value={manualForm.taskId}
                   onChange={(e) => setManualForm({ ...manualForm, taskId: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
                 >
                   <option value="">🎯 General Focus / No Task</option>
                   {dateTasks.map((t) => (
@@ -1135,8 +1262,9 @@ export function WorkTracker() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Notes / Progress:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <FileText size={13} style={{ color: '#06B6D4' }} />
+                  <span>Notes / Progress:</span>
                 </label>
                 <textarea
                   rows={2}
@@ -1144,19 +1272,58 @@ export function WorkTracker() {
                   placeholder="What was completed during this block..."
                   value={manualForm.notes}
                   onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                    resize: 'vertical',
+                  }}
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '10px',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                }}
+              >
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setIsManualModalOpen(false)}
+                  style={{
+                    fontSize: '0.84rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 14px',
+                  }}
                 >
-                  Cancel
+                  <X size={14} /> Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Save Session Log
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 18px',
+                    background: 'var(--primary-color, #1769FF)',
+                    boxShadow: '0 4px 14px rgba(23, 105, 255, 0.35)',
+                  }}
+                >
+                  <Check size={14} /> Save Session Log
                 </button>
               </div>
             </form>
@@ -1168,61 +1335,292 @@ export function WorkTracker() {
       {editingSession && (
         <div
           className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            backgroundColor: 'rgba(0, 0, 0, 0.72)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setEditingSession(null);
           }}
         >
-          <div className="card w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-color">
-            <div className="p-4 border-b border-color flex justify-between items-center">
-              <h3 className="text-sm font-extrabold m-0 text-primary flex items-center gap-2">
-                <Edit2 size={15} className="text-blue-400" />
-                Edit Work Session Details
-              </h3>
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '490px',
+              background: 'var(--card-bg, #10192D)',
+              border: '1px solid rgba(23, 105, 255, 0.28)',
+              borderRadius: '16px',
+              boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 28px rgba(23, 105, 255, 0.12)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(180deg, rgba(23, 105, 255, 0.12) 0%, transparent 100%)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '9px',
+                    background: 'rgba(23, 105, 255, 0.15)',
+                    border: '1px solid rgba(23, 105, 255, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#60A5FA',
+                  }}
+                >
+                  <Edit2 size={16} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+                    Edit Work Session Details
+                  </h3>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                    Update stop reason, notes, or linked task
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="button"
-                className="btn-icon w-7 h-7"
+                className="btn-icon"
                 onClick={() => setEditingSession(null)}
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted, #64748B)',
+                  cursor: 'pointer',
+                }}
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditSession} className="p-4 flex flex-col gap-3">
+            <form onSubmit={handleSaveEditSession} style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Session Meta Strip */}
+              {(editingSession.startTime || editingSession.durationSeconds) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '9px 13px',
+                    borderRadius: '10px',
+                    background: 'rgba(23, 105, 255, 0.06)',
+                    border: '1px solid rgba(23, 105, 255, 0.18)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <Clock size={13} style={{ color: '#60A5FA' }} />
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary, #FFFFFF)' }}>
+                      {editingSession.startTime || 'Start'} → {editingSession.endTime || 'Present'}
+                    </span>
+                  </div>
+                  {editingSession.durationSeconds ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Timer size={12} style={{ color: '#10B981' }} />
+                      <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#10B981', fontFamily: 'monospace' }}>
+                        {Math.floor(editingSession.durationSeconds / 60)}m {editingSession.durationSeconds % 60}s
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Stop / Break Reason Field */}
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Stop Reason:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Coffee size={13} style={{ color: '#F59E0B' }} />
+                  <span>Stop Reason:</span>
                 </label>
+
+                {/* Quick Presets */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+                  {[
+                    'Coffee / Tea Break',
+                    'Lunch Break',
+                    'Team Meeting',
+                    'Phone Call',
+                    'Stepped Away',
+                    'Task Completed',
+                    'Switching Tasks',
+                  ].map((preset) => {
+                    const isSelected = editingSession.stopReason === preset;
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setEditingSession({ ...editingSession, stopReason: preset })}
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: isSelected
+                            ? '1px solid var(--primary-color, #1769FF)'
+                            : '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                          background: isSelected
+                            ? 'rgba(23, 105, 255, 0.2)'
+                            : 'rgba(255, 255, 255, 0.03)',
+                          color: isSelected
+                            ? '#60A5FA'
+                            : 'var(--text-secondary, #94A3B8)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {preset}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <input
                   type="text"
                   className="form-input"
-                  value={editingSession.stopReason}
+                  value={editingSession.stopReason || ''}
                   onChange={(e) => setEditingSession({ ...editingSession, stopReason: e.target.value })}
+                  placeholder="e.g. Lunch, Team Meeting, Call..."
                   required
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
                 />
               </div>
 
+              {/* Linked Task Field */}
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">
-                  Notes / Accomplishments:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <Target size={13} style={{ color: '#8B5CF6' }} />
+                  <span>Linked Task:</span>
+                </label>
+                <select
+                  className="form-input"
+                  value={editingSession.taskId || ''}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const taskObj = dateTasks.find((t) => t.id === selectedId);
+                    setEditingSession({
+                      ...editingSession,
+                      taskId: selectedId || null,
+                      taskTitle: taskObj ? taskObj.title : 'General Focus Session',
+                    });
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                  }}
+                >
+                  <option value="">🎯 General Focus (No linked task)</option>
+                  {dateTasks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Notes / Accomplishments Field */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <FileText size={13} style={{ color: '#06B6D4' }} />
+                  <span>Notes / Accomplishments:</span>
                 </label>
                 <textarea
                   rows={3}
                   className="form-input"
                   value={editingSession.notes || ''}
                   onChange={(e) => setEditingSession({ ...editingSession, notes: e.target.value })}
+                  placeholder="Summary of work achieved or break intermission details..."
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+                    color: 'var(--text-primary, #FFFFFF)',
+                    fontSize: '0.86rem',
+                    resize: 'vertical',
+                  }}
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              {/* Modal Footer Actions */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '10px',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                }}
+              >
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setEditingSession(null)}
+                  style={{
+                    fontSize: '0.84rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 14px',
+                  }}
                 >
-                  Cancel
+                  <X size={14} /> Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Update Session
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 18px',
+                    background: 'var(--primary-color, #1769FF)',
+                    boxShadow: '0 4px 14px rgba(23, 105, 255, 0.35)',
+                  }}
+                >
+                  <Check size={14} /> Update Session
                 </button>
               </div>
             </form>
