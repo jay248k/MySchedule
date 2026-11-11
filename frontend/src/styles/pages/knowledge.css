@@ -113,8 +113,55 @@
 .knowledge-view-switcher {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.knowledge-sort-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.knowledge-sort-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px 8px;
+  transition: all 0.2s ease;
+}
+
+.knowledge-sort-pill:hover,
+.knowledge-sort-pill:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(23, 105, 255, 0.15);
+}
+
+.knowledge-sort-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.knowledge-sort-select {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  padding: 2px 4px;
+}
+
+.knowledge-sort-select option {
+  background-color: var(--card-bg, #0F172A);
+  color: var(--text-primary, #F8FAFC);
+  padding: 6px 10px;
 }
 
 .knowledge-view-pill-group {

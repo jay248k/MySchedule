@@ -30,6 +30,7 @@ import {
   Clipboard,
   Maximize2,
   Minimize2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -47,6 +48,9 @@ export function KnowledgePage() {
   const [isTableFullPage, setIsTableFullPage] = useState(true); // Default to fullpage for tables
   const [tableSearchQuery, setTableSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('pc-grid'); // 'pc-grid' | 'cards' | 'chain'
+  const [sortBy, setSortBy] = useState(() => {
+    return localStorage.getItem('knowledge_sort_by') || 'created-asc';
+  });
 
   // Creation Modals
   const [modalMode, setModalMode] = useState(null); // 'folder' | 'lesson' | 'table'
@@ -180,7 +184,7 @@ export function KnowledgePage() {
     }
   }, [items, searchParams]);
 
-  // Filter items in the current folder, sorting pinned items first
+  // Filter items in the current folder, sorting pinned items first, then by selected sortBy
   const currentItems = useMemo(() => {
     let list;
     if (searchQuery.trim()) {
@@ -197,11 +201,62 @@ export function KnowledgePage() {
     }
 
     return [...list].sort((a, b) => {
+      // 1. Pinned items always come first
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return (a.title || '').localeCompare(b.title || '');
+
+      // 2. Sort by user selected criteria
+      switch (sortBy) {
+        case 'name-asc':
+          return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' });
+
+        case 'name-desc':
+          return (b.title || '').localeCompare(a.title || '', undefined, { numeric: true, sensitivity: 'base' });
+
+        case 'date-desc': {
+          const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          if (tA !== tB) return tB - tA;
+          return (a.title || '').localeCompare(b.title || '');
+        }
+
+        case 'date-asc': {
+          const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          if (tA !== tB) return tA - tB;
+          return (a.title || '').localeCompare(b.title || '');
+        }
+
+        case 'time-desc': {
+          const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+          const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+          if (tA !== tB) return tB - tA;
+          return (a.title || '').localeCompare(b.title || '');
+        }
+
+        case 'time-asc': {
+          const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+          const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+          if (tA !== tB) return tA - tB;
+          return (a.title || '').localeCompare(b.title || '');
+        }
+
+        case 'created-asc':
+        default: {
+          // Default: Creation order (A created 1st, B created 2nd, C created 3rd -> A, B, C)
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (tA && tB && tA !== tB) {
+            return tA - tB;
+          }
+          if (a.orderIndex !== undefined && b.orderIndex !== undefined && a.orderIndex !== b.orderIndex) {
+            return a.orderIndex - b.orderIndex;
+          }
+          return items.indexOf(a) - items.indexOf(b);
+        }
+      }
     });
-  }, [items, currentFolder, searchQuery]);
+  }, [items, currentFolder, searchQuery, sortBy]);
 
   // Lessons inside current folder available for chaining
   const lessonsInFolder = useMemo(() => {
@@ -1095,6 +1150,31 @@ export function KnowledgePage() {
             >
               <GitBranch size={13} /> Chain View
             </button>
+          </div>
+
+          {/* Sort Position Selector: A-Z, Z-A, By Date, By Time, Default Created (A, B, C) */}
+          <div className="knowledge-sort-wrap">
+            <div className="knowledge-sort-pill">
+              <ArrowUpDown size={13} className="text-secondary" />
+              <span className="knowledge-sort-label">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  localStorage.setItem('knowledge_sort_by', e.target.value);
+                }}
+                className="knowledge-sort-select"
+                title="Sort order for files & folders"
+              >
+                <option value="created-asc">Default (Created Sequence: A, B, C)</option>
+                <option value="name-asc">A → Z (Alphabetical)</option>
+                <option value="name-desc">Z → A (Alphabetical)</option>
+                <option value="date-desc">By Date (Newest First)</option>
+                <option value="date-asc">By Date (Oldest First)</option>
+                <option value="time-desc">By Time (Latest First)</option>
+                <option value="time-asc">By Time (Earliest First)</option>
+              </select>
+            </div>
           </div>
 
           {/* Search Box */}
