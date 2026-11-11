@@ -694,7 +694,7 @@ export function DeviationsPage() {
                 <textarea
                   rows={2}
                   className="form-textarea"
-                  placeholder="Detail the root friction or trigger (e.g. felt tired, task felt unclear, got interrupted)..."
+                  placeholder="Enter root cause or friction details..."
                   value={form.rootCause}
                   onChange={(e) => setForm({ ...form, rootCause: e.target.value })}
                 />

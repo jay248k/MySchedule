@@ -1911,10 +1911,10 @@ export function KnowledgePage() {
                     required={modalMode !== 'table'}
                     placeholder={
                       modalMode === 'folder'
-                        ? 'e.g. Architecture & System Design'
+                        ? 'Enter folder name...'
                         : modalMode === 'table'
-                        ? 'e.g. Electron vs Proton (or auto-named from file)'
-                        : 'e.g. PostgreSQL Indexing Guide'
+                        ? 'Enter table name...'
+                        : 'Enter lesson title...'
                     }
                     value={createTitle}
                     onChange={(e) => setCreateTitle(e.target.value)}
@@ -1931,7 +1931,7 @@ export function KnowledgePage() {
                       <textarea
                         rows={7}
                         required
-                        placeholder="Write down comprehensive notes, key takeaways, code examples, or summary..."
+                        placeholder="Enter comprehensive notes, key takeaways, or summary..."
                         value={createContent}
                         onChange={(e) => setCreateContent(e.target.value)}
                         className="form-textarea"
@@ -2048,7 +2048,7 @@ export function KnowledgePage() {
                           rows={4}
                           value={pasteText}
                           onChange={(e) => setPasteText(e.target.value)}
-                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here (e.g. Header 1&#9;Header 2&#10;Val 1&#9;Val 2)..."
+                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here..."
                           className="form-input text-xs font-mono"
                           style={{ width: '100%', resize: 'vertical' }}
                         />
@@ -2170,7 +2170,7 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Tags (comma-separated, e.g. dev, database, notes)"
+                    placeholder="Enter tags (comma-separated)..."
                     value={createTags}
                     onChange={(e) => setCreateTags(e.target.value)}
                     className="form-input"
@@ -2530,7 +2530,7 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Tags (comma-separated, e.g. dev, database, notes)"
+                    placeholder="Enter tags (comma-separated)..."
                     value={editTags}
                     onChange={(e) => setEditTags(e.target.value)}
                     className="form-input"

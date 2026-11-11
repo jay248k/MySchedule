@@ -1958,181 +1958,86 @@ export function Reports() {
 
             {/* Right Column: Single-Paragraph Daily Work Report & Reporting Time */}
             <div style={{ gridColumn: 'span 7', minWidth: 0 }} className="report-chart-col">
-              <div
-                className="card"
-                style={{
-                  padding: '12px 14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
-                  background: 'var(--card-bg)',
-                  border: '1px solid var(--border-color)',
-                  boxShadow: 'var(--shadow-sm)',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
+              <div className="daily-report-studio-card">
                 {/* 1. Header with Status & Top Quick Actions */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid var(--border-color)',
-                    paddingBottom: '8px',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
-                        background: 'rgba(23, 105, 255, 0.12)',
-                        color: 'var(--primary-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid rgba(23, 105, 255, 0.25)',
-                      }}
-                    >
-                      <FileText size={15} />
+                <div className="daily-report-studio-header">
+                  <div className="flex items-center gap-3">
+                    <div className="studio-icon-badge">
+                      <FileText size={18} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        Daily Work Report & Standup
-                      </h3>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="studio-title">
+                          Daily Work Report & Standup
+                        </h3>
+                        {savedReportForSelectedDate ? (
+                          <span className="report-status-pill is-saved">
+                            <CheckCircle2 size={12} /> Saved in Archive
+                          </span>
+                        ) : (
+                          <span className="report-status-pill is-pending">
+                            <Clock size={12} /> Ready to Submit
+                          </span>
+                        )}
+                      </div>
+                      <div className="studio-subtitle">
                         Enter your daily work summary note and reporting details
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {savedReportForSelectedDate ? (
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          background: 'rgba(16, 185, 129, 0.12)',
-                          color: '#10B981',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <CheckCircle2 size={12} /> Saved in Archive
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          background: 'rgba(245, 158, 11, 0.12)',
-                          color: '#F59E0B',
-                          border: '1px solid rgba(245, 158, 11, 0.3)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        ● Ready to Submit
-                      </span>
-                    )}
-
+                  <div className="studio-header-actions">
                     <button
                       type="button"
-                      className="btn btn-primary btn-sm btn-no-print"
+                      className="report-btn-autocreate btn-no-print"
                       onClick={() => handleAutoGenerateAndSubmitReport(selectedReportDate, true)}
-                      style={{
-                        padding: '7px 16px',
-                        fontSize: '0.84rem',
-                        fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                        borderColor: '#059669',
-                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-                      }}
                       title="Auto-generates report with today's timer start-stops & completed works, and saves it immediately"
                     >
-                      <Sparkles size={15} /> ⚡ Auto-Create Report
+                      <Sparkles size={14} /> ⚡ Auto-Create Report
                     </button>
 
                     <button
                       type="button"
-                      className="btn btn-secondary btn-sm btn-no-print"
+                      className="report-btn-save btn-no-print"
                       onClick={handleSaveReport}
-                      style={{
-                        padding: '7px 16px',
-                        fontSize: '0.84rem',
-                        fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
                     >
-                      <Save size={15} /> Save Report
+                      <Save size={14} /> Save Report
                     </button>
                   </div>
                 </div>
 
                 {/* 2. Metadata Bar: Default Selected Date + Reporting Time */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '12px',
-                    padding: '12px 16px',
-                    background: 'var(--page-bg)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-color)',
-                  }}
-                >
+                <div className="daily-report-metadata-bar">
                   {/* Selected Date */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      <Calendar size={13} color="var(--primary-color)" />
-                      Selected Date
+                  <div className="metadata-field-box">
+                    <div className="metadata-field-label">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={13} className="text-blue-400" />
+                        Selected Date
+                      </span>
                     </div>
                     <input
                       type="date"
                       value={selectedReportDate}
                       onChange={(e) => e.target.value && setSelectedReportDate(e.target.value)}
-                      style={{
-                        padding: '7px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        background: 'var(--card-bg)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.86rem',
-                        fontWeight: 700,
-                        outline: 'none',
-                      }}
+                      className="metadata-input"
                     />
                   </div>
 
                   {/* Reporting Time */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} color="#10B981" />
+                  <div className="metadata-field-box">
+                    <div className="metadata-field-label">
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={13} className="text-emerald-400" />
                         Reporting Time
                       </span>
                       <button
                         type="button"
-                        className="text-xs text-primary font-bold bg-transparent border-none cursor-pointer p-0"
+                        className="btn-set-now"
                         onClick={() => setReportingTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}
                         title="Set to current local time"
                       >
-                        Set to Now
+                        ⚡ Set to Now
                       </button>
                     </div>
                     <input
@@ -2140,16 +2045,7 @@ export function Reports() {
                       value={reportingTime}
                       onChange={(e) => setReportingTime(e.target.value)}
                       placeholder="Enter time (HH:MM AM/PM)"
-                      style={{
-                        padding: '7px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        background: 'var(--card-bg)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.86rem',
-                        fontWeight: 700,
-                        outline: 'none',
-                      }}
+                      className="metadata-input"
                     />
                   </div>
                 </div>
@@ -2160,13 +2056,13 @@ export function Reports() {
                     className="completed-works-dropdown-header"
                     onClick={() => setIsCompletedWorksDropdownOpen((prev) => !prev)}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <CheckCircle2 size={16} color="#10B981" />
                       <span className="font-extrabold text-sm text-primary">
                         Completed Works on this Day
                       </span>
-                      <span className="badge badge-success text-xs px-2 py-0.5 font-bold">
-                        {completedWorksForDate.length} completed
+                      <span className="completed-count-pill">
+                        {completedWorksForDate.length} Completed
                       </span>
                     </div>
 
@@ -2289,13 +2185,7 @@ export function Reports() {
                 </div>
 
                 {/* 3. The One Single Paragraph Box */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px',
-                  }}
-                >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -2309,20 +2199,8 @@ export function Reports() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm btn-no-print"
+                        className="btn-auto-draft btn-no-print"
                         onClick={() => handleAutoGenerateAndSubmitReport(selectedReportDate, false)}
-                        style={{
-                          fontSize: '0.76rem',
-                          padding: '5px 12px',
-                          color: '#10B981',
-                          background: 'rgba(16, 185, 129, 0.08)',
-                          border: '1px solid rgba(16, 185, 129, 0.25)',
-                          borderRadius: 'var(--radius-md)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontWeight: 700,
-                        }}
                         title="Auto-generate draft text with timer start-stops & completed works"
                       >
                         <Sparkles size={13} /> ⚡ Auto-Generate Report Draft
@@ -2333,22 +2211,9 @@ export function Reports() {
                   <textarea
                     rows={9}
                     className="daily-report-textarea"
-                    placeholder="Write your daily work report here... (e.g., Completed scheduled sprint deliverables, resolved pending API integration tasks, reviewed repository PRs, and verified readiness for tomorrow.)"
+                    placeholder="Enter your daily work report here..."
                     value={dailyReportText}
                     onChange={(e) => setDailyReportText(e.target.value)}
-                    style={{
-                      width: '100%',
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--page-bg)',
-                      border: '1.5px solid var(--border-color)',
-                      fontSize: '0.92rem',
-                      lineHeight: '1.7',
-                      padding: '14px 16px',
-                      color: 'var(--text-primary)',
-                      outline: 'none',
-                      resize: 'vertical',
-                      minHeight: '200px',
-                    }}
                   />
                 </div>
 
