@@ -36,113 +36,40 @@ const CATEGORY_COLORS = {
 };
 
 /**
- * Parses markup for Red, Green, Yellow word marking, plus Underline, Bold, Italic.
- * Supported tags:
- *   <red>text</red> or [red]text[/red]
- *   <green>text</green> or [green]text[/green]
- *   <yellow>text</yellow> or [yellow]text[/yellow] (and legacy ==text== / <mark>text</mark>)
- *   <u>underline</u>
- *   **bold**
- *   *italic*
+ * Normalizes legacy markup (<red>, <green>, <yellow>, ==, <mark>, **, *)
+ * and rich HTML into clean inline styled spans with FONT COLOR ONLY.
+ * Strips all backgrounds, badge boxes, and borders.
  */
+export function normalizeThoughtHtml(rawText) {
+  if (!rawText) return '';
+  let html = String(rawText);
+
+  // Normalize legacy and markdown tags to clean font-color spans
+  html = html.replace(/<red>([\s\S]*?)<\/red>/gi, '<span style="color: #EF4444; font-weight: 700;">$1</span>');
+  html = html.replace(/\[red\]([\s\S]*?)\[\/red\]/gi, '<span style="color: #EF4444; font-weight: 700;">$1</span>');
+
+  html = html.replace(/<green>([\s\S]*?)<\/green>/gi, '<span style="color: #10B981; font-weight: 700;">$1</span>');
+  html = html.replace(/\[green\]([\s\S]*?)\[\/green\]/gi, '<span style="color: #10B981; font-weight: 700;">$1</span>');
+
+  html = html.replace(/<yellow>([\s\S]*?)<\/yellow>/gi, '<span style="color: #F59E0B; font-weight: 700;">$1</span>');
+  html = html.replace(/\[yellow\]([\s\S]*?)\[\/yellow\]/gi, '<span style="color: #F59E0B; font-weight: 700;">$1</span>');
+  html = html.replace(/==([\s\S]*?)==/gi, '<span style="color: #F59E0B; font-weight: 700;">$1</span>');
+  html = html.replace(/<mark>([\s\S]*?)<\/mark>/gi, '<span style="color: #F59E0B; font-weight: 700;">$1</span>');
+
+  // Markdown bold & italic if present
+  html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+
+  // Convert plain newlines to <br /> if no block or break tags exist
+  if (!/<(p|br|div)[\s>]/i.test(html)) {
+    html = html.replace(/\n/g, '<br />');
+  }
+
+  return html;
+}
+
 export function parseFormattedText(text) {
-  if (!text) return null;
-
-  const tokenRegex = /(<red>[\s\S]+?<\/red>|\[red\][\s\S]+?\[\/red\]|<green>[\s\S]+?<\/green>|\[green\][\s\S]+?\[\/green\]|<yellow>[\s\S]+?<\/yellow>|\[yellow\][\s\S]+?\[\/yellow\]|==[\s\S]+?==|<mark>[\s\S]+?<\/mark>|<u>[\s\S]+?<\/u>|\*\*[\s\S]+?\*\*|\*[\s\S]+?\*)/g;
-  const parts = text.split(tokenRegex);
-
-  return parts.map((part, index) => {
-    if (!part) return null;
-
-    // RED
-    if (
-      (part.startsWith('<red>') && part.endsWith('</red>') && part.length >= 11) ||
-      (part.startsWith('[red]') && part.endsWith('[/red]') && part.length >= 11)
-    ) {
-      const inner = part.startsWith('<red>') ? part.slice(5, -6) : part.slice(5, -6);
-      return (
-        <span key={index} className="thought-mark-red">
-          {parseFormattedText(inner)}
-        </span>
-      );
-    }
-
-    // GREEN
-    if (
-      (part.startsWith('<green>') && part.endsWith('</green>') && part.length >= 15) ||
-      (part.startsWith('[green]') && part.endsWith('[/green]') && part.length >= 15)
-    ) {
-      const inner = part.startsWith('<green>') ? part.slice(7, -8) : part.slice(7, -8);
-      return (
-        <span key={index} className="thought-mark-green">
-          {parseFormattedText(inner)}
-        </span>
-      );
-    }
-
-    // YELLOW (and legacy == or <mark>)
-    if (
-      (part.startsWith('<yellow>') && part.endsWith('</yellow>') && part.length >= 17) ||
-      (part.startsWith('[yellow]') && part.endsWith('[/yellow]') && part.length >= 17)
-    ) {
-      const inner = part.startsWith('<yellow>') ? part.slice(8, -9) : part.slice(8, -9);
-      return (
-        <span key={index} className="thought-mark-yellow">
-          {parseFormattedText(inner)}
-        </span>
-      );
-    }
-
-    if (part.startsWith('==') && part.endsWith('==') && part.length >= 4) {
-      const inner = part.slice(2, -2);
-      return (
-        <span key={index} className="thought-mark-yellow">
-          {parseFormattedText(inner)}
-        </span>
-      );
-    }
-
-    if (part.startsWith('<mark>') && part.endsWith('</mark>') && part.length >= 13) {
-      const inner = part.slice(6, -7);
-      return (
-        <span key={index} className="thought-mark-yellow">
-          {parseFormattedText(inner)}
-        </span>
-      );
-    }
-
-    // UNDERLINE
-    if (part.startsWith('<u>') && part.endsWith('</u>') && part.length >= 7) {
-      const inner = part.slice(3, -4);
-      return (
-        <u key={index} className="thought-underline-text">
-          {parseFormattedText(inner)}
-        </u>
-      );
-    }
-
-    // BOLD
-    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-      const inner = part.slice(2, -2);
-      return (
-        <strong key={index} className="thought-bold-text">
-          {parseFormattedText(inner)}
-        </strong>
-      );
-    }
-
-    // ITALIC
-    if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
-      const inner = part.slice(1, -1);
-      return (
-        <em key={index} className="thought-italic-text">
-          {parseFormattedText(inner)}
-        </em>
-      );
-    }
-
-    return part;
-  });
+  return normalizeThoughtHtml(text);
 }
 
 export function ThoughtsPage() {
@@ -157,17 +84,33 @@ export function ThoughtsPage() {
   const [copiedId, setCopiedId] = useState(null);
 
   // Add Form State
-  const [thoughtText, setThoughtText] = useState('');
   const [category, setCategory] = useState('Motivation');
   const [submitting, setSubmitting] = useState(false);
-  const addTextareaRef = useRef(null);
+  const [addCharCount, setAddCharCount] = useState(0);
+  const addEditorRef = useRef(null);
 
   // Edit Form State
   const [editingThought, setEditingThought] = useState(null);
-  const [editThoughtText, setEditThoughtText] = useState('');
   const [editCategory, setEditCategory] = useState('Motivation');
   const [editSubmitting, setEditSubmitting] = useState(false);
-  const editTextareaRef = useRef(null);
+  const [editCharCount, setEditCharCount] = useState(0);
+  const editEditorRef = useRef(null);
+
+  const setEditEditorRef = (node) => {
+    editEditorRef.current = node;
+    if (node && editingThought) {
+      node.innerHTML = normalizeThoughtHtml(editingThought.text || '');
+      setEditCharCount(node.innerText.replace(/\n$/, '').length);
+    }
+  };
+
+  const setAddEditorRef = (node) => {
+    addEditorRef.current = node;
+    if (node) {
+      node.innerHTML = '';
+      setAddCharCount(0);
+    }
+  };
 
   const fetchThoughts = async () => {
     try {
@@ -258,64 +201,78 @@ export function ThoughtsPage() {
   };
 
   /**
-   * Inserts formatting tags (<red>, <green>, <yellow>, <u>, etc.)
-   * around selected text or as a placeholder.
+   * Applies font color directly to selected text in the rich editor.
+   * Zero tags are displayed to the user - text changes color visually in real time!
    */
-  const insertFormatting = (prefix, suffix, isEdit = false) => {
-    const textarea = isEdit ? editTextareaRef.current : addTextareaRef.current;
-    if (!textarea) return;
+  const applyTextColor = (colorHex, isEdit = false) => {
+    const editor = isEdit ? editEditorRef.current : addEditorRef.current;
+    if (!editor) return;
+    editor.focus();
 
-    const currentText = isEdit ? editThoughtText : thoughtText;
-    const start = textarea.selectionStart ?? 0;
-    const end = textarea.selectionEnd ?? 0;
-    const selectedText = currentText.substring(start, end);
-
-    let newText;
-    let newCursorPos;
-
-    if (selectedText.length > 0) {
-      const before = currentText.substring(0, start);
-      const after = currentText.substring(end);
-      newText = before + prefix + selectedText + suffix + after;
-      newCursorPos = start + prefix.length + selectedText.length + suffix.length;
-    } else {
-      let placeholder = 'word';
-      if (prefix === '<red>') placeholder = 'marked text';
-      else if (prefix === '<green>') placeholder = 'marked text';
-      else if (prefix === '<yellow>') placeholder = 'marked text';
-      else if (prefix === '<u>') placeholder = 'underlined text';
-      else if (prefix === '**') placeholder = 'bold text';
-      else if (prefix === '*') placeholder = 'italic text';
-
-      const before = currentText.substring(0, start);
-      const after = currentText.substring(end);
-      newText = before + prefix + placeholder + suffix + after;
-      newCursorPos = start + prefix.length + placeholder.length;
-    }
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('foreColor', false, colorHex);
 
     if (isEdit) {
-      setEditThoughtText(newText);
+      setEditCharCount(editor.innerText.replace(/\n$/, '').length);
     } else {
-      setThoughtText(newText);
+      setAddCharCount(editor.innerText.replace(/\n$/, '').length);
     }
+  };
 
-    setTimeout(() => {
-      textarea.focus();
-      if (selectedText.length === 0) {
-        textarea.setSelectionRange(start + prefix.length, newCursorPos);
-      } else {
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-      }
-    }, 10);
+  /**
+   * Resets font color back to default text color.
+   */
+  const clearTextColor = (isEdit = false) => {
+    const editor = isEdit ? editEditorRef.current : addEditorRef.current;
+    if (!editor) return;
+    editor.focus();
+
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('foreColor', false, 'inherit');
+    document.execCommand('removeFormat', false, null);
+
+    if (isEdit) {
+      setEditCharCount(editor.innerText.replace(/\n$/, '').length);
+    } else {
+      setAddCharCount(editor.innerText.replace(/\n$/, '').length);
+    }
+  };
+
+  /**
+   * Applies inline formatting (underline, bold, italic).
+   */
+  const applyFormat = (command, isEdit = false) => {
+    const editor = isEdit ? editEditorRef.current : addEditorRef.current;
+    if (!editor) return;
+    editor.focus();
+    document.execCommand(command, false, null);
+
+    if (isEdit) {
+      setEditCharCount(editor.innerText.replace(/\n$/, '').length);
+    } else {
+      setAddCharCount(editor.innerText.replace(/\n$/, '').length);
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
   };
 
   const handleCreateThought = async (e) => {
     e.preventDefault();
-    if (!thoughtText.trim()) return;
+    if (!addEditorRef.current) return;
+    const innerHtml = addEditorRef.current.innerHTML.trim();
+    const plainText = addEditorRef.current.innerText.trim();
+    if (!plainText) {
+      showToast({ type: 'warning', title: 'Validation', message: 'Please enter thought text.' });
+      return;
+    }
     try {
       setSubmitting(true);
       const res = await api.createThought({
-        text: thoughtText.trim(),
+        text: innerHtml,
         category: category || 'Motivation',
       });
       if (res?.data) {
@@ -325,7 +282,6 @@ export function ThoughtsPage() {
           title: 'Thought Saved',
           message: 'Motivational thought stored in database successfully!',
         });
-        setThoughtText('');
         setIsAddModalOpen(false);
       }
     } catch (err) {
@@ -341,17 +297,22 @@ export function ThoughtsPage() {
 
   const handleStartEdit = (thought) => {
     setEditingThought(thought);
-    setEditThoughtText(thought.text || '');
     setEditCategory(typeof thought.category === 'object' ? thought.category?.name : (thought.category || 'Motivation'));
   };
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
-    if (!editingThought || !editThoughtText.trim()) return;
+    if (!editingThought || !editEditorRef.current) return;
+    const innerHtml = editEditorRef.current.innerHTML.trim();
+    const plainText = editEditorRef.current.innerText.trim();
+    if (!plainText) {
+      showToast({ type: 'warning', title: 'Validation', message: 'Thought text cannot be empty.' });
+      return;
+    }
     try {
       setEditSubmitting(true);
       const res = await api.updateThought(editingThought.id, {
-        text: editThoughtText.trim(),
+        text: innerHtml,
         category: editCategory,
       });
       if (res?.data) {
@@ -361,7 +322,7 @@ export function ThoughtsPage() {
         showToast({
           type: 'success',
           title: 'Thought Updated',
-          message: 'Changes saved with color markings successfully!',
+          message: 'Changes saved with color formatting successfully!',
         });
         setEditingThought(null);
       }
@@ -395,7 +356,8 @@ export function ThoughtsPage() {
   };
 
   const handleCopy = (text, id) => {
-    navigator.clipboard.writeText(text);
+    const cleanText = (text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    navigator.clipboard.writeText(cleanText || text);
     setCopiedId(id);
     showToast({
       type: 'success',
@@ -408,37 +370,52 @@ export function ThoughtsPage() {
   const renderFormattingToolbar = (isEdit = false) => (
     <div className="thought-format-toolbar">
       <div className="thought-format-actions">
-        {/* Red color marker */}
+        {/* Red Font Color */}
         <button
           type="button"
-          onClick={() => insertFormatting('<red>', '</red>', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyTextColor('#EF4444', isEdit)}
           className="thought-format-btn thought-format-btn-red"
-          title="Mark selected words in Red (<red>word</red>)"
+          title="Change font color of selected word to Red"
         >
           <span className="thought-swatch swatch-red" />
           <span>Red</span>
         </button>
 
-        {/* Green color marker */}
+        {/* Green Font Color */}
         <button
           type="button"
-          onClick={() => insertFormatting('<green>', '</green>', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyTextColor('#10B981', isEdit)}
           className="thought-format-btn thought-format-btn-green"
-          title="Mark selected words in Green (<green>word</green>)"
+          title="Change font color of selected word to Green"
         >
           <span className="thought-swatch swatch-green" />
           <span>Green</span>
         </button>
 
-        {/* Yellow color marker */}
+        {/* Yellow Font Color */}
         <button
           type="button"
-          onClick={() => insertFormatting('<yellow>', '</yellow>', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyTextColor('#F59E0B', isEdit)}
           className="thought-format-btn thought-format-btn-yellow"
-          title="Mark selected words in Yellow (<yellow>word</yellow>)"
+          title="Change font color of selected word to Yellow"
         >
           <span className="thought-swatch swatch-yellow" />
           <span>Yellow</span>
+        </button>
+
+        {/* Default Color */}
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => clearTextColor(isEdit)}
+          className="thought-format-btn thought-format-btn-reset"
+          title="Reset to default plain text color"
+        >
+          <span className="thought-swatch swatch-default" />
+          <span>Default</span>
         </button>
 
         <span className="thought-toolbar-divider" />
@@ -446,9 +423,10 @@ export function ThoughtsPage() {
         {/* Underline */}
         <button
           type="button"
-          onClick={() => insertFormatting('<u>', '</u>', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat('underline', isEdit)}
           className="thought-format-btn thought-format-btn-underline"
-          title="Underline selected words (<u>text</u>)"
+          title="Underline text"
         >
           <Underline size={13} />
           <span>Underline</span>
@@ -457,9 +435,10 @@ export function ThoughtsPage() {
         {/* Bold */}
         <button
           type="button"
-          onClick={() => insertFormatting('**', '**', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat('bold', isEdit)}
           className="thought-format-btn"
-          title="Bold text (**text**)"
+          title="Bold text"
         >
           <Bold size={13} />
           <span>Bold</span>
@@ -468,9 +447,10 @@ export function ThoughtsPage() {
         {/* Italic */}
         <button
           type="button"
-          onClick={() => insertFormatting('*', '*', isEdit)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat('italic', isEdit)}
           className="thought-format-btn"
-          title="Italic text (*text*)"
+          title="Italic text"
         >
           <Italic size={13} />
           <span>Italic</span>
@@ -478,7 +458,7 @@ export function ThoughtsPage() {
       </div>
 
       <div className="thought-format-hint">
-        Select words to mark with color
+        Select word to change font color
       </div>
     </div>
   );
@@ -593,7 +573,7 @@ export function ThoughtsPage() {
           {filteredThoughts.map((item) => {
             const catName = typeof item.category === 'object' ? item.category?.name : (item.category || 'Motivation');
             const catMeta = CATEGORY_COLORS[catName] || CATEGORY_COLORS.Motivation;
-            const wordCount = (item.text || '').trim().split(/\s+/).filter(Boolean).length;
+            const wordCount = (item.text || '').replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
             const cardDate = item.createdAt
               ? new Date(item.createdAt).toLocaleDateString('en-US', {
                   month: 'short',
@@ -680,11 +660,14 @@ export function ThoughtsPage() {
                   </div>
                 </div>
 
-                {/* Card Content with Formatted Highlight & Underline */}
+                {/* Card Content with Formatted Font Colors (No Backgrounds) */}
                 <div className="thought-body-quote">
-                  <div className="thought-quote-content">
-                    {parseFormattedText(item.text)}
-                  </div>
+                  <div
+                    className="thought-quote-content"
+                    dangerouslySetInnerHTML={{
+                      __html: normalizeThoughtHtml(item.text),
+                    }}
+                  />
                 </div>
 
                 {/* Card Footer */}
@@ -751,28 +734,31 @@ export function ThoughtsPage() {
                 </select>
               </div>
 
-              {/* Text Input with Formatting Toolbar */}
+              {/* Text Input with Rich WYSIWYG Editor */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-secondary">
                     Thought / Quote Text *
                   </label>
                   <span className="text-xs text-muted font-mono">
-                    {thoughtText.length} chars
+                    {addCharCount} chars
                   </span>
                 </div>
 
                 {/* Formatting Toolbar */}
                 {renderFormattingToolbar(false)}
 
-                <textarea
-                  ref={addTextareaRef}
-                  rows={5}
-                  required
-                  placeholder="Enter thought text... Select any word and click Red, Green, or Yellow to mark it."
-                  value={thoughtText}
-                  onChange={(e) => setThoughtText(e.target.value)}
-                  className="thought-form-textarea"
+                <div
+                  ref={setAddEditorRef}
+                  contentEditable
+                  className="thought-rich-editor"
+                  data-placeholder="Type thought text here... Select any word and click Red, Green, or Yellow to color it."
+                  onInput={() => {
+                    if (addEditorRef.current) {
+                      setAddCharCount(addEditorRef.current.innerText.replace(/\n$/, '').length);
+                    }
+                  }}
+                  onPaste={handlePaste}
                 />
               </div>
 
@@ -787,7 +773,7 @@ export function ThoughtsPage() {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={submitting || !thoughtText.trim()}
+                  disabled={submitting}
                 >
                   {submitting ? 'Saving...' : 'Save Thought'}
                 </button>
@@ -851,21 +837,24 @@ export function ThoughtsPage() {
                     Thought / Quote Text *
                   </label>
                   <span className="text-xs text-muted font-mono">
-                    {editThoughtText.length} chars
+                    {editCharCount} chars
                   </span>
                 </div>
 
                 {/* Formatting Toolbar */}
                 {renderFormattingToolbar(true)}
 
-                <textarea
-                  ref={editTextareaRef}
-                  rows={5}
-                  required
-                  placeholder="Enter thought text... Select any word and click Red, Green, or Yellow to mark it."
-                  value={editThoughtText}
-                  onChange={(e) => setEditThoughtText(e.target.value)}
-                  className="thought-form-textarea"
+                <div
+                  ref={setEditEditorRef}
+                  contentEditable
+                  className="thought-rich-editor"
+                  data-placeholder="Type thought text here... Select any word and click Red, Green, or Yellow to color it."
+                  onInput={() => {
+                    if (editEditorRef.current) {
+                      setEditCharCount(editEditorRef.current.innerText.replace(/\n$/, '').length);
+                    }
+                  }}
+                  onPaste={handlePaste}
                 />
               </div>
 
@@ -880,7 +869,7 @@ export function ThoughtsPage() {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={editSubmitting || !editThoughtText.trim()}
+                  disabled={editSubmitting}
                 >
                   {editSubmitting ? 'Updating...' : 'Update Thought'}
                 </button>

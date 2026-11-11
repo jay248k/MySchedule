@@ -358,100 +358,145 @@
 }
 
 /* ==========================================================================
-   FORMATTING ENGINE: RED, GREEN, YELLOW WORD MARKINGS, UNDERLINE, BOLD, ITALIC
+   PURE FONT COLOR ONLY - NO BACKGROUNDS, NO BORDERS, NO BADGE BOXES
    ========================================================================== */
 
-.thought-mark-red {
-  background: rgba(239, 68, 68, 0.18);
-  color: #F87171;
+.thought-quote-content,
+.thought-rich-editor {
+  line-height: 1.65;
+}
+
+/* Ensure completely transparent background on any formatted spans, badges, or marks */
+.thought-quote-content span,
+.thought-rich-editor span,
+.thought-mark-red,
+.thought-mark-green,
+.thought-mark-yellow,
+.thought-highlight-badge,
+.thought-quote-content mark,
+.thought-rich-editor mark {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-shadow: none !important;
+}
+
+/* Red font color */
+.thought-mark-red,
+.thought-quote-content span[style*="239, 68, 68"],
+.thought-quote-content span[style*="#EF4444"],
+.thought-quote-content span[style*="#ef4444"],
+.thought-rich-editor span[style*="239, 68, 68"],
+.thought-rich-editor span[style*="#EF4444"],
+.thought-rich-editor span[style*="#ef4444"] {
+  color: #EF4444 !important;
   font-weight: 700;
-  padding: 1px 6px;
-  margin: 0 1px;
-  border-radius: 4px;
-  border-bottom: 2px solid #EF4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.22);
   display: inline;
 }
 
-.thought-mark-green {
-  background: rgba(16, 185, 129, 0.18);
-  color: #34D399;
+/* Green font color */
+.thought-mark-green,
+.thought-quote-content span[style*="16, 185, 129"],
+.thought-quote-content span[style*="#10B981"],
+.thought-quote-content span[style*="#10b981"],
+.thought-rich-editor span[style*="16, 185, 129"],
+.thought-rich-editor span[style*="#10B981"],
+.thought-rich-editor span[style*="#10b981"] {
+  color: #10B981 !important;
   font-weight: 700;
-  padding: 1px 6px;
-  margin: 0 1px;
-  border-radius: 4px;
-  border-bottom: 2px solid #10B981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.22);
   display: inline;
 }
 
-.thought-mark-yellow {
-  background: rgba(245, 158, 11, 0.22);
-  color: #FBBF24;
+/* Yellow font color */
+.thought-mark-yellow,
+.thought-highlight-badge,
+.thought-quote-content mark,
+.thought-rich-editor mark,
+.thought-quote-content span[style*="245, 158, 11"],
+.thought-quote-content span[style*="#F59E0B"],
+.thought-quote-content span[style*="#f59e0b"],
+.thought-rich-editor span[style*="245, 158, 11"],
+.thought-rich-editor span[style*="#F59E0B"],
+.thought-rich-editor span[style*="#f59e0b"] {
+  color: #F59E0B !important;
   font-weight: 700;
-  padding: 1px 6px;
-  margin: 0 1px;
-  border-radius: 4px;
-  border-bottom: 2px solid #F59E0B;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.22);
   display: inline;
 }
 
-/* Light Theme Contrast for Marked Words */
+/* Light Theme Font Colors - Still 100% Background-Free */
 [data-theme="light"] .thought-mark-red,
+[data-theme="light"] .thought-quote-content span[style*="239, 68, 68"],
+[data-theme="light"] .thought-quote-content span[style*="#EF4444"],
+[data-theme="light"] .thought-quote-content span[style*="#ef4444"],
+[data-theme="light"] .thought-rich-editor span[style*="239, 68, 68"],
+[data-theme="light"] .thought-rich-editor span[style*="#EF4444"],
+[data-theme="light"] .thought-rich-editor span[style*="#ef4444"],
 body.light-theme .thought-mark-red {
-  background: rgba(239, 68, 68, 0.15);
-  color: #DC2626;
-  border-bottom: 2px solid #DC2626;
-  box-shadow: none;
+  color: #DC2626 !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 [data-theme="light"] .thought-mark-green,
+[data-theme="light"] .thought-quote-content span[style*="16, 185, 129"],
+[data-theme="light"] .thought-quote-content span[style*="#10B981"],
+[data-theme="light"] .thought-quote-content span[style*="#10b981"],
+[data-theme="light"] .thought-rich-editor span[style*="16, 185, 129"],
+[data-theme="light"] .thought-rich-editor span[style*="#10B981"],
+[data-theme="light"] .thought-rich-editor span[style*="#10b981"],
 body.light-theme .thought-mark-green {
-  background: rgba(16, 185, 129, 0.15);
-  color: #059669;
-  border-bottom: 2px solid #059669;
-  box-shadow: none;
+  color: #059669 !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 [data-theme="light"] .thought-mark-yellow,
+[data-theme="light"] .thought-highlight-badge,
+[data-theme="light"] .thought-quote-content mark,
+[data-theme="light"] .thought-rich-editor mark,
+[data-theme="light"] .thought-quote-content span[style*="245, 158, 11"],
+[data-theme="light"] .thought-quote-content span[style*="#F59E0B"],
+[data-theme="light"] .thought-quote-content span[style*="#f59e0b"],
+[data-theme="light"] .thought-rich-editor span[style*="245, 158, 11"],
+[data-theme="light"] .thought-rich-editor span[style*="#F59E0B"],
+[data-theme="light"] .thought-rich-editor span[style*="#f59e0b"],
 body.light-theme .thought-mark-yellow {
-  background: rgba(245, 158, 11, 0.18);
-  color: #D97706;
-  border-bottom: 2px solid #D97706;
-  box-shadow: none;
+  color: #D97706 !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
-/* Legacy fallback support */
-.thought-highlight-badge {
-  background: rgba(245, 158, 11, 0.22);
-  color: #FBBF24;
-  font-weight: 700;
-  padding: 1px 6px;
-  margin: 0 1px;
-  border-radius: 4px;
-  border-bottom: 2px solid #F59E0B;
-  display: inline;
-}
-
-.thought-underline-text {
+.thought-underline-text,
+.thought-quote-content u,
+.thought-rich-editor u {
   text-decoration: underline;
   text-decoration-color: #38BDF8;
-  text-underline-offset: 4px;
-  text-decoration-thickness: 2.5px;
-  color: inherit;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
   font-weight: 600;
   display: inline;
 }
 
-.thought-bold-text {
+.thought-bold-text,
+.thought-quote-content strong,
+.thought-rich-editor strong,
+.thought-quote-content b,
+.thought-rich-editor b {
   font-weight: 800;
-  color: var(--text-primary);
+  color: inherit;
 }
 
-.thought-italic-text {
+.thought-italic-text,
+.thought-quote-content em,
+.thought-rich-editor em,
+.thought-quote-content i,
+.thought-rich-editor i {
   font-style: italic;
-  color: var(--text-secondary);
+  color: inherit;
 }
 
 /* Card Footer */
@@ -513,6 +558,7 @@ body.light-theme .thought-mark-yellow {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+  user-select: none;
 }
 
 .thought-format-btn:hover {
@@ -542,6 +588,11 @@ body.light-theme .thought-mark-yellow {
 .swatch-yellow {
   background: #F59E0B;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
+}
+
+.swatch-default {
+  background: var(--text-muted);
+  opacity: 0.75;
 }
 
 .thought-format-btn-red {
@@ -577,6 +628,14 @@ body.light-theme .thought-mark-yellow {
   color: #F59E0B;
 }
 
+.thought-format-btn-reset {
+  color: var(--text-secondary);
+}
+.thought-format-btn-reset:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .thought-toolbar-divider {
   width: 1px;
   height: 18px;
@@ -600,7 +659,7 @@ body.light-theme .thought-mark-yellow {
 }
 
 /* ==========================================================================
-   MODALS: COMPACT, SLEEK & POLISHED
+   MODALS: COMPACT, SLEEK & POLISHED WITH RICH WYSIWYG EDITOR
    ========================================================================== */
 
 .thought-modal-overlay {
@@ -689,25 +748,38 @@ body.light-theme .thought-mark-yellow {
   border-color: var(--primary-color);
 }
 
-.thought-form-textarea {
+/* WYSIWYG Rich Editor (No tags, visual font colors directly) */
+.thought-rich-editor {
   width: 100%;
+  min-height: 130px;
+  max-height: 280px;
+  overflow-y: auto;
   padding: 12px 14px;
   border-radius: 0 0 10px 10px;
   border: 1px solid var(--border-color);
   background: var(--page-bg);
   color: var(--text-primary);
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   line-height: 1.6;
   outline: none;
-  resize: vertical;
   box-sizing: border-box;
   font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: text;
 }
 
-.thought-form-textarea:focus {
+.thought-rich-editor:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.thought-rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+  display: block;
 }
 
 .thought-modal-footer {
