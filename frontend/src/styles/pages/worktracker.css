@@ -802,8 +802,9 @@
 }
 
 .stream-node-card {
-  background: linear-gradient(135deg, rgba(26, 36, 58, 0.72) 0%, rgba(15, 23, 42, 0.88) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(20, 29, 48, 0.78) 0%, rgba(11, 18, 33, 0.94) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
   border-left: 4.5px solid #10B981;
   border-radius: 16px;
   padding: 16px 20px;
@@ -812,32 +813,34 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 28px -6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .stream-node-card:hover {
-  border-color: rgba(16, 185, 129, 0.35);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 12px 34px -4px rgba(0, 0, 0, 0.5), 0 0 22px rgba(16, 185, 129, 0.16);
   transform: translateY(-2px);
 }
 
 .stream-node-card.is-gap {
   border-left-color: #F59E0B;
-  background: linear-gradient(135deg, rgba(32, 28, 20, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border-color: rgba(245, 158, 11, 0.22);
+  border-top-color: rgba(245, 158, 11, 0.32);
+  background: linear-gradient(135deg, rgba(38, 28, 18, 0.72) 0%, rgba(15, 20, 32, 0.94) 100%);
 }
 
 .stream-node-card.is-gap:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 34px -4px rgba(0, 0, 0, 0.5), 0 0 22px rgba(245, 158, 11, 0.16);
 }
 
 .stream-node-card.is-active {
   border-color: #10B981;
   border-left-color: #10B981;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(15, 23, 42, 0.9) 100%);
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.3);
 }
 
 .stream-node-left {
@@ -849,14 +852,14 @@
 }
 
 .stream-node-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .stream-node-details {
@@ -874,9 +877,9 @@
 }
 
 .stream-node-title {
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  color: #F8FAFC;
+  color: #FFFFFF;
   letter-spacing: -0.015em;
 }
 
@@ -965,9 +968,15 @@
 .stream-time-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  color: #E2E8F0;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #F1F5F9;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
 }
 
 .meta-bullet {
@@ -977,30 +986,34 @@
 .meta-context {
   color: var(--text-secondary);
   font-size: 0.75rem;
+  font-weight: 600;
 }
 
 /* Remarks Note Banner */
 .stream-node-remarks-banner {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
   border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  color: #E2E8F0;
-  margin-top: 2px;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  color: #FEF3C7;
+  margin-top: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .remarks-tag {
-  color: var(--text-secondary);
-  font-weight: 700;
+  color: #FBBF24;
+  font-weight: 800;
   font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .remarks-text {
-  color: #F1F5F9;
+  color: #FFFFFF;
   font-style: italic;
   font-weight: 600;
 }
@@ -1015,12 +1028,12 @@
   font-size: 0.88rem;
   font-weight: 900;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(8, 13, 24, 0.9);
+  border: 1px solid rgba(16, 185, 129, 0.38);
   padding: 6px 14px;
   border-radius: 10px;
   color: #34D399;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
   display: inline-flex;
   align-items: center;
@@ -1028,14 +1041,15 @@
 }
 
 .stream-node-duration.is-gap {
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(245, 158, 11, 0.38);
   color: #FBBF24;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .stream-node-duration.is-live {
   border-color: #10B981;
   color: #34D399;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.3);
 }
 
 .stream-node-actions {
