@@ -13,17 +13,9 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      author: {
-        type: DataTypes.STRING,
-        defaultValue: 'Unknown',
-      },
       category: {
         type: DataTypes.STRING,
         defaultValue: 'Motivation',
-      },
-      tags: {
-        type: DataTypes.STRING,
-        allowNull: true,
       },
       isFavorite: {
         type: DataTypes.BOOLEAN,

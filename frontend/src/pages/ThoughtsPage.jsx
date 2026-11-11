@@ -30,9 +30,7 @@ export function ThoughtsPage() {
 
   // Form State
   const [thoughtText, setThoughtText] = useState('');
-  const [author, setAuthor] = useState('');
   const [category, setCategory] = useState('Motivation');
-  const [tags, setTags] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const fetchThoughts = async () => {
@@ -91,9 +89,8 @@ export function ThoughtsPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchText = (t.text || '').toLowerCase().includes(q);
-        const matchAuthor = (t.author || '').toLowerCase().includes(q);
-        const matchTags = (t.tags || '').toLowerCase().includes(q);
-        if (!matchText && !matchAuthor && !matchTags) return false;
+        const matchCategory = (t.category || '').toLowerCase().includes(q);
+        if (!matchText && !matchCategory) return false;
       }
       return true;
     });
@@ -129,9 +126,7 @@ export function ThoughtsPage() {
       setSubmitting(true);
       const res = await api.createThought({
         text: thoughtText.trim(),
-        author: author.trim() || 'Anonymous',
         category: category || 'Motivation',
-        tags: tags.trim() || null,
       });
       if (res?.data) {
         setThoughts((prev) => [res.data, ...prev]);
@@ -141,8 +136,6 @@ export function ThoughtsPage() {
           message: 'Motivational thought stored in database successfully!',
         });
         setThoughtText('');
-        setAuthor('');
-        setTags('');
         setIsAddModalOpen(false);
       }
     } catch (err) {
@@ -237,7 +230,7 @@ export function ThoughtsPage() {
           <Search size={14} color="var(--text-muted)" className="thoughts-search-icon" />
           <input
             type="text"
-            placeholder="Search thoughts, quotes, tags..."
+            placeholder="Search thoughts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="thoughts-search-input"
@@ -306,21 +299,7 @@ export function ThoughtsPage() {
                 <div className="thought-body-quote">
                   "{item.text}"
                 </div>
-
-                <div className="thought-author-row">
-                  — {item.author || 'Anonymous'}
-                </div>
               </div>
-
-              {item.tags && (
-                <div className="thought-tags-wrap">
-                  {item.tags.split(',').map((tag, i) => (
-                    <span key={i} className="thought-tag-pill">
-                      #{tag.trim()}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -348,57 +327,29 @@ export function ThoughtsPage() {
                 <textarea
                   rows={4}
                   required
-                  placeholder="Paste or write inspirational thought, lesson, or reminder..."
+                  placeholder="Enter thought or wisdom text..."
                   value={thoughtText}
                   onChange={(e) => setThoughtText(e.target.value)}
                   className="thought-form-textarea"
                 />
               </div>
 
-              <div className="thought-modal-grid-2col">
-                <div>
-                  <label className="block text-xs font-bold text-secondary mb-1">
-                    Author / Source
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter author or source..."
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-secondary mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="form-input"
-                  >
-                    <option value="Motivation">Motivation</option>
-                    <option value="Discipline">Discipline</option>
-                    <option value="Mindset">Mindset</option>
-                    <option value="Productivity">Productivity</option>
-                    <option value="Wisdom">Wisdom</option>
-                    <option value="Tech">Tech & Engineering</option>
-                  </select>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-secondary mb-1">
-                  Tags (comma separated)
+                  Category
                 </label>
-                <input
-                  type="text"
-                  placeholder="focus, habits, daily"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="form-input"
-                />
+                >
+                  <option value="Motivation">Motivation</option>
+                  <option value="Discipline">Discipline</option>
+                  <option value="Mindset">Mindset</option>
+                  <option value="Productivity">Productivity</option>
+                  <option value="Wisdom">Wisdom</option>
+                  <option value="Tech">Tech & Engineering</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 mt-2">
