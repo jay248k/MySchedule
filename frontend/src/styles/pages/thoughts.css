@@ -1,5 +1,5 @@
 /* ==========================================================================
-   THOUGHTS & MOTIVATION PAGE STYLES
+   THOUGHTS & MOTIVATION PAGE STYLES (FULL-WIDTH MODERN UI)
    ========================================================================== */
 
 .thoughts-page-container {
@@ -13,13 +13,13 @@
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(139, 92, 246, 0.06) 100%);
   border: 1px solid rgba(37, 99, 235, 0.25);
   border-radius: 12px;
-  padding: 10px 16px;
-  margin-bottom: 12px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
 .thoughts-banner-tag {
@@ -34,7 +34,7 @@
 
 .thoughts-banner-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-primary);
   display: flex;
@@ -44,7 +44,7 @@
 
 .thoughts-banner-sub {
   margin: 6px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
@@ -52,18 +52,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  padding: 8px 16px;
+  font-size: 0.88rem;
   font-weight: 800;
   border-radius: 10px;
 }
 
-/* Filter & Search Bar */
+/* Filter & View Switcher Bar */
 .thoughts-filter-bar {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
@@ -92,25 +92,56 @@
   color: var(--text-secondary);
 }
 
+.thoughts-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.thoughts-view-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.thoughts-view-btn.active {
+  background: var(--card-bg);
+  color: var(--primary-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .thoughts-search-wrap {
   position: relative;
-  width: 260px;
+  width: 240px;
 }
 
 .thoughts-search-icon {
   position: absolute;
   left: 10px;
-  top: 10px;
+  top: 9px;
 }
 
 .thoughts-search-input {
   width: 100%;
-  padding: 7px 10px 7px 32px;
+  padding: 7px 10px 7px 30px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--page-bg);
   color: var(--text-primary);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   outline: none;
 }
 
@@ -145,41 +176,64 @@
   color: var(--text-secondary);
 }
 
-/* Grid & Cards */
+/* ==========================================================================
+   CARDS CONTAINER: FULL-WIDTH LIST & GRID
+   ========================================================================== */
+
+.thoughts-full-width-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
 .thoughts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
 }
 
+/* Thought Card */
 .thought-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  padding: 16px 20px;
+  padding: 18px 22px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 14px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.thought-card:hover {
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.thought-card.is-full-width {
+  width: 100%;
+  padding: 20px 26px;
+  border-radius: 16px;
 }
 
 .thought-card.is-pinned {
-  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3), var(--shadow-sm);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.03) 0%, var(--card-bg) 40%);
 }
 
 @keyframes thoughtCardPulse {
   0% {
     box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 16, 185, 129), 0.7);
     border-color: var(--primary-color);
-    transform: scale(1.02);
+    transform: scale(1.01);
   }
   60% {
     box-shadow: 0 0 0 12px rgba(var(--primary-rgb, 16, 185, 129), 0);
     border-color: var(--primary-color);
-    transform: scale(1.02);
+    transform: scale(1.01);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 16, 185, 129), 0);
@@ -193,22 +247,56 @@
   z-index: 10;
 }
 
+/* Card Header */
 .thought-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.thought-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .thought-category-badge {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 5px;
-  background: rgba(37, 99, 235, 0.12);
-  color: var(--primary-color);
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.thought-card-date {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thought-pinned-chip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .thought-card-actions {
@@ -221,15 +309,18 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 6px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
 }
 
-.thought-btn-pin {
-  color: var(--text-muted);
+.thought-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
 }
 
 .thought-btn-pin.pinned {
@@ -237,82 +328,235 @@
   color: #F59E0B;
 }
 
-.thought-btn-copy {
-  color: var(--text-muted);
+.thought-btn-edit:hover {
+  color: #60A5FA;
 }
 
 .thought-btn-copy.copied {
   color: #10B981;
 }
 
-.thought-btn-delete {
-  color: #EF4444;
-  opacity: 0.6;
-}
-
 .thought-btn-delete:hover {
-  opacity: 1;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
+/* Card Content & Formatting */
 .thought-body-quote {
-  font-size: 1rem;
+  font-size: 1.04rem;
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.75;
   font-weight: 500;
   position: relative;
   letter-spacing: -0.01em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.thought-author-row {
-  margin-top: 10px;
-  font-size: 0.84rem;
+.thought-quote-content {
+  position: relative;
+}
+
+/* ==========================================================================
+   FORMATTING ENGINE: HIGHLIGHT, UNDERLINE, BOLD, ITALIC
+   ========================================================================== */
+
+.thought-highlight-badge {
+  background: linear-gradient(120deg, rgba(245, 158, 11, 0.28) 0%, rgba(251, 191, 36, 0.35) 100%);
+  color: #FDE047;
   font-weight: 700;
-  color: var(--text-secondary);
-  text-align: right;
-}
-
-.thought-tags-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 10px;
-}
-
-.thought-tag-pill {
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  background: var(--page-bg);
-  padding: 2px 6px;
+  padding: 1px 6px;
+  margin: 0 1px;
   border-radius: 4px;
-  border: 1px solid var(--border-color);
+  border-bottom: 2px solid #F59E0B;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.22);
+  display: inline;
 }
 
-/* Modal */
+.thought-underline-text {
+  text-decoration: underline;
+  text-decoration-color: #38BDF8;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2.5px;
+  color: inherit;
+  font-weight: 600;
+  display: inline;
+}
+
+.thought-bold-text {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.thought-italic-text {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* Card Footer */
+.thought-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.thought-meta-count {
+  font-family: monospace;
+  font-size: 0.74rem;
+}
+
+.thought-footer-featured {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #F59E0B;
+}
+
+/* ==========================================================================
+   FORMATTING TOOLBAR IN CREATE & EDIT MODALS
+   ========================================================================== */
+
+.thought-format-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.thought-format-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thought-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.thought-format-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.thought-format-btn-highlight {
+  color: #F59E0B;
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.thought-format-btn-highlight:hover {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.thought-format-btn-underline {
+  color: #38BDF8;
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.thought-format-btn-underline:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
+
+.thought-format-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.thought-preview-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thought-preview-container {
+  background: var(--page-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.thought-preview-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.thought-preview-content {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Modals */
 .thought-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .thought-modal-card {
-  background: var(--card-bg);
+  background: var(--card-bg, #10192D);
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  padding: 24px;
+  padding: 22px;
   width: 100%;
-  max-width: 520px;
-  box-shadow: var(--shadow-lg);
+  max-width: 540px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+}
+
+.thought-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .thought-modal-title {
-  margin: 0 0 16px;
-  font-size: 1.25rem;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -321,20 +565,18 @@
 
 .thought-form-textarea {
   width: 100%;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 0 0 8px 8px;
   border: 1px solid var(--border-color);
   background: var(--page-bg);
   color: var(--text-primary);
   font-size: 0.9rem;
+  line-height: 1.6;
   outline: none;
   resize: vertical;
   box-sizing: border-box;
 }
 
-.thought-modal-grid-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.thought-form-textarea:focus {
+  border-color: var(--primary-color);
 }
-
