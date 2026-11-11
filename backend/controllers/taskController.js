@@ -29,7 +29,7 @@ exports.getAllTasks = async (req, res, next) => {
     }
 
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
@@ -170,12 +170,22 @@ exports.createTask = async (req, res, next) => {
       }
     }
 
-    let resolvedCategoryId = categoryId || null;
-    if (!resolvedCategoryId && category) {
-      const foundCat = await Category.findOne({
-        where: { name: typeof category === 'string' ? category : category.name },
-      });
-      if (foundCat) resolvedCategoryId = foundCat.id;
+    let resolvedCategoryId = null;
+    if (categoryId && String(categoryId).trim() !== '' && categoryId !== 'none' && categoryId !== 'all') {
+      resolvedCategoryId = String(categoryId).trim();
+    } else if (category) {
+      const catName = typeof category === 'string' ? category.trim() : category.name?.trim();
+      if (catName) {
+        const foundCat = await Category.findOne({
+          where: { name: catName },
+        });
+        if (foundCat) resolvedCategoryId = foundCat.id;
+      }
+    }
+
+    let resolvedGoalId = null;
+    if (goalId && String(goalId).trim() !== '' && goalId !== 'none' && goalId !== 'all') {
+      resolvedGoalId = String(goalId).trim();
     }
 
     const task = await Task.create({
@@ -188,7 +198,7 @@ exports.createTask = async (req, res, next) => {
       categoryId: resolvedCategoryId,
       color: color || null,
       priority: normalizePriority(priority),
-      goalId: goalId || null,
+      goalId: resolvedGoalId,
       status: status || 'pending',
       userId: req.userId || req.body.userId || null,
     });
@@ -319,7 +329,9 @@ exports.bulkCreateTasks = async (req, res, next) => {
 exports.updateTask = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
@@ -340,12 +352,28 @@ exports.updateTask = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Task date must be in YYYY-MM-DD format' });
     }
 
-    let resolvedCategoryId = categoryId !== undefined ? categoryId : task.categoryId;
-    if (categoryId === undefined && category) {
-      const foundCat = await Category.findOne({
-        where: { name: typeof category === 'string' ? category : category.name },
-      });
-      if (foundCat) resolvedCategoryId = foundCat.id;
+    let resolvedCategoryId = task.categoryId;
+    if (categoryId !== undefined) {
+      resolvedCategoryId =
+        categoryId && String(categoryId).trim() !== '' && categoryId !== 'none' && categoryId !== 'all'
+          ? String(categoryId).trim()
+          : null;
+    } else if (category) {
+      const catName = typeof category === 'string' ? category.trim() : category.name?.trim();
+      if (catName) {
+        const foundCat = await Category.findOne({
+          where: { name: catName },
+        });
+        if (foundCat) resolvedCategoryId = foundCat.id;
+      }
+    }
+
+    let resolvedGoalId = task.goalId;
+    if (goalId !== undefined) {
+      resolvedGoalId =
+        goalId && String(goalId).trim() !== '' && goalId !== 'none' && goalId !== 'all'
+          ? String(goalId).trim()
+          : null;
     }
 
     const targetDate = date !== undefined ? date : task.date;
@@ -393,8 +421,9 @@ exports.updateTask = async (req, res, next) => {
       categoryId: resolvedCategoryId,
       color: color !== undefined ? color : task.color,
       priority: priority !== undefined ? normalizePriority(priority) : task.priority,
-      goalId: goalId !== undefined ? goalId : task.goalId,
+      goalId: resolvedGoalId,
       status: status !== undefined ? status : task.status,
+      ...(task.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 
     const updatedTask = await Task.findByPk(task.id, {
@@ -413,14 +442,19 @@ exports.updateTask = async (req, res, next) => {
 exports.toggleTaskComplete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
-    await task.update({ status: newStatus });
+    await task.update({
+      status: newStatus,
+      ...(task.userId === null && req.userId ? { userId: req.userId } : {}),
+    });
 
     const updatedTask = await Task.findByPk(task.id, {
       include: [
@@ -438,7 +472,9 @@ exports.toggleTaskComplete = async (req, res, next) => {
 exports.deleteTask = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const task = await Task.findOne({ where });
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
@@ -448,5 +484,7 @@ exports.deleteTask = async (req, res, next) => {
     res.json({ success: true, message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
+  }
+};
   }
 };

@@ -1,4 +1,5 @@
 const { WorkRequest, Task, Category } = require('../models');
+const { Op } = require('sequelize');
 
 exports.getAllRequests = async (req, res, next) => {
   try {
@@ -12,7 +13,7 @@ exports.getAllRequests = async (req, res, next) => {
       where.date = date;
     }
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const requests = await WorkRequest.findAll({
@@ -85,6 +86,10 @@ exports.createRequest = async (req, res, next) => {
 
     const requestId = id || `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const userId = req.userId || req.body.userId || null;
+    let resolvedTaskId = null;
+    if (taskId && String(taskId).trim() !== '' && taskId !== 'none') {
+      resolvedTaskId = String(taskId).trim();
+    }
 
     const newRequest = await WorkRequest.create({
       id: requestId,
@@ -94,7 +99,7 @@ exports.createRequest = async (req, res, next) => {
       endTime: endTime || null,
       reason,
       status: 'pending',
-      taskId: taskId || null,
+      taskId: resolvedTaskId,
       userId,
     });
 

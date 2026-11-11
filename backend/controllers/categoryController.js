@@ -133,7 +133,9 @@ exports.bulkCreateCategories = async (req, res, next) => {
 exports.updateCategory = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const category = await Category.findOne({ where });
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found or unauthorized' });

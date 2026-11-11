@@ -1,4 +1,5 @@
 const { WorkSession, ActiveWorkSession, Task, Category } = require('../models');
+const { Op } = require('sequelize');
 
 // GET /api/work-sessions/active
 exports.getActiveWorkSession = async (req, res, next) => {
@@ -119,7 +120,7 @@ exports.getAllWorkSessions = async (req, res, next) => {
       where.date = date;
     }
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
@@ -211,6 +212,10 @@ exports.createWorkSession = async (req, res, next) => {
 
     const sessionId = id || `session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const userId = req.userId || req.body.userId || null;
+    let resolvedTaskId = null;
+    if (taskId && String(taskId).trim() !== '' && taskId !== 'none') {
+      resolvedTaskId = String(taskId).trim();
+    }
 
     const newSession = await WorkSession.create({
       id: sessionId,
@@ -220,7 +225,7 @@ exports.createWorkSession = async (req, res, next) => {
       durationSeconds: Number(durationSeconds) || 0,
       stopReason: stopReason || 'Finished Work',
       notes: notes || '',
-      taskId: taskId || null,
+      taskId: resolvedTaskId,
       taskTitle: taskTitle || null,
       userId,
     });
@@ -256,7 +261,11 @@ exports.createWorkSession = async (req, res, next) => {
 exports.updateWorkSession = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const session = await WorkSession.findByPk(id);
+    const where = { id };
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
+    const session = await WorkSession.findOne({ where });
 
     if (!session) {
       return res.status(404).json({ success: false, message: 'Work session not found' });
@@ -273,6 +282,11 @@ exports.updateWorkSession = async (req, res, next) => {
       taskTitle,
     } = req.body;
 
+    let resolvedTaskId = session.taskId;
+    if (taskId !== undefined) {
+      resolvedTaskId = (taskId && String(taskId).trim() !== '' && taskId !== 'none') ? String(taskId).trim() : null;
+    }
+
     await session.update({
       ...(date !== undefined && { date }),
       ...(startTime !== undefined && { startTime }),
@@ -280,8 +294,9 @@ exports.updateWorkSession = async (req, res, next) => {
       ...(durationSeconds !== undefined && { durationSeconds: Number(durationSeconds) }),
       ...(stopReason !== undefined && { stopReason }),
       ...(notes !== undefined && { notes }),
-      ...(taskId !== undefined && { taskId }),
+      ...(taskId !== undefined && { taskId: resolvedTaskId }),
       ...(taskTitle !== undefined && { taskTitle }),
+      ...(session.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 
     res.json({
@@ -297,7 +312,11 @@ exports.updateWorkSession = async (req, res, next) => {
 exports.deleteWorkSession = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const session = await WorkSession.findByPk(id);
+    const where = { id };
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
+    const session = await WorkSession.findOne({ where });
 
     if (!session) {
       return res.status(404).json({ success: false, message: 'Work session not found' });

@@ -1,4 +1,5 @@
 const { Goal, Task } = require('../models');
+const { Op } = require('sequelize');
 const cacheManager = require('../utils/cacheManager');
 
 exports.getAllGoals = async (req, res, next) => {
@@ -11,7 +12,7 @@ exports.getAllGoals = async (req, res, next) => {
 
     const where = {};
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const goals = await Goal.findAll({
@@ -30,7 +31,9 @@ exports.getAllGoals = async (req, res, next) => {
 exports.getGoalById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
 
     const goal = await Goal.findOne({
       where,
@@ -148,7 +151,9 @@ exports.bulkCreateGoals = async (req, res, next) => {
 exports.updateGoal = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const goal = await Goal.findOne({ where });
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
@@ -185,6 +190,7 @@ exports.updateGoal = async (req, res, next) => {
       status: status !== undefined ? status : (finalProgress >= 100 ? 'completed' : goal.status),
       category: category !== undefined ? category : goal.category,
       relatedTaskIds: relatedTaskIds !== undefined ? relatedTaskIds : goal.relatedTaskIds,
+      ...(goal.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 
     const updatedGoal = await Goal.findByPk(goal.id, {
@@ -201,7 +207,9 @@ exports.updateGoal = async (req, res, next) => {
 exports.deleteGoal = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const goal = await Goal.findOne({ where });
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });

@@ -12,12 +12,12 @@ exports.getAllEvents = async (req, res, next) => {
       where.date = { [Op.between]: [startDate, endDate] };
     }
 
-    if (categoryId && categoryId !== 'all') {
+    if (categoryId && categoryId !== 'all' && categoryId !== 'none') {
       where.categoryId = categoryId;
     }
 
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const events = await Event.findAll({
@@ -37,7 +37,13 @@ exports.getAllEvents = async (req, res, next) => {
 
 exports.getEventById = async (req, res, next) => {
   try {
-    const event = await Event.findByPk(req.params.id, {
+    const where = { id: req.params.id };
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
+
+    const event = await Event.findOne({
+      where,
       include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'color', 'icon'] }],
     });
     if (!event) {
@@ -63,6 +69,11 @@ exports.createEvent = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Event end time must be after start time' });
     }
 
+    let resolvedCategoryId = null;
+    if (categoryId && String(categoryId).trim() !== '' && categoryId !== 'none' && categoryId !== 'all') {
+      resolvedCategoryId = String(categoryId).trim();
+    }
+
     const event = await Event.create({
       id: id || undefined,
       title: title.trim(),
@@ -70,7 +81,7 @@ exports.createEvent = async (req, res, next) => {
       date,
       startTime: startTime || null,
       endTime: endTime || null,
-      categoryId: categoryId || null,
+      categoryId: resolvedCategoryId,
       location: location ? location.trim() : null,
       userId: req.userId || req.body.userId || null,
     });
@@ -88,7 +99,9 @@ exports.createEvent = async (req, res, next) => {
 exports.updateEvent = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const event = await Event.findOne({ where });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
@@ -106,14 +119,23 @@ exports.updateEvent = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Event end time must be after start time' });
     }
 
+    let resolvedCategoryId = event.categoryId;
+    if (categoryId !== undefined) {
+      resolvedCategoryId =
+        categoryId && String(categoryId).trim() !== '' && categoryId !== 'none' && categoryId !== 'all'
+          ? String(categoryId).trim()
+          : null;
+    }
+
     await event.update({
       title: title !== undefined ? title.trim() : event.title,
       description: description !== undefined ? (description ? description.trim() : null) : event.description,
       date: date !== undefined ? date : event.date,
       startTime: startTime !== undefined ? startTime : event.startTime,
       endTime: endTime !== undefined ? endTime : event.endTime,
-      categoryId: categoryId !== undefined ? categoryId : event.categoryId,
+      categoryId: resolvedCategoryId,
       location: location !== undefined ? (location ? location.trim() : null) : event.location,
+      ...(event.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 
     const updatedEvent = await Event.findByPk(event.id, {
@@ -129,7 +151,9 @@ exports.updateEvent = async (req, res, next) => {
 exports.deleteEvent = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
     const event = await Event.findOne({ where });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });

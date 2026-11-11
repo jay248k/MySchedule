@@ -1,4 +1,5 @@
 const { DailyReport } = require('../models');
+const { Op } = require('sequelize');
 const cacheManager = require('../utils/cacheManager');
 
 exports.getAllReports = async (req, res, next) => {
@@ -11,7 +12,7 @@ exports.getAllReports = async (req, res, next) => {
 
     const where = {};
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const limit = req.query.limit || req.query.take ? parseInt(req.query.limit || req.query.take, 10) : undefined;
@@ -40,7 +41,9 @@ exports.getReportByDate = async (req, res, next) => {
   try {
     const { date } = req.params;
     const where = { date };
-    if (req.userId) where.userId = req.userId;
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
 
     const report = await DailyReport.findOne({ where });
     if (!report) {

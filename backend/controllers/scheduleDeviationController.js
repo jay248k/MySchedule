@@ -1,4 +1,5 @@
 const { ScheduleDeviation, Task, Category } = require('../models');
+const { Op } = require('sequelize');
 
 exports.getAllDeviations = async (req, res, next) => {
   try {
@@ -9,7 +10,7 @@ exports.getAllDeviations = async (req, res, next) => {
       where.date = date;
     }
     if (req.userId) {
-      where.userId = req.userId;
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
     const deviations = await ScheduleDeviation.findAll({
@@ -97,6 +98,10 @@ exports.createDeviation = async (req, res, next) => {
 
     const deviationId = id || `dev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const userId = req.userId || req.body.userId || null;
+    let resolvedTaskId = null;
+    if (taskId && String(taskId).trim() !== '' && taskId !== 'none') {
+      resolvedTaskId = String(taskId).trim();
+    }
 
     const newDeviation = await ScheduleDeviation.create({
       id: deviationId,
@@ -110,7 +115,7 @@ exports.createDeviation = async (req, res, next) => {
       rootCause: rootCause || '',
       lessonLearned: lessonLearned || '',
       deviationType: deviationType || 'unproductive',
-      taskId: taskId || null,
+      taskId: resolvedTaskId,
       userId,
     });
 
@@ -127,7 +132,11 @@ exports.createDeviation = async (req, res, next) => {
 exports.updateDeviation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deviation = await ScheduleDeviation.findByPk(id);
+    const where = { id };
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
+    const deviation = await ScheduleDeviation.findOne({ where });
 
     if (!deviation) {
       return res.status(404).json({ success: false, message: 'Deviation log not found' });
@@ -147,6 +156,11 @@ exports.updateDeviation = async (req, res, next) => {
       taskId,
     } = req.body;
 
+    let resolvedTaskId = deviation.taskId;
+    if (taskId !== undefined) {
+      resolvedTaskId = (taskId && String(taskId).trim() !== '' && taskId !== 'none') ? String(taskId).trim() : null;
+    }
+
     await deviation.update({
       ...(date !== undefined && { date }),
       ...(startTime !== undefined && { startTime }),
@@ -158,7 +172,8 @@ exports.updateDeviation = async (req, res, next) => {
       ...(rootCause !== undefined && { rootCause }),
       ...(lessonLearned !== undefined && { lessonLearned }),
       ...(deviationType !== undefined && { deviationType }),
-      ...(taskId !== undefined && { taskId }),
+      ...(taskId !== undefined && { taskId: resolvedTaskId }),
+      ...(deviation.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 
     res.json({
@@ -174,7 +189,11 @@ exports.updateDeviation = async (req, res, next) => {
 exports.deleteDeviation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deviation = await ScheduleDeviation.findByPk(id);
+    const where = { id };
+    if (req.userId) {
+      where[Op.or] = [{ userId: req.userId }, { userId: null }];
+    }
+    const deviation = await ScheduleDeviation.findOne({ where });
 
     if (!deviation) {
       return res.status(404).json({ success: false, message: 'Deviation log not found' });

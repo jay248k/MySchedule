@@ -1338,14 +1338,18 @@ export function AppProvider({ children }) {
       const finalTaskId = taskId || activeWorkSession.taskId || null;
       const finalTaskTitle = taskTitle || activeWorkSession.taskTitle || '';
 
+      const sessionId = `session-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`;
       const workNode = {
         id: `work-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+        sessionId,
         type: 'work',
         startTime: activeWorkSession.startTime,
         endTime,
         durationSeconds: segmentSeconds,
         taskId: finalTaskId,
         taskTitle: finalTaskTitle,
+        stopReason: stopReason || 'Finished Work',
+        notes: notes || '',
       };
 
       const existingChain = workChains[sessionDate] || {
@@ -1373,7 +1377,7 @@ export function AppProvider({ children }) {
       });
 
       const sessionPayload = {
-        id: `session-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+        id: sessionId,
         date: sessionDate,
         startTime: activeWorkSession.startTime,
         endTime,

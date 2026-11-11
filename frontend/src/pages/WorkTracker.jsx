@@ -268,103 +268,17 @@ export function WorkTracker() {
 
   return (
     <div className="worktracker-container">
-      {/* Top Header Bar */}
-      <div className="worktracker-header">
-        <div>
-          <div className="worktracker-title-row">
-            <h1 className="worktracker-title">
-              <Zap size={22} className="text-emerald-400" />
-              Today's Work Tracker & Focus Stream
-            </h1>
-            {isRunning && (
-              <span className="worktracker-recording-pill">
-                <span className="worktracker-recording-dot" />
-                <span className="worktracker-audio-bars">
-                  <span className="worktracker-audio-bar" />
-                  <span className="worktracker-audio-bar" />
-                  <span className="worktracker-audio-bar" />
-                </span>
-                LIVE FOCUSING
-              </span>
-            )}
-          </div>
-          <p className="worktracker-sub">
-            <Sparkles size={14} className="text-blue-400" />
-            Track focused work blocks in real time, auto-compute break intervals, and maintain a seamless chronological day chain.
-          </p>
-        </div>
-
-        {/* Date Selector & Manual Session Button */}
-        <div className="worktracker-header-actions">
-          {/* Day Stepper */}
-          <div className="flex items-center bg-card border border-color rounded-xl py-1 px-2 shadow-sm">
-            <button
-              type="button"
-              className="btn-icon w-7 h-7"
-              onClick={() => {
-                const d = new Date(activeDate + 'T00:00:00');
-                d.setDate(d.getDate() - 1);
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                setSelectedDate(`${y}-${m}-${day}`);
-              }}
-              title="Previous Day"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <span className="text-xs font-extrabold px-2 text-primary flex items-center gap-1.5">
-              <Calendar size={13} className="text-secondary" />
-              {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
-            </span>
-            <button
-              type="button"
-              className="btn-icon w-7 h-7"
-              onClick={() => {
-                const d = new Date(activeDate + 'T00:00:00');
-                d.setDate(d.getDate() + 1);
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                setSelectedDate(`${y}-${m}-${day}`);
-              }}
-              title="Next Day"
-            >
-              <ChevronRight size={15} />
-            </button>
-            {!isToday && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs ml-1 text-xs py-0.5 px-2 text-primary font-bold"
-                onClick={() => setSelectedDate(todayStr)}
-              >
-                Today
-              </button>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm flex items-center gap-1.5 h-8 text-xs px-3 rounded-xl shadow-sm"
-            onClick={handleOpenManualModal}
-          >
-            <Plus size={14} />
-            <span>Log Past Session</span>
-          </button>
-        </div>
-      </div>
-
       {/* ==========================================================================
-          MISSION CONTROL FOCUS COCKPIT DECK (NO 4 BULKY CARDS)
+          MISSION CONTROL FOCUS COCKPIT DECK (COMPACT INTEGRATED HEADER)
          ========================================================================== */}
       <div
         className={`focus-cockpit-deck ${
           isRunning ? 'is-running' : isPaused ? 'is-paused' : isFinished ? 'is-finished' : 'is-idle'
         }`}
       >
-        {/* Cockpit Status Bar & Inline Micro-Stats */}
+        {/* Cockpit Status Bar, Day Stepper & Inline Micro-Stats */}
         <div className="cockpit-top-bar">
-          <div className="flex items-center gap-2">
+          <div className="cockpit-top-left">
             {isRunning ? (
               <div className="cockpit-mode-pill is-running">
                 <Activity size={14} className="animate-pulse" />
@@ -386,35 +300,95 @@ export function WorkTracker() {
                 <span>Ready for Deep Focus</span>
               </div>
             )}
+
+            {/* Integrated Day Navigator */}
+            <div className="cockpit-day-stepper">
+              <button
+                type="button"
+                className="btn-stepper-nav"
+                onClick={() => {
+                  const d = new Date(activeDate + 'T00:00:00');
+                  d.setDate(d.getDate() - 1);
+                  const y = d.getFullYear();
+                  const m = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  setSelectedDate(`${y}-${m}-${day}`);
+                }}
+                title="Previous Day"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="cockpit-date-label">
+                <Calendar size={13} className="text-secondary" />
+                {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
+              </span>
+              <button
+                type="button"
+                className="btn-stepper-nav"
+                onClick={() => {
+                  const d = new Date(activeDate + 'T00:00:00');
+                  d.setDate(d.getDate() + 1);
+                  const y = d.getFullYear();
+                  const m = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  setSelectedDate(`${y}-${m}-${day}`);
+                }}
+                title="Next Day"
+              >
+                <ChevronRight size={14} />
+              </button>
+              {!isToday && (
+                <button
+                  type="button"
+                  className="btn-jump-today"
+                  onClick={() => setSelectedDate(todayStr)}
+                  title="Return to Today"
+                >
+                  Today
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Integrated Micro-Stats Badges */}
-          <div className="cockpit-micro-stats">
-            <div className="micro-stat-badge" title="Total focus logged today">
-              <Zap size={14} className="text-emerald-400" />
-              <span>Total:</span>
-              <strong>{totalHours}h {totalMinutes}m {totalSecs}s</strong>
-            </div>
-
-            <div className="micro-stat-badge" title="Completed work sessions today">
-              <Layers size={14} className="text-blue-400" />
-              <span>Blocks:</span>
-              <strong>{sessionCount}</strong>
-            </div>
-
-            <div className="micro-stat-badge" title="Average duration per block">
-              <TrendingUp size={14} className="text-purple-400" />
-              <span>Avg:</span>
-              <strong>{avgSessionMinutes}m</strong>
-            </div>
-
-            {Object.keys(reasonBreakdown).length > 0 && (
-              <div className="micro-stat-badge" title="Distinct break / intermission reasons recorded">
-                <Coffee size={14} className="text-amber-400" />
-                <span>Breaks:</span>
-                <strong>{Object.keys(reasonBreakdown).length}</strong>
+          {/* Integrated Micro-Stats Badges & Quick Action */}
+          <div className="cockpit-top-right">
+            <div className="cockpit-micro-stats">
+              <div className="micro-stat-badge" title="Total focus logged today">
+                <Zap size={13} className="text-emerald-400" />
+                <span>Total:</span>
+                <strong>{totalHours}h {totalMinutes}m {totalSecs}s</strong>
               </div>
-            )}
+
+              <div className="micro-stat-badge" title="Completed work sessions today">
+                <Layers size={13} className="text-blue-400" />
+                <span>Blocks:</span>
+                <strong>{sessionCount}</strong>
+              </div>
+
+              <div className="micro-stat-badge" title="Average duration per block">
+                <TrendingUp size={13} className="text-purple-400" />
+                <span>Avg:</span>
+                <strong>{avgSessionMinutes}m</strong>
+              </div>
+
+              {Object.keys(reasonBreakdown).length > 0 && (
+                <div className="micro-stat-badge" title="Distinct break / intermission reasons recorded">
+                  <Coffee size={13} className="text-amber-400" />
+                  <span>Breaks:</span>
+                  <strong>{Object.keys(reasonBreakdown).length}</strong>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="btn-log-session-compact"
+              onClick={handleOpenManualModal}
+              title="Log past focus block or intermission"
+            >
+              <Plus size={13} />
+              <span>Log Past Session</span>
+            </button>
           </div>
         </div>
 
@@ -668,162 +642,173 @@ export function WorkTracker() {
           </div>
         ) : (
           <div className="focus-timeline-container">
-            {/* If Chain nodes exist, render the chronological chain */}
-            {todayChain?.chain?.length > 0 ? (
-              todayChain.chain.map((node, index) => {
-                const isWork = node.type === 'work';
-                const durMinutes = Math.floor((node.durationSeconds || 0) / 60);
-                const durHours = Math.floor(durMinutes / 60);
-                const remainMinutes = durMinutes % 60;
-                const durLabel = durHours > 0 ? `${durHours}h ${remainMinutes}m` : `${durMinutes}m`;
-                const meta = getReasonMeta(node.reason, isWork);
+            {/* If Chain nodes exist, render the chronological chain; else fallback to dateSessions */}
+            {(todayChain?.chain?.length > 0 ? todayChain.chain : dateSessions).map((item, index) => {
+              const isChain = todayChain?.chain?.length > 0;
+              const isWork = isChain ? item.type === 'work' : true;
+              const durSeconds = item.durationSeconds || 0;
+              const durMin = Math.floor(durSeconds / 60);
+              const durSec = durSeconds % 60;
+              const durHours = Math.floor(durMin / 60);
+              const remainMin = durMin % 60;
+              const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
 
-                return (
-                  <div key={node.id || index} className="stream-node-wrapper">
-                    {/* Spine Pin Dot */}
-                    <div className={`stream-node-pin ${!isWork ? 'is-gap' : ''}`}>
-                      <div
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: isWork ? '#10B981' : '#F59E0B',
-                        }}
-                      />
-                    </div>
+              const title = item.taskTitle || (isWork ? 'General Focus Session' : `Break / Intermission: ${item.reason || 'Pause'}`);
+              const stopReason = isChain ? (item.stopReason || item.reason || (isWork ? 'Focus Segment' : 'Intermission')) : (item.stopReason || 'Finished Work');
+              const notes = isChain ? (item.notes || item.remarks || '') : (item.notes || '');
+              const startTime = item.startTime || '';
+              const endTime = item.endTime || (isWork ? 'Completed' : '');
+              const sessionId = isChain ? (item.sessionId || item.id) : item.id;
+              const taskId = item.taskId;
 
-                    <div className={`stream-node-card ${!isWork ? 'is-gap' : ''}`}>
-                      <div className="stream-node-left">
-                        <div
-                          className="stream-node-icon-box"
-                          style={{
-                            background: meta.bg,
-                            border: `1px solid ${meta.borderColor}`,
-                          }}
-                        >
-                          {meta.icon}
-                        </div>
+              const reasonMeta = getReasonMeta(stopReason, isWork);
+              const linkedTask = taskId ? tasks.find((t) => t.id === taskId) : null;
 
-                        <div className="stream-node-details">
-                          <div className="stream-node-title-row">
-                            <span className="stream-node-title">
-                              {isWork
-                                ? node.taskTitle || 'Focus Work Session'
-                                : `Break / Intermission: ${node.reason || 'Pause'}`}
-                            </span>
-                            <span
-                              className={`stream-node-badge ${isWork ? 'badge-green' : 'badge-amber'}`}
-                            >
-                              {isWork ? 'Focus Segment' : 'Intermission'}
-                            </span>
-                          </div>
-
-                          <div className="stream-node-meta">
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} className="text-secondary" />
-                              {node.startTime} – {node.endTime}
-                            </span>
-                            {!isWork && node.remarks && node.remarks !== node.reason && (
-                              <span className="stream-node-notes-bubble">
-                                <FileText size={11} />
-                                "{node.remarks}"
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="stream-node-right">
-                        <span className={`stream-node-duration ${!isWork ? 'is-gap' : ''}`}>
-                          {isWork ? durLabel : `⚡ ${node.durationLabel || durLabel}`}
-                        </span>
-                      </div>
-                    </div>
+              return (
+                <div key={item.id || index} className="stream-node-wrapper">
+                  {/* Spine Pin Dot */}
+                  <div className={`stream-node-pin ${!isWork ? 'is-gap' : ''}`}>
+                    <div
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: isWork ? '#10B981' : '#F59E0B',
+                        boxShadow: isWork ? '0 0 6px #10B981' : '0 0 6px #F59E0B',
+                      }}
+                    />
                   </div>
-                );
-              })
-            ) : (
-              /* Fallback to dateSessions if chain not yet stored */
-              dateSessions.map((session) => {
-                const durMin = Math.floor((session.durationSeconds || 0) / 60);
-                const durSec = (session.durationSeconds || 0) % 60;
-                const durHours = Math.floor(durMin / 60);
-                const remainMin = durMin % 60;
-                const durStr = durHours > 0 ? `${durHours}h ${remainMin}m` : `${durMin}m ${durSec}s`;
-                const meta = getReasonMeta(session.stopReason, false);
 
-                return (
-                  <div key={session.id} className="stream-node-wrapper">
-                    <div className="stream-node-pin">
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
-                    </div>
-
-                    <div className="stream-node-card">
-                      <div className="stream-node-left">
-                        <div
-                          className="stream-node-icon-box"
-                          style={{ background: meta.bg, border: `1px solid ${meta.borderColor}` }}
-                        >
-                          {meta.icon}
-                        </div>
-
-                        <div className="stream-node-details">
-                          <div className="stream-node-title-row">
-                            <span className="stream-node-title">
-                              {session.taskTitle || 'General Focus Session'}
-                            </span>
-                            <span className="stream-node-badge badge-green">
-                              {session.stopReason || 'Finished Work'}
-                            </span>
-                          </div>
-
-                          <div className="stream-node-meta">
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} className="text-secondary" />
-                              {session.startTime} – {session.endTime || 'Completed'}
-                            </span>
-                            {session.notes && (
-                              <span className="stream-node-notes-bubble">
-                                <FileText size={11} />
-                                "{session.notes}"
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                  <div className={`stream-node-card ${!isWork ? 'is-gap' : 'is-work'}`}>
+                    <div className="stream-node-left">
+                      {/* Sculpted Dual-Layer Icon Pod */}
+                      <div
+                        className="stream-node-icon-box"
+                        style={{
+                          background: isWork ? 'rgba(16, 185, 129, 0.16)' : reasonMeta.bg,
+                          border: `1px solid ${isWork ? 'rgba(16, 185, 129, 0.35)' : reasonMeta.borderColor}`,
+                        }}
+                      >
+                        {isWork ? <Zap size={18} color="#10B981" /> : reasonMeta.icon}
                       </div>
 
-                      <div className="stream-node-right">
-                        <span className="stream-node-duration">
-                          {durStr}
-                        </span>
+                      <div className="stream-node-details">
+                        {/* Title & Badges */}
+                        <div className="stream-node-title-row">
+                          <span className="stream-node-title">{title}</span>
+
+                          {isWork ? (
+                            <span className="stream-badge-work">
+                              <span className="stream-pulse-dot" /> Focus Segment
+                            </span>
+                          ) : (
+                            <span className="stream-badge-break">
+                              <Coffee size={11} /> Intermission
+                            </span>
+                          )}
+
+                          {stopReason && (
+                            <span
+                              className="stream-reason-pill"
+                              style={{
+                                background: reasonMeta.bg,
+                                borderColor: reasonMeta.borderColor,
+                                color: reasonMeta.color,
+                              }}
+                            >
+                              {reasonMeta.icon}
+                              <span>{stopReason}</span>
+                            </span>
+                          )}
+
+                          {linkedTask?.category && (
+                            <span className="stream-task-category-pill">
+                              <span
+                                className="category-color-dot"
+                                style={{ background: linkedTask.categoryColor || '#3B82F6' }}
+                              />
+                              <span>{linkedTask.category}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Interval & Context */}
+                        <div className="stream-node-meta">
+                          <span className="stream-time-badge">
+                            <Clock size={12} className={isWork ? 'text-emerald-400' : 'text-amber-400'} />
+                            {startTime} → {endTime}
+                          </span>
+                          <span className="meta-bullet">•</span>
+                          <span className="meta-context">
+                            {isWork ? `${durStr} focused session` : `${durStr} break intermission`}
+                          </span>
+                        </div>
+
+                        {/* User Remarks Note Banner */}
+                        {notes && notes.trim() !== '' && (
+                          <div className="stream-node-remarks-banner">
+                            <FileText size={13} className={isWork ? 'text-emerald-400' : 'text-amber-400'} />
+                            <span className="remarks-tag">Log Note:</span>
+                            <span className="remarks-text">"{notes}"</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Side: Monospace Duration & Actions */}
+                    <div className="stream-node-right">
+                      <div className={`stream-node-duration ${!isWork ? 'is-gap' : ''}`}>
+                        <Timer size={13} />
+                        <span>{durStr}</span>
+                      </div>
+
+                      <div className="stream-node-actions">
                         <button
                           type="button"
                           className="stream-action-btn"
-                          onClick={() => setEditingSession(session)}
-                          title="Edit remarks"
+                          onClick={() => {
+                            const targetSession = isChain
+                              ? dateSessions.find((s) => s.id === sessionId || s.startTime === startTime) || {
+                                  id: sessionId,
+                                  startTime,
+                                  endTime,
+                                  durationSeconds: durSeconds,
+                                  stopReason,
+                                  notes,
+                                  taskId,
+                                  taskTitle: title,
+                                }
+                              : item;
+                            setEditingSession(targetSession);
+                          }}
+                          title="Edit remarks & details"
                         >
                           <Edit2 size={13} />
                         </button>
                         <button
                           type="button"
                           className="stream-action-btn btn-delete"
-                          onClick={() => deleteWorkSession(session.id)}
-                          title="Delete session"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this session log?')) {
+                              deleteWorkSession(sessionId);
+                            }
+                          }}
+                          title="Delete session log"
                         >
                           <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
                   </div>
-                );
-              })
-            )}
+                </div>
+              );
+            })}
 
             {/* Active Running Session Segment in the Timeline Stream */}
             {isRunning && activeWorkSession?.date === activeDate && (
               <div className="stream-node-wrapper">
                 <div className="stream-node-pin is-active">
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF' }} />
                 </div>
 
                 <div className="stream-node-card is-active animate-pulse">
@@ -840,25 +825,29 @@ export function WorkTracker() {
                         <span className="stream-node-title">
                           {activeWorkSession?.taskTitle || 'Live Work Segment'}
                         </span>
-                        <span className="stream-node-badge badge-green">
-                          <Activity size={11} /> Recording
+                        <span className="stream-badge-work is-live">
+                          <Activity size={11} className="animate-pulse" /> Recording
                         </span>
                       </div>
 
                       <div className="stream-node-meta">
-                        <span className="flex items-center gap-1">
+                        <span className="stream-time-badge">
                           <Clock size={12} className="text-emerald-400" />
                           Started at {activeWorkSession?.startTime || 'now'}
                         </span>
-                        <span>· Real-time focus tracking</span>
+                        <span className="meta-bullet">•</span>
+                        <span className="meta-context text-emerald-400">
+                          Real-time continuous focus tracking
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="stream-node-right">
-                    <span className="stream-node-duration" style={{ color: '#34D399' }}>
-                      {activeHrs > 0 ? `${activeHrs}h ` : ''}{activeMins}m {activeSecs}s
-                    </span>
+                    <div className="stream-node-duration is-live" style={{ color: '#34D399' }}>
+                      <Timer size={13} />
+                      <span>{activeHrs > 0 ? `${activeHrs}h ` : ''}{activeMins}m {activeSecs}s</span>
+                    </div>
                     <button
                       type="button"
                       className="btn-stop-focus"
