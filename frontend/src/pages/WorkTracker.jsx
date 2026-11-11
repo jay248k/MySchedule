@@ -573,11 +573,11 @@ export function WorkTracker() {
                   <Coffee size={16} />
                 </div>
                 <div className="paused-info-wrap">
-                  <div className="paused-title">Work Paused: {todayChain.lastPauseReason || 'Break'}</div>
+                  <div className="paused-title">Work Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}</div>
                   <div className="paused-sub">
                     Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
-                    {todayChain.lastPauseRemarks && todayChain.lastPauseRemarks !== todayChain.lastPauseReason && (
-                      <span> · "{todayChain.lastPauseRemarks}"</span>
+                    {todayChain.lastPauseRemarks && (
+                      <span> · {todayChain.lastPauseRemarks.replace(/["'“”]/g, '').trim()}</span>
                     )}
                   </div>
                 </div>
@@ -937,43 +937,42 @@ export function WorkTracker() {
                       </div>
 
                       <div className="stream-node-details">
-                        <div className="stream-node-title-row">
-                          <span className="stream-node-title">
-                            {isOngoing ? `Current Gap: ${item.reason}` : `Break: ${item.reason}`}
-                          </span>
+                        {(() => {
+                          const cleanReason = (item.reason || '').replace(/["'“”]/g, '').trim();
+                          const cleanNotes = (item.notes || '').replace(/["'“”]/g, '').trim();
+                          const isGeneric = !cleanReason || cleanReason.toLowerCase() === 'break' || cleanReason.toLowerCase() === 'intermission';
+                          const displayTitle = isGeneric ? (isOngoing ? 'Paused Intermission' : 'Break Intermission') : cleanReason;
+                          const hasSeparateNotes = cleanNotes && cleanNotes.toLowerCase() !== cleanReason.toLowerCase();
 
-                          <span
-                            className="stream-reason-pill"
-                            style={{
-                              background: reasonMeta.bg,
-                              borderColor: reasonMeta.borderColor,
-                              color: reasonMeta.color,
-                            }}
-                          >
-                            {reasonMeta.icon}
-                            <span>{item.reason}</span>
-                          </span>
+                          return (
+                            <>
+                              <div className="stream-node-title-row">
+                                <span className="stream-node-title">
+                                  {displayTitle}
+                                </span>
 
-                          {isOngoing && (
-                            <span className="stream-node-badge badge-amber">
-                              Paused
-                            </span>
-                          )}
-                        </div>
+                                <span className="stream-badge-break">
+                                  <Coffee size={10} />
+                                  <span>{isOngoing ? 'Paused' : 'Intermission'}</span>
+                                </span>
+                              </div>
 
-                        <div className="stream-node-meta">
-                          <span className="stream-time-badge is-gap">
-                            <Clock size={11} className="text-amber-400" />
-                            {item.startTime} → {item.endTime}
-                          </span>
+                              <div className="stream-node-meta">
+                                <span className="stream-time-badge is-gap">
+                                  <Clock size={11} className="text-amber-400" />
+                                  {item.startTime} → {item.endTime}
+                                </span>
 
-                          {item.notes && item.notes.trim() !== '' && (
-                            <span className="stream-compact-remarks" title={item.notes}>
-                              <FileText size={11} className="text-amber-400" />
-                              <span className="remarks-inline-quote">"{item.notes}"</span>
-                            </span>
-                          )}
-                        </div>
+                                {hasSeparateNotes && (
+                                  <span className="stream-compact-remarks" title={cleanNotes}>
+                                    <FileText size={11} className="text-amber-400" />
+                                    <span className="remarks-text-clean">{cleanNotes}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 
