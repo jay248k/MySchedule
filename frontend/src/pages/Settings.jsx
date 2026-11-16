@@ -671,7 +671,7 @@ export function Settings() {
                   </label>
                   <input
                     type="time"
-                    className="input"
+                    className="form-input"
                     value={settings.workHourStart || '09:00'}
                     onChange={(e) => handleUpdate('workHourStart', e.target.value)}
                   />
@@ -683,7 +683,7 @@ export function Settings() {
                   </label>
                   <input
                     type="time"
-                    className="input"
+                    className="form-input"
                     value={settings.workHourEnd || '18:30'}
                     onChange={(e) => handleUpdate('workHourEnd', e.target.value)}
                   />
@@ -1501,7 +1501,7 @@ export function Settings() {
                   </label>
                   <input
                     type="text"
-                    className="input"
+                    className="form-input"
                     value={settings.workspaceName || 'My Schedule Workspace'}
                     onChange={(e) => handleUpdate('workspaceName', e.target.value)}
                     placeholder="Enter workspace name"

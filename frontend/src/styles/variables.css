@@ -67,12 +67,14 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
 }
 
 /* Dark Mode Overrides */
 html[data-theme='dark'],
 body[data-theme='dark'],
 html.dark-mode:not([data-theme='oled']):not([data-theme='warm']):not([data-theme='light']) {
+  color-scheme: dark;
   --sidebar-bg: #071738;
   --sidebar-active: #0D265A;
   --sidebar-hover: rgba(255, 255, 255, 0.06);
@@ -107,6 +109,7 @@ html.dark-mode:not([data-theme='oled']):not([data-theme='warm']):not([data-theme
 /* Very Dark / OLED Pitch Black Theme */
 html[data-theme='oled'],
 body[data-theme='oled'] {
+  color-scheme: dark;
   --sidebar-bg: #020408;
   --sidebar-active: #0E1726;
   --sidebar-hover: rgba(255, 255, 255, 0.05);
@@ -141,6 +144,7 @@ body[data-theme='oled'] {
 /* Warm Paper Theme */
 html[data-theme='warm'],
 body[data-theme='warm'] {
+  color-scheme: light;
   --sidebar-bg: #F4EFE6;
   --sidebar-active: #E8DEC8;
   --sidebar-hover: rgba(41, 37, 36, 0.07);

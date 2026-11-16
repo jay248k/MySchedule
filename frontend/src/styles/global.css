@@ -274,6 +274,8 @@ textarea {
 .form-input,
 .form-select,
 .form-textarea,
+.input,
+.select,
 select {
   width: 100%;
   padding: 10px 14px;
@@ -281,17 +283,31 @@ select {
   border-radius: var(--radius-md);
   background: var(--card-bg);
   color: var(--text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
   outline: none;
+  box-sizing: border-box;
+}
+
+.form-input::placeholder,
+.input::placeholder,
+.form-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.75;
 }
 
 select,
-.form-select {
+.form-select,
+.select {
   cursor: pointer;
 }
 
 select option,
-.form-select option {
+.form-select option,
+.select option {
   background-color: var(--card-bg) !important;
   color: var(--text-primary) !important;
   padding: 8px 12px;
@@ -300,9 +316,57 @@ select option,
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus,
+.input:focus,
+.select:focus,
 select:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 23, 105, 255), 0.15);
+}
+
+/* Time & Date Pickers inherit theme color-scheme */
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"] {
+  color-scheme: inherit;
+  font-family: inherit;
+}
+
+html[data-theme='dark'] input[type="time"],
+html[data-theme='dark'] input[type="date"],
+html[data-theme='dark'] input[type="datetime-local"],
+html[data-theme='oled'] input[type="time"],
+html[data-theme='oled'] input[type="date"],
+html[data-theme='oled'] input[type="datetime-local"],
+html.dark-mode input[type="time"],
+html.dark-mode input[type="date"],
+html.dark-mode input[type="datetime-local"],
+body.dark-mode input[type="time"],
+body.dark-mode input[type="date"],
+body.dark-mode input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+html[data-theme='light'] input[type="time"],
+html[data-theme='light'] input[type="date"],
+html[data-theme='light'] input[type="datetime-local"],
+html[data-theme='warm'] input[type="time"],
+html[data-theme='warm'] input[type="date"],
+html[data-theme='warm'] input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .form-row {

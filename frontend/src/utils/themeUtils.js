@@ -249,7 +249,8 @@ export function applyThemeToDocument({
 
   // Set theme attributes on HTML root & body
   const body = typeof document !== 'undefined' ? document.body : null;
-  if (theme === 'dark' || theme === 'oled') {
+  const isDark = theme === 'dark' || theme === 'oled';
+  if (isDark) {
     root.classList.add('dark-mode');
     if (body) body.classList.add('dark-mode');
   } else {
@@ -258,6 +259,8 @@ export function applyThemeToDocument({
   }
   root.setAttribute('data-theme', theme);
   if (body) body.setAttribute('data-theme', theme);
+  root.style.colorScheme = isDark ? 'dark' : 'light';
+  if (body) body.style.colorScheme = isDark ? 'dark' : 'light';
 
   // Apply theme mode variables
   root.style.setProperty('--page-bg', modeConfig.pageBg);
