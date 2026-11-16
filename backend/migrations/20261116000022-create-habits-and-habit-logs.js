@@ -118,3 +118,4 @@ module.exports = {
     await queryInterface.dropTable('habits');
   },
 };
+

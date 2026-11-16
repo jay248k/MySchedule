@@ -15,3 +15,4 @@ router.delete('/:id', ...authenticate, habitController.deleteHabit);
 router.post('/:id/toggle', ...authenticate, habitController.toggleHabitDate);
 
 module.exports = router;
+

@@ -276,7 +276,15 @@ textarea {
 .form-textarea,
 .input,
 .select,
-select {
+select,
+input[type="text"],
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"] {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border-color);
@@ -288,6 +296,14 @@ select {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
   outline: none;
   box-sizing: border-box;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--card-bg) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-input::placeholder,

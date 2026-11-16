@@ -762,7 +762,7 @@ export function WorkTracker() {
                 return (
                   <div key={item.id} className="stream-node-wrapper">
                     <div className="stream-node-pin is-active">
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF' }} />
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF', flexShrink: 0 }} />
                     </div>
 
                     <div className="stream-node-card is-active animate-pulse">

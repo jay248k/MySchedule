@@ -1773,9 +1773,11 @@ body.calendar-fullpage-active .page-container,
   position: absolute;
   top: 12px;
   bottom: 12px;
-  left: 11px;
+  left: 12px;
   width: 2px;
+  transform: translateX(-50%);
   background: var(--border-color);
+  pointer-events: none;
 }
 
 .archive-timeline-item {
@@ -1787,11 +1789,13 @@ body.calendar-fullpage-active .page-container,
 
 .archive-timeline-node {
   position: absolute;
-  left: -28px;
+  left: -16px;
   top: 14px;
   width: 24px;
   height: 24px;
+  transform: translateX(-50%);
   border-radius: 50%;
+  box-sizing: border-box;
   background: var(--card-bg);
   border: 2px solid var(--border-color);
   display: flex;
