@@ -21,6 +21,8 @@ import {
   Heart,
   Search,
   Filter,
+  LayoutGrid,
+  Maximize2,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -68,6 +70,7 @@ export function HabitsPage() {
   const todayDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const [calendarMonths, setCalendarMonths] = useState({});
+  const [calendarDensity, setCalendarDensity] = useState('compact'); // 'compact' | 'comfortable'
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -323,7 +326,15 @@ export function HabitsPage() {
         <div
           key={dateStr}
           onClick={() => handleToggleDate(habit.id, dateStr)}
-          className={`habit-cal-day-cell ${isToday ? 'is-today' : ''}`}
+          className={`habit-cal-day-cell ${isToday ? 'is-today' : ''} ${isCompleted ? 'is-completed' : ''}`}
+          style={
+            isCompleted
+              ? {
+                  borderColor: habit.color || '#10B981',
+                  backgroundColor: `${habit.color || '#10B981'}20`,
+                }
+              : {}
+          }
           title={
             isCompleted
               ? `Completed on ${dateStr} (Click to toggle)`
@@ -336,7 +347,7 @@ export function HabitsPage() {
               className="habit-cal-mark"
               style={{ backgroundColor: habit.color || '#10B981' }}
             >
-              ✓
+              <Check size={11} strokeWidth={3.8} />
             </div>
           ) : (
             <div className="habit-cal-unmarked-dot" />
@@ -351,11 +362,11 @@ export function HabitsPage() {
     });
 
     return (
-      <div>
+      <div className={`habit-calendar-section ${calendarDensity}`}>
         {/* Month Navigation */}
         <div className="habit-cal-nav">
           <div className="habit-cal-month-title">
-            <Calendar size={16} color="var(--primary-color)" />
+            <Calendar size={15} color="var(--primary-color)" />
             <span>{monthLabel}</span>
           </div>
 
@@ -366,7 +377,7 @@ export function HabitsPage() {
               className="habit-cal-nav-btn"
               title="Previous Month"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
             </button>
 
             {(year !== currentYear || month !== currentMonth) && (
@@ -385,22 +396,25 @@ export function HabitsPage() {
               className="habit-cal-nav-btn"
               title="Next Month"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </button>
           </div>
         </div>
 
-        {/* Days of Week Header */}
-        <div className="habit-calendar-grid" style={{ marginBottom: '6px' }}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-            <div key={d} className="habit-cal-weekday-header">
-              {d}
-            </div>
-          ))}
-        </div>
+        {/* Constrained Compact Calendar Wrap */}
+        <div className="habit-calendar-wrap">
+          {/* Days of Week Header */}
+          <div className="habit-calendar-grid habit-calendar-header-grid">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <div key={d} className="habit-cal-weekday-header">
+                {d}
+              </div>
+            ))}
+          </div>
 
-        {/* Calendar Grid Cells */}
-        <div className="habit-calendar-grid">{cells}</div>
+          {/* Calendar Grid Cells */}
+          <div className="habit-calendar-grid habit-calendar-body-grid">{cells}</div>
+        </div>
       </div>
     );
   };
@@ -594,20 +608,44 @@ export function HabitsPage() {
           ))}
         </div>
 
-        <div style={{ position: 'relative', width: '220px' }}>
-          <Search
-            size={14}
-            color="var(--text-muted)"
-            style={{ position: 'absolute', left: '10px', top: '10px' }}
-          />
-          <input
-            type="text"
-            placeholder="Search habits..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input"
-            style={{ paddingLeft: '32px', fontSize: '0.82rem' }}
-          />
+        <div className="flex items-center gap-2.5">
+          {/* Calendar View Density Mode Toggle */}
+          <div className="habit-density-toggle">
+            <button
+              type="button"
+              onClick={() => setCalendarDensity('compact')}
+              className={`habit-density-btn ${calendarDensity === 'compact' ? 'active' : ''}`}
+              title="Compact Calendar Mode (Sleek, dense monthly grid)"
+            >
+              <LayoutGrid size={13} />
+              <span>Compact</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCalendarDensity('comfortable')}
+              className={`habit-density-btn ${calendarDensity === 'comfortable' ? 'active' : ''}`}
+              title="Comfortable Calendar Mode"
+            >
+              <Maximize2 size={13} />
+              <span>Comfortable</span>
+            </button>
+          </div>
+
+          <div style={{ position: 'relative', width: '200px' }}>
+            <Search
+              size={14}
+              color="var(--text-muted)"
+              style={{ position: 'absolute', left: '10px', top: '10px' }}
+            />
+            <input
+              type="text"
+              placeholder="Search habits..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input"
+              style={{ paddingLeft: '32px', fontSize: '0.82rem' }}
+            />
+          </div>
         </div>
       </div>
 
