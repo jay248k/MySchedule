@@ -545,95 +545,115 @@ body.light-theme .thought-mark-yellow {
   gap: 6px;
 }
 
-.thought-format-btn {
+/* Toolbar */
+.thought-format-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--card-bg, #10192D);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.thought-format-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Color Dot Buttons (Only color dots, no color name text) */
+.thought-dot-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 700;
+  justify-content: center;
+  padding: 0;
+  border: 1.5px solid transparent;
+  background: var(--page-bg);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
   user-select: none;
 }
 
-.thought-format-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
+.thought-dot-btn:hover {
+  transform: scale(1.18);
 }
 
-/* Swatches for Red, Green, Yellow */
-.thought-swatch {
-  width: 9px;
-  height: 9px;
+.thought-dot-btn:active {
+  transform: scale(0.92);
+}
+
+.thought-dot {
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
+  display: block;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.thought-dot-red {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+.thought-dot-red:hover {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+.thought-dot-red:hover .swatch-red {
+  box-shadow: 0 0 10px #EF4444;
+}
+
+.thought-dot-green {
+  border-color: rgba(16, 185, 129, 0.45);
+}
+.thought-dot-green:hover {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.2);
+}
+.thought-dot-green:hover .swatch-green {
+  box-shadow: 0 0 10px #10B981;
+}
+
+.thought-dot-yellow {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+.thought-dot-yellow:hover {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.2);
+}
+.thought-dot-yellow:hover .swatch-yellow {
+  box-shadow: 0 0 10px #F59E0B;
+}
+
+.thought-dot-default {
+  border-color: var(--border-color);
+}
+.thought-dot-default:hover {
+  border-color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .swatch-red {
   background: #EF4444;
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
 }
-
 .swatch-green {
   background: #10B981;
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
 }
-
 .swatch-yellow {
   background: #F59E0B;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
 }
-
 .swatch-default {
   background: var(--text-muted);
-  opacity: 0.75;
-}
-
-.thought-format-btn-red {
-  color: #EF4444;
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.08);
-}
-.thought-format-btn-red:hover {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: #EF4444;
-  color: #EF4444;
-}
-
-.thought-format-btn-green {
-  color: #10B981;
-  border-color: rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.08);
-}
-.thought-format-btn-green:hover {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: #10B981;
-  color: #10B981;
-}
-
-.thought-format-btn-yellow {
-  color: #F59E0B;
-  border-color: rgba(245, 158, 11, 0.35);
-  background: rgba(245, 158, 11, 0.08);
-}
-.thought-format-btn-yellow:hover {
-  background: rgba(245, 158, 11, 0.18);
-  border-color: #F59E0B;
-  color: #F59E0B;
-}
-
-.thought-format-btn-reset {
-  color: var(--text-secondary);
-}
-.thought-format-btn-reset:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  opacity: 0.8;
 }
 
 .thought-toolbar-divider {
@@ -643,18 +663,37 @@ body.light-theme .thought-mark-yellow {
   margin: 0 2px;
 }
 
-.thought-format-btn-underline {
-  color: #38BDF8;
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(56, 189, 248, 0.08);
+/* Format action icon buttons (Underline, Bold, Italic) */
+.thought-format-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  padding: 0;
 }
+
+.thought-format-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: var(--primary-color);
+}
+
 .thought-format-btn-underline:hover {
   background: rgba(56, 189, 248, 0.18);
   color: #38BDF8;
+  border-color: #38BDF8;
 }
 
 .thought-format-hint {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
@@ -775,9 +814,11 @@ body.light-theme .thought-mark-yellow {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.thought-rich-editor:empty::before {
+.thought-rich-editor:empty::before,
+.thought-rich-editor[data-empty='true']::before {
   content: attr(data-placeholder);
   color: var(--text-muted);
+  opacity: 0.7;
   pointer-events: none;
   display: block;
 }

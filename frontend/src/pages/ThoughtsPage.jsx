@@ -96,21 +96,41 @@ export function ThoughtsPage() {
   const [editCharCount, setEditCharCount] = useState(0);
   const editEditorRef = useRef(null);
 
-  const setEditEditorRef = (node) => {
-    editEditorRef.current = node;
-    if (node && editingThought) {
-      node.innerHTML = normalizeThoughtHtml(editingThought.text || '');
-      setEditCharCount(node.innerText.replace(/\n$/, '').length);
-    }
-  };
-
-  const setAddEditorRef = (node) => {
-    addEditorRef.current = node;
-    if (node) {
-      node.innerHTML = '';
+  // Initialize Add Editor when Add Modal opens
+  useEffect(() => {
+    if (isAddModalOpen) {
       setAddCharCount(0);
+      const timer = setTimeout(() => {
+        if (addEditorRef.current) {
+          addEditorRef.current.innerHTML = '';
+          addEditorRef.current.setAttribute('data-empty', 'true');
+          addEditorRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isAddModalOpen]);
+
+  // Initialize Edit Editor when Edit Modal opens
+  useEffect(() => {
+    if (editingThought) {
+      const timer = setTimeout(() => {
+        if (editEditorRef.current) {
+          const html = normalizeThoughtHtml(editingThought.text || '');
+          editEditorRef.current.innerHTML = html;
+          const text = editEditorRef.current.innerText.replace(/\n$/, '');
+          setEditCharCount(text.length);
+          if (!text.trim()) {
+            editEditorRef.current.setAttribute('data-empty', 'true');
+          } else {
+            editEditorRef.current.removeAttribute('data-empty');
+          }
+          editEditorRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [editingThought]);
 
   const fetchThoughts = async () => {
     try {
@@ -212,10 +232,16 @@ export function ThoughtsPage() {
     document.execCommand('styleWithCSS', false, true);
     document.execCommand('foreColor', false, colorHex);
 
+    const text = editor.innerText.replace(/\n$/, '');
     if (isEdit) {
-      setEditCharCount(editor.innerText.replace(/\n$/, '').length);
+      setEditCharCount(text.length);
     } else {
-      setAddCharCount(editor.innerText.replace(/\n$/, '').length);
+      setAddCharCount(text.length);
+    }
+    if (!text.trim()) {
+      editor.setAttribute('data-empty', 'true');
+    } else {
+      editor.removeAttribute('data-empty');
     }
   };
 
@@ -231,10 +257,16 @@ export function ThoughtsPage() {
     document.execCommand('foreColor', false, 'inherit');
     document.execCommand('removeFormat', false, null);
 
+    const text = editor.innerText.replace(/\n$/, '');
     if (isEdit) {
-      setEditCharCount(editor.innerText.replace(/\n$/, '').length);
+      setEditCharCount(text.length);
     } else {
-      setAddCharCount(editor.innerText.replace(/\n$/, '').length);
+      setAddCharCount(text.length);
+    }
+    if (!text.trim()) {
+      editor.setAttribute('data-empty', 'true');
+    } else {
+      editor.removeAttribute('data-empty');
     }
   };
 
@@ -370,52 +402,52 @@ export function ThoughtsPage() {
   const renderFormattingToolbar = (isEdit = false) => (
     <div className="thought-format-toolbar">
       <div className="thought-format-actions">
-        {/* Red Font Color */}
+        {/* Red Font Color Dot */}
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => applyTextColor('#EF4444', isEdit)}
-          className="thought-format-btn thought-format-btn-red"
-          title="Change font color of selected word to Red"
+          className="thought-dot-btn thought-dot-red"
+          title="Red"
+          aria-label="Red font color"
         >
-          <span className="thought-swatch swatch-red" />
-          <span>Red</span>
+          <span className="thought-dot swatch-red" />
         </button>
 
-        {/* Green Font Color */}
+        {/* Green Font Color Dot */}
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => applyTextColor('#10B981', isEdit)}
-          className="thought-format-btn thought-format-btn-green"
-          title="Change font color of selected word to Green"
+          className="thought-dot-btn thought-dot-green"
+          title="Green"
+          aria-label="Green font color"
         >
-          <span className="thought-swatch swatch-green" />
-          <span>Green</span>
+          <span className="thought-dot swatch-green" />
         </button>
 
-        {/* Yellow Font Color */}
+        {/* Yellow Font Color Dot */}
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => applyTextColor('#F59E0B', isEdit)}
-          className="thought-format-btn thought-format-btn-yellow"
-          title="Change font color of selected word to Yellow"
+          className="thought-dot-btn thought-dot-yellow"
+          title="Yellow"
+          aria-label="Yellow font color"
         >
-          <span className="thought-swatch swatch-yellow" />
-          <span>Yellow</span>
+          <span className="thought-dot swatch-yellow" />
         </button>
 
-        {/* Default Color */}
+        {/* Default Color Dot */}
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => clearTextColor(isEdit)}
-          className="thought-format-btn thought-format-btn-reset"
-          title="Reset to default plain text color"
+          className="thought-dot-btn thought-dot-default"
+          title="Default color"
+          aria-label="Reset to default text color"
         >
-          <span className="thought-swatch swatch-default" />
-          <span>Default</span>
+          <span className="thought-dot swatch-default" />
         </button>
 
         <span className="thought-toolbar-divider" />
@@ -427,9 +459,9 @@ export function ThoughtsPage() {
           onClick={() => applyFormat('underline', isEdit)}
           className="thought-format-btn thought-format-btn-underline"
           title="Underline text"
+          aria-label="Underline"
         >
-          <Underline size={13} />
-          <span>Underline</span>
+          <Underline size={14} />
         </button>
 
         {/* Bold */}
@@ -439,9 +471,9 @@ export function ThoughtsPage() {
           onClick={() => applyFormat('bold', isEdit)}
           className="thought-format-btn"
           title="Bold text"
+          aria-label="Bold"
         >
-          <Bold size={13} />
-          <span>Bold</span>
+          <Bold size={14} />
         </button>
 
         {/* Italic */}
@@ -451,14 +483,14 @@ export function ThoughtsPage() {
           onClick={() => applyFormat('italic', isEdit)}
           className="thought-format-btn"
           title="Italic text"
+          aria-label="Italic"
         >
-          <Italic size={13} />
-          <span>Italic</span>
+          <Italic size={14} />
         </button>
       </div>
 
       <div className="thought-format-hint">
-        Select word to change font color
+        Select word to mark color
       </div>
     </div>
   );
@@ -749,13 +781,22 @@ export function ThoughtsPage() {
                 {renderFormattingToolbar(false)}
 
                 <div
-                  ref={setAddEditorRef}
+                  ref={addEditorRef}
                   contentEditable
+                  suppressContentEditableWarning
                   className="thought-rich-editor"
-                  data-placeholder="Type thought text here... Select any word and click Red, Green, or Yellow to color it."
+                  data-placeholder="Enter thoughts..."
+                  data-empty="true"
+                  onClick={() => addEditorRef.current?.focus()}
                   onInput={() => {
                     if (addEditorRef.current) {
-                      setAddCharCount(addEditorRef.current.innerText.replace(/\n$/, '').length);
+                      const text = addEditorRef.current.innerText.replace(/\n$/, '');
+                      setAddCharCount(text.length);
+                      if (!text.trim()) {
+                        addEditorRef.current.setAttribute('data-empty', 'true');
+                      } else {
+                        addEditorRef.current.removeAttribute('data-empty');
+                      }
                     }
                   }}
                   onPaste={handlePaste}
@@ -845,13 +886,21 @@ export function ThoughtsPage() {
                 {renderFormattingToolbar(true)}
 
                 <div
-                  ref={setEditEditorRef}
+                  ref={editEditorRef}
                   contentEditable
+                  suppressContentEditableWarning
                   className="thought-rich-editor"
-                  data-placeholder="Type thought text here... Select any word and click Red, Green, or Yellow to color it."
+                  data-placeholder="Enter thoughts..."
+                  onClick={() => editEditorRef.current?.focus()}
                   onInput={() => {
                     if (editEditorRef.current) {
-                      setEditCharCount(editEditorRef.current.innerText.replace(/\n$/, '').length);
+                      const text = editEditorRef.current.innerText.replace(/\n$/, '');
+                      setEditCharCount(text.length);
+                      if (!text.trim()) {
+                        editEditorRef.current.setAttribute('data-empty', 'true');
+                      } else {
+                        editEditorRef.current.removeAttribute('data-empty');
+                      }
                     }
                   }}
                   onPaste={handlePaste}
