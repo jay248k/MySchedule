@@ -1,182 +1,234 @@
 /* ==========================================================================
-   HABITS & DAILY DISCIPLINES STYLES (FULL CALENDAR & STREAKS)
+   HABITS & DAILY DISCIPLINES STYLES (COMPACT MISSION-CONTROL UI)
    ========================================================================== */
 
 .habits-page-container {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 20px 16px 40px;
+  padding: 12px 16px 32px;
 }
 
-/* Header Banner */
-.habits-banner-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: 14px;
-  padding: 18px 24px;
-  margin-bottom: 20px;
+/* 1. Ultra-Compact Header Deck */
+.habits-header-deck {
+  padding: 12px 18px;
+  border-radius: 12px;
+  margin-bottom: 10px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.habits-banner-tag {
-  background: rgba(16, 185, 129, 0.18);
+.habits-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.habits-header-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #10B981;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.habits-banner-title {
-  margin: 6px 0 0;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.habits-banner-sub {
-  margin: 4px 0 0;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.habits-btn-add {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 18px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  border-radius: 10px;
-  background: #10B981;
-  color: #FFFFFF;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-  transition: all 0.18s ease;
-}
-
-.habits-btn-add:hover {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
-}
-
-/* Overview Summary Stats */
-.habits-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
-.habits-stat-card {
-  padding: 16px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.habits-stat-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.habits-stat-val {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  line-height: 1.1;
-}
-
-.habits-stat-lbl {
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-top: 3px;
-}
-
-/* Today's Quick Check-In Bar */
-.habits-quick-card {
-  padding: 16px 20px;
-  border-radius: 14px;
-  margin-bottom: 22px;
-}
-
-.habits-quick-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.habits-quick-title {
-  font-size: 0.96rem;
-  font-weight: 800;
-  color: var(--text-primary);
+.habits-header-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.habits-quick-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+.habits-header-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
-.habits-quick-item {
+.habits-header-pill {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10B981;
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.habits-header-sub {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.habits-btn-add-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  border-radius: 8px;
+  background: #10B981;
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.habits-btn-add-compact:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(16, 185, 129, 0.4);
+}
+
+/* 2. Overview Compact Stats Strip */
+.habits-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .habits-stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.habits-stat-strip-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 4px 6px;
+}
+
+.habits-stat-mini-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.habits-stat-val-inline {
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.habits-stat-lbl-inline {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* 3. Compact Today Check-In Bar */
+.habits-quick-compact-bar {
+  padding: 8px 14px;
   border-radius: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.habits-quick-inline-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.habits-quick-row-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+  padding: 2px 0;
+}
+
+.habits-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--page-bg);
-  min-width: 200px;
-  flex-shrink: 0;
+  cursor: pointer;
   transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
 }
 
-.habits-quick-item.is-done {
+.habits-quick-chip:hover {
   border-color: rgba(16, 185, 129, 0.4);
-  background: rgba(16, 185, 129, 0.08);
+  transform: translateY(-1px);
 }
 
-.habits-quick-check-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+.habits-quick-chip.is-done {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.habits-quick-chip-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.habits-quick-chip-time {
+  font-size: 0.70rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+
+.habits-quick-chip-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
   border: 1.5px solid var(--border-color);
   background: var(--card-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
-.habits-quick-check-btn.checked {
+.habits-quick-chip-box.checked {
   background: #10B981;
   border-color: #10B981;
   color: #FFFFFF;

@@ -426,101 +426,100 @@ export function HabitsPage() {
 
   return (
     <div className="habits-page-container">
-      {/* 1. Header Banner */}
-      <div className="habits-banner-card card">
-        <div>
-          <span className="habits-banner-tag">
-            <Flame size={13} /> Habit Mastery Engine
-          </span>
-          <h1 className="habits-banner-title">
-            <Sparkles size={24} color="#10B981" /> Habits & Daily Disciplines
-          </h1>
-          <p className="habits-banner-sub">
-            Build unshakeable momentum with individual calendars, daily streak tracking, and instant completion check-ins.
-          </p>
+      {/* 1. Ultra-Compact Header Deck */}
+      <div className="habits-header-deck card">
+        <div className="habits-header-left">
+          <div className="habits-header-badge">
+            <Flame size={16} />
+          </div>
+          <div>
+            <div className="habits-header-title-row">
+              <h1 className="habits-header-title">Habits & Daily Disciplines</h1>
+              <span className="habits-header-pill">Engine</span>
+            </div>
+            <p className="habits-header-sub">
+              Individual month calendars, daily streak tracking, and 1-click check-ins
+            </p>
+          </div>
         </div>
 
-        <button onClick={handleOpenAdd} className="habits-btn-add">
-          <Plus size={16} /> New Habit
+        <button onClick={handleOpenAdd} className="habits-btn-add-compact">
+          <Plus size={14} /> <span>New Habit</span>
         </button>
       </div>
 
-      {/* 2. Overview Performance Stats */}
-      <div className="habits-stats-grid">
-        <div className="habits-stat-card card">
+      {/* 2. Overview Compact Stats Strip */}
+      <div className="habits-stats-strip card">
+        <div className="habits-stat-strip-item">
           <div
-            className="habits-stat-icon-wrap"
+            className="habits-stat-mini-icon"
             style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10B981' }}
           >
-            <Flame size={22} />
+            <Flame size={14} />
           </div>
           <div>
-            <div className="habits-stat-val" style={{ color: '#10B981' }}>
+            <div className="habits-stat-val-inline" style={{ color: '#10B981' }}>
               {overallStats.maxCurrentStreak} {overallStats.maxCurrentStreak === 1 ? 'Day' : 'Days'}
             </div>
-            <div className="habits-stat-lbl">Longest Active Streak</div>
+            <div className="habits-stat-lbl-inline">Active Streak</div>
           </div>
         </div>
 
-        <div className="habits-stat-card card">
+        <div className="habits-stat-strip-item">
           <div
-            className="habits-stat-icon-wrap"
+            className="habits-stat-mini-icon"
             style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B' }}
           >
-            <Trophy size={22} />
+            <Trophy size={14} />
           </div>
           <div>
-            <div className="habits-stat-val" style={{ color: '#F59E0B' }}>
+            <div className="habits-stat-val-inline" style={{ color: '#F59E0B' }}>
               {overallStats.maxBestStreak} {overallStats.maxBestStreak === 1 ? 'Day' : 'Days'}
             </div>
-            <div className="habits-stat-lbl">All-Time Best Streak</div>
+            <div className="habits-stat-lbl-inline">Best Streak</div>
           </div>
         </div>
 
-        <div className="habits-stat-card card">
+        <div className="habits-stat-strip-item">
           <div
-            className="habits-stat-icon-wrap"
+            className="habits-stat-mini-icon"
             style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6' }}
           >
-            <Target size={22} />
+            <Target size={14} />
           </div>
           <div>
-            <div className="habits-stat-val" style={{ color: '#3B82F6' }}>
+            <div className="habits-stat-val-inline" style={{ color: '#3B82F6' }}>
               {overallStats.monthlyCompliance}%
             </div>
-            <div className="habits-stat-lbl">This Month Compliance</div>
+            <div className="habits-stat-lbl-inline">Month Rate</div>
           </div>
         </div>
 
-        <div className="habits-stat-card card">
+        <div className="habits-stat-strip-item">
           <div
-            className="habits-stat-icon-wrap"
+            className="habits-stat-mini-icon"
             style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6' }}
           >
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={14} />
           </div>
           <div>
-            <div className="habits-stat-val">
+            <div className="habits-stat-val-inline" style={{ color: '#8B5CF6' }}>
               {overallStats.totalCheckinsThisMonth}
             </div>
-            <div className="habits-stat-lbl">Total Check-Ins This Month</div>
+            <div className="habits-stat-lbl-inline">Check-Ins</div>
           </div>
         </div>
       </div>
 
-      {/* 3. Today's Quick Check-In Bar */}
+      {/* 3. Compact Today Check-In Bar */}
       {habits.length > 0 && (
-        <div className="habits-quick-card card">
-          <div className="habits-quick-heading">
-            <div className="habits-quick-title">
-              <CheckCircle2 size={18} color="#10B981" /> Today's Check-In ({todayDateStr})
-            </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              1-Click Mark Today Done
-            </span>
+        <div className="habits-quick-compact-bar card">
+          <div className="habits-quick-inline-label">
+            <CheckCircle2 size={14} color="#10B981" />
+            <span>Today's Check-In:</span>
           </div>
 
-          <div className="habits-quick-row">
+          <div className="habits-quick-row-compact">
             {habits.map((habit) => {
               const isDone = (habit.logs || []).some(
                 (l) => l.date === todayDateStr && l.completed
@@ -530,55 +529,28 @@ export function HabitsPage() {
               return (
                 <div
                   key={habit.id}
-                  className={`habits-quick-item ${isDone ? 'is-done' : ''}`}
+                  className={`habits-quick-chip ${isDone ? 'is-done' : ''}`}
+                  onClick={() => handleToggleDate(habit.id, todayDateStr)}
+                  title={isDone ? 'Completed today! Click to uncheck' : 'Click to complete for today'}
                 >
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <div
-                      style={{
-                        color: habit.color || '#10B981',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <IconComp size={18} />
-                    </div>
-                    <div className="overflow-hidden">
-                      <div
-                        style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          color: 'var(--text-primary)',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {habit.name}
-                      </div>
-                      {habit.targetTime && (
-                        <div
-                          style={{
-                            fontSize: '0.72rem',
-                            color: 'var(--text-muted)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                          }}
-                        >
-                          <Clock size={11} /> {habit.targetTime}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleToggleDate(habit.id, todayDateStr)}
-                    className={`habits-quick-check-btn ${isDone ? 'checked' : ''}`}
-                    title={isDone ? 'Completed today! Click to uncheck' : 'Click to complete for today'}
+                  <div
+                    style={{
+                      color: habit.color || '#10B981',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
                   >
-                    {isDone ? <Check size={16} strokeWidth={3} /> : null}
-                  </button>
+                    <IconComp size={14} />
+                  </div>
+                  <span className="habits-quick-chip-title">{habit.name}</span>
+                  {habit.targetTime && (
+                    <span className="habits-quick-chip-time">
+                      <Clock size={10} /> {habit.targetTime}
+                    </span>
+                  )}
+                  <div className={`habits-quick-chip-box ${isDone ? 'checked' : ''}`}>
+                    {isDone ? <Check size={11} strokeWidth={3.5} /> : null}
+                  </div>
                 </div>
               );
             })}
