@@ -47,7 +47,7 @@ export function KnowledgePage() {
   const [activeItem, setActiveItem] = useState(null); // Previewing item (lesson or table)
   const [isTableFullPage, setIsTableFullPage] = useState(true); // Default to fullpage for tables
   const [tableSearchQuery, setTableSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('pc-grid'); // 'pc-grid' | 'cards' | 'chain'
+  const [viewMode, setViewMode] = useState('chain'); // Default to sequential lesson chain view ('chain' | 'pc-grid' | 'cards')
   const [sortBy, setSortBy] = useState(() => {
     return localStorage.getItem('knowledge_sort_by') || 'created-asc';
   });
@@ -258,10 +258,14 @@ export function KnowledgePage() {
     });
   }, [items, currentFolder, searchQuery, sortBy]);
 
-  // Lessons inside current folder available for chaining
+  // Lessons available for chaining: in current folder, or all lessons if at root
   const lessonsInFolder = useMemo(() => {
-    const parentId = currentFolder ? currentFolder.id : null;
-    return items.filter((it) => (it.parentId || null) === parentId && it.type === 'lesson');
+    if (currentFolder) {
+      return items.filter((it) => it.parentId === currentFolder.id && it.type === 'lesson');
+    }
+    const rootLessons = items.filter((it) => !it.parentId && it.type === 'lesson');
+    const allLessons = items.filter((it) => it.type === 'lesson');
+    return rootLessons.length > 0 ? rootLessons : allLessons;
   }, [items, currentFolder]);
 
   // Chain Sequence Builder
@@ -1544,63 +1548,175 @@ export function KnowledgePage() {
             </div>
           ) : viewMode === 'chain' ? (
             /* ========================================================================= */
-            /* VIEW 2: LESSON CHAIN VIEW (Props ➔ State ➔ Hooks Flow)                    */
+            /* VIEW 2: LESSON CHAIN VIEW (Sequential Curriculum Flow: A ➔ B ➔ C)         */
             /* ========================================================================= */
             <div className="knowledge-chain-container">
-              <div className="text-xs text-secondary font-semibold">
-                🔗 Sequential Chain View: lessons linked together in ordered curriculum flow.
-              </div>
-
-              {chainSequence.map((chain, chainIdx) => (
-                <div key={chainIdx} className="knowledge-chain-card">
-                  <div className="knowledge-chain-heading">
-                    Chain Sequence #{chainIdx + 1} ({chain.length} linked {chain.length === 1 ? 'lesson' : 'lessons'})
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <div>
+                  <div className="text-sm font-bold text-primary flex items-center gap-2">
+                    <GitBranch size={16} color="#10B981" /> Sequential Lesson Chains
                   </div>
-
-                  <div className="knowledge-chain-nodes">
-                    {chain.map((lesson, idx) => (
-                      <React.Fragment key={lesson.id}>
-                        <div
-                          onClick={() => setActiveItem(lesson)}
-                          className={`knowledge-chain-node ${activeItem?.id === lesson.id ? 'is-active' : ''}`}
-                        >
-                          <FileText size={15} color="#3B82F6" />
-                          <span className="text-xs font-bold text-primary">
-                            {lesson.title}
-                          </span>
-                          <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditModal(lesson);
-                              }}
-                              className="btn-icon p-0.5 text-primary opacity-60 hover:opacity-100"
-                              title="Edit Lesson"
-                            >
-                              <Edit2 size={11} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteItem(lesson.id, e)}
-                              className="btn-icon p-0.5 text-red-500 opacity-60 hover:opacity-100"
-                              title="Delete Lesson"
-                            >
-                              <Trash2 size={11} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {idx < chain.length - 1 && (
-                          <div className="flex items-center text-emerald-500">
-                            <ArrowRight size={18} strokeWidth={2.5} />
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
+                  <div className="text-xs text-secondary">
+                    Connect lessons sequentially (e.g. Lesson A ➔ Lesson B ➔ Lesson C) to build ordered curriculums.
                   </div>
                 </div>
-              ))}
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenCreateModal('lesson')}
+                  className="btn btn-primary btn-sm"
+                  style={{ backgroundColor: '#10B981', borderColor: '#10B981' }}
+                >
+                  <Plus size={14} /> New Lesson Chain
+                </button>
+              </div>
+
+              {chainSequence.length === 0 ? (
+                <div
+                  className="card"
+                  style={{ textAlign: 'center', padding: '40px 20px', borderRadius: '14px' }}
+                >
+                  <GitBranch size={42} color="#10B981" style={{ opacity: 0.5, margin: '0 auto 10px' }} />
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>
+                    No lesson chains created yet
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    Create Lesson A, then chain Lesson B and Lesson C sequentially.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCreateModal('lesson')}
+                    className="btn btn-primary btn-sm mx-auto mt-3"
+                    style={{ backgroundColor: '#10B981', borderColor: '#10B981' }}
+                  >
+                    <Plus size={14} /> Create First Lesson
+                  </button>
+                </div>
+              ) : (
+                chainSequence.map((chain, chainIdx) => (
+                  <div key={chainIdx} className="knowledge-chain-card">
+                    <div className="knowledge-chain-heading">
+                      <div className="flex items-center gap-2">
+                        <span className="knowledge-chain-step-badge">
+                          Chain #{chainIdx + 1}
+                        </span>
+                        <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {chain.map((l) => l.title).join(' ➔ ')}
+                        </span>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          ({chain.length} {chain.length === 1 ? 'lesson' : 'lessons'})
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="knowledge-chain-nodes">
+                      {chain.map((lesson, idx) => (
+                        <React.Fragment key={lesson.id}>
+                          <div
+                            onClick={() => setActiveItem(lesson)}
+                            className={`knowledge-chain-node ${activeItem?.id === lesson.id ? 'is-active' : ''}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="knowledge-chain-step-badge">
+                                Step {idx + 1}
+                              </span>
+
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditModal(lesson);
+                                  }}
+                                  className="btn-icon p-1 text-primary opacity-70 hover:opacity-100"
+                                  title="Edit Lesson"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteItem(lesson.id, e)}
+                                  className="btn-icon p-1 text-red-500 opacity-70 hover:opacity-100"
+                                  title="Delete Lesson"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-1">
+                              <FileText size={16} color="#3B82F6" style={{ flexShrink: 0 }} />
+                              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {lesson.title}
+                              </span>
+                            </div>
+
+                            {/* Inline Next Lesson Chainer */}
+                            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                              <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                🔗 Next in chain:
+                              </label>
+                              <select
+                                value={lesson.nextLessonId || ''}
+                                onChange={(e) => handleSetNextLesson(lesson.id, e.target.value)}
+                                className="form-select"
+                                style={{
+                                  fontSize: '0.74rem',
+                                  padding: '4px 8px',
+                                  marginTop: '2px',
+                                  borderColor: lesson.nextLessonId ? '#10B981' : 'var(--border-color)',
+                                }}
+                              >
+                                <option value="">(End of chain)</option>
+                                {lessonsInFolder
+                                  .filter((other) => other.id !== lesson.id)
+                                  .map((other) => (
+                                    <option key={other.id} value={other.id}>
+                                      ➔ {other.title}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Arrow Connector between nodes */}
+                          {idx < chain.length - 1 && (
+                            <div className="knowledge-chain-arrow">
+                              <ArrowRight size={20} strokeWidth={2.8} />
+                              <button
+                                type="button"
+                                onClick={() => handleSetNextLesson(lesson.id, null)}
+                                className="knowledge-chain-unlink-btn"
+                                title="Unlink this step from chain"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          )}
+                        </React.Fragment>
+                      ))}
+
+                      {/* + Add Next Step in Chain Slot */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lastLesson = chain[chain.length - 1];
+                          handleOpenCreateModal('lesson');
+                          if (lastLesson) {
+                            setTimeout(() => {
+                              handleSetNextLesson(lastLesson.id, null);
+                            }, 100);
+                          }
+                        }}
+                        className="knowledge-chain-add-slot"
+                        title="Create or append next lesson to this chain"
+                      >
+                        <Plus size={15} /> Add Next Step
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           ) : (
             /* ========================================================================= */

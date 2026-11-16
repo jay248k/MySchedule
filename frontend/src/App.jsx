@@ -19,6 +19,7 @@ import RequestsPage from './pages/RequestsPage';
 import { Settings } from './pages/Settings';
 import { ThoughtsPage } from './pages/ThoughtsPage';
 import { KnowledgePage } from './pages/KnowledgePage';
+import { HabitsPage } from './pages/HabitsPage';
 import { NotFound } from './pages/NotFound';
 
 import './styles/global.css';
@@ -73,6 +74,7 @@ function AppRoutes() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="categories" element={<Categories />} />
         <Route path="goals" element={<Goals />} />
+        <Route path="habits" element={<HabitsPage />} />
         <Route path="thoughts" element={<ThoughtsPage />} />
         <Route path="knowledge" element={<KnowledgePage />} />
         <Route path="red-flags" element={<RedFlagPage />} />

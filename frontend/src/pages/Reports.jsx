@@ -35,6 +35,7 @@ import {
   Timer,
   Coffee,
   Sliders,
+  Flame,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -62,6 +63,7 @@ import {
 import { ProgressBar } from '../components/common/ProgressRing';
 import { TaskItem } from '../components/tasks/TaskItem';
 import { ExcelReportTable } from '../components/reports/ExcelReportTable';
+import { HabitsReportTab } from '../components/reports/HabitsReportTab';
 import { analyzeRedFlags } from '../utils/redFlagEngine';
 import { getEffectiveStatus } from '../utils/taskUtils';
 import '../styles/pages/reports-archive.css';
@@ -92,6 +94,7 @@ export function Reports() {
   const sortedReportTabs = useMemo(() => {
     const defaultTabs = [
       { key: 'today-report', path: '/reports', label: 'Daily Standup & Work Report', shortLabel: 'Daily Standup', icon: FileText, color: '#38BDF8' },
+      { key: 'habits', path: '/reports/habits', label: 'Habits & Streaks Report', shortLabel: 'Habits', icon: Flame, color: '#10B981' },
       { key: 'pending', path: '/reports/pending', label: 'Pending Tasks Report', shortLabel: 'Pending Tasks', icon: Clock, color: '#F59E0B' },
       { key: 'completed', path: '/reports/completed', label: 'Completed Tasks Report', shortLabel: 'Completed Tasks', icon: CheckCircle2, color: '#10B981' },
       { key: 'missed', path: '/reports/missed', label: 'Missed & Overdue Report', shortLabel: 'Missed & Overdue', icon: AlertTriangle, color: '#EF4444' },
@@ -113,16 +116,16 @@ export function Reports() {
     });
   }, [settings?.reportsOrder]);
 
-  // Active view: sync with route param if present ('pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics')
+  // Active view: sync with route param if present ('pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits')
   const [activeTab, setActiveTab] = useState(() => {
-    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics'].includes(reportType)) {
+    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
       return reportType;
     }
     return 'today-report';
   });
 
   useEffect(() => {
-    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics'].includes(reportType)) {
+    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
       setActiveTab(reportType);
     } else if (!reportType) {
       setActiveTab('today-report');
@@ -1729,6 +1732,13 @@ export function Reports() {
           <span>Resequence Tabs in Settings</span>
         </button>
       </div>
+      {/* ========================================================================= */}
+      {/* VIEW: HABITS & STREAKS COMPREHENSIVE REPORT                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'habits' && (
+        <HabitsReportTab />
+      )}
+
       {/* ========================================================================= */}
       {activeTab === 'pending' && (
         <ExcelReportTable

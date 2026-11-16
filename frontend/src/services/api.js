@@ -187,6 +187,15 @@ export const api = {
   rescheduleRequest: (id, payload) => apiClient.patch(`/requests/${id}/reschedule`, payload),
   cancelRequest: (id, payload) => apiClient.patch(`/requests/${id}/cancel`, payload),
   deleteRequest: (id) => apiClient.delete(`/requests/${id}`),
+
+  // Habits & Streaks
+  getHabits: (params = {}) => apiClient.get('/habits', { params }),
+  getHabit: (id) => apiClient.get(`/habits/${id}`),
+  createHabit: (payload) => apiClient.post('/habits', payload),
+  updateHabit: (id, payload) => apiClient.put(`/habits/${id}`, payload),
+  deleteHabit: (id) => apiClient.delete(`/habits/${id}`),
+  toggleHabitDate: (id, payload) => apiClient.post(`/habits/${id}/toggle`, payload),
+  getHabitsReport: () => apiClient.get('/habits/report'),
 };
 
 export default api;

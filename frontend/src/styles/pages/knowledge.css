@@ -949,3 +949,136 @@
   border-color: var(--primary-color);
 }
 
+/* ==========================================================================
+   SEQUENTIAL LESSON CHAIN VIEW (A -> B -> C Flow)
+   ========================================================================== */
+
+.knowledge-chain-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.knowledge-chain-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.knowledge-chain-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: var(--shadow-md);
+}
+
+.knowledge-chain-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.knowledge-chain-nodes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.knowledge-chain-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--page-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-width: 220px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.knowledge-chain-node:hover {
+  transform: translateY(-2px);
+  border-color: #3B82F6;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.18);
+}
+
+.knowledge-chain-node.is-active {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.knowledge-chain-step-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #3B82F6;
+  background: rgba(59, 130, 246, 0.12);
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+  align-self: flex-start;
+  letter-spacing: 0.04em;
+}
+
+.knowledge-chain-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10B981;
+  position: relative;
+  padding: 0 4px;
+}
+
+.knowledge-chain-unlink-btn {
+  position: absolute;
+  top: -14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #EF4444;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.knowledge-chain-unlink-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.knowledge-chain-add-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.knowledge-chain-add-slot:hover {
+  border-color: #10B981;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.06);
+}
+

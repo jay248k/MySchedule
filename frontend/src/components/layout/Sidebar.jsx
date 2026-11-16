@@ -95,6 +95,7 @@ export function Sidebar() {
       { name: 'Pending Tasks', path: '/reports/pending', icon: Clock, key: 'pending' },
       { name: 'Completed Tasks', path: '/reports/completed', icon: CheckCircle2, key: 'completed' },
       { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle, key: 'missed' },
+      { name: 'Habits', path: '/reports/habits', icon: Flame, key: 'habits' },
       { name: 'Goal Progression', path: '/reports/goals', icon: Target, key: 'goals' },
       { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag, key: 'red-flags' },
       { name: 'Tracker & Gap Logs', path: '/reports/tracker-logs', icon: Timer, key: 'tracker-logs' },
@@ -169,6 +170,7 @@ export function Sidebar() {
     { name: 'Calendar', path: '/calendar', icon: Calendar, iconColor: '#3B82F6' },
     { name: 'Categories', path: '/categories', icon: Tags, iconColor: '#10B981' },
     { name: 'Goals', path: '/goals', icon: Target, iconColor: '#EC4899' },
+    { name: 'Habits', path: '/habits', icon: Flame, iconColor: '#10B981' },
     {
       name: 'Reports',
       path: '/reports',

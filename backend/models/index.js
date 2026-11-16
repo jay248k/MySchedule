@@ -18,6 +18,8 @@ const ScheduleDeviationModel = require('./ScheduleDeviation');
 const WorkRequestModel = require('./WorkRequest');
 const ThoughtModel = require('./Thought');
 const KnowledgeItemModel = require('./KnowledgeItem');
+const HabitModel = require('./Habit');
+const HabitLogModel = require('./HabitLog');
 
 // Initialize models
 const db = {
@@ -37,6 +39,8 @@ const db = {
   WorkRequest: WorkRequestModel(sequelize),
   Thought: ThoughtModel(sequelize),
   KnowledgeItem: KnowledgeItemModel(sequelize),
+  Habit: HabitModel(sequelize),
+  HabitLog: HabitLogModel(sequelize),
 };
 
 // Establish associations
