@@ -40,6 +40,7 @@ import {
   Target,
   Flag,
   Timer,
+  Flame,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COLOR_COMBINATIONS } from '../utils/themeUtils';
@@ -1000,6 +1001,7 @@ export function Settings() {
                       '/calendar',
                       '/categories',
                       '/goals',
+                      '/habits',
                       '/reports',
                       '/archive',
                       '/settings',
@@ -1032,6 +1034,7 @@ export function Settings() {
                     { path: '/calendar', label: 'Calendar', color: '#3B82F6' },
                     { path: '/categories', label: 'Categories', color: '#10B981' },
                     { path: '/goals', label: 'Goals', color: '#EC4899' },
+                    { path: '/habits', label: 'Habits', color: '#10B981' },
                     { path: '/reports', label: 'Reports', color: '#06B6D4' },
                     { path: '/archive', label: 'Reports Archive', color: '#64748B' },
                     { path: '/settings', label: 'Settings', color: '#94A3B8' },
@@ -1043,6 +1046,23 @@ export function Settings() {
                   }
                   if (!Array.isArray(currentOrder) || currentOrder.length === 0) {
                     currentOrder = ALL_ITEMS.map((i) => i.path);
+                  } else {
+                    currentOrder = [...currentOrder];
+                    ALL_ITEMS.forEach((item) => {
+                      if (!currentOrder.includes(item.path)) {
+                        const goalsIdx = currentOrder.indexOf('/goals');
+                        if (goalsIdx !== -1) {
+                          currentOrder.splice(goalsIdx + 1, 0, item.path);
+                        } else {
+                          const settingsIdx = currentOrder.indexOf('/settings');
+                          if (settingsIdx !== -1) {
+                            currentOrder.splice(settingsIdx, 0, item.path);
+                          } else {
+                            currentOrder.push(item.path);
+                          }
+                        }
+                      }
+                    });
                   }
 
                   let hiddenPaths = settings?.hiddenNavigationItems;
@@ -1301,6 +1321,7 @@ export function Settings() {
                         '/reports/pending',
                         '/reports/completed',
                         '/reports/missed',
+                        '/reports/habits',
                         '/reports/goals',
                         '/reports/red-flags',
                         '/reports/tracker-logs',
@@ -1325,6 +1346,7 @@ export function Settings() {
                     { path: '/reports/pending', key: 'pending', label: 'Pending Tasks Report', color: '#F59E0B', icon: Clock },
                     { path: '/reports/completed', key: 'completed', label: 'Completed Tasks Report', color: '#10B981', icon: CheckCircle2 },
                     { path: '/reports/missed', key: 'missed', label: 'Missed & Overdue Report', color: '#EF4444', icon: AlertTriangle },
+                    { path: '/reports/habits', key: 'habits', label: 'Habits Mastery Report', color: '#10B981', icon: Flame },
                     { path: '/reports/goals', key: 'goals', label: 'Goal Progression & Milestones', color: '#A855F7', icon: Target },
                     { path: '/reports/red-flags', key: 'red-flags', label: 'Red Flag Diagnostic Report', color: '#DC2626', icon: Flag },
                     { path: '/reports/tracker-logs', key: 'tracker-logs', label: 'Tracker & Gap Logs', color: '#06B6D4', icon: Timer },
@@ -1336,6 +1358,18 @@ export function Settings() {
                   }
                   if (!Array.isArray(currentOrder) || currentOrder.length === 0) {
                     currentOrder = ALL_REPORTS.map((i) => i.path);
+                  } else {
+                    currentOrder = [...currentOrder];
+                    ALL_REPORTS.forEach((item) => {
+                      if (!currentOrder.includes(item.path) && !currentOrder.includes(item.key)) {
+                        const missedIdx = currentOrder.findIndex((p) => p === '/reports/missed' || p === 'missed');
+                        if (missedIdx !== -1) {
+                          currentOrder.splice(missedIdx + 1, 0, item.path);
+                        } else {
+                          currentOrder.push(item.path);
+                        }
+                      }
+                    });
                   }
 
                   // Order items according to currentOrder

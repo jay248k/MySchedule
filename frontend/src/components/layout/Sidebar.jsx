@@ -108,9 +108,20 @@ export function Sidebar() {
     if (!Array.isArray(order) || order.length === 0) {
       return defaultSubItems;
     }
+    const effectiveOrder = [...order];
+    defaultSubItems.forEach((item) => {
+      if (!effectiveOrder.includes(item.path) && !effectiveOrder.includes(item.key)) {
+        const missedIdx = effectiveOrder.findIndex((p) => p === '/reports/missed' || p === 'missed');
+        if (missedIdx !== -1) {
+          effectiveOrder.splice(missedIdx + 1, 0, item.path);
+        } else {
+          effectiveOrder.push(item.path);
+        }
+      }
+    });
     return [...defaultSubItems].sort((a, b) => {
-      const idxA = order.indexOf(a.path) !== -1 ? order.indexOf(a.path) : (order.indexOf(a.key) !== -1 ? order.indexOf(a.key) : 999);
-      const idxB = order.indexOf(b.path) !== -1 ? order.indexOf(b.path) : (order.indexOf(b.key) !== -1 ? order.indexOf(b.key) : 999);
+      const idxA = effectiveOrder.indexOf(a.path) !== -1 ? effectiveOrder.indexOf(a.path) : (effectiveOrder.indexOf(a.key) !== -1 ? effectiveOrder.indexOf(a.key) : 999);
+      const idxB = effectiveOrder.indexOf(b.path) !== -1 ? effectiveOrder.indexOf(b.path) : (effectiveOrder.indexOf(b.key) !== -1 ? effectiveOrder.indexOf(b.key) : 999);
       return idxA - idxB;
     });
   }, [settings?.reportsOrder]);
@@ -205,8 +216,24 @@ export function Sidebar() {
     if (!Array.isArray(order) || order.length === 0) {
       return filtered;
     }
+    const effectiveOrder = [...order];
+    allNavItems.forEach((item) => {
+      if (!effectiveOrder.includes(item.path)) {
+        const goalsIdx = effectiveOrder.indexOf('/goals');
+        if (goalsIdx !== -1) {
+          effectiveOrder.splice(goalsIdx + 1, 0, item.path);
+        } else {
+          const settingsIdx = effectiveOrder.indexOf('/settings');
+          if (settingsIdx !== -1) {
+            effectiveOrder.splice(settingsIdx, 0, item.path);
+          } else {
+            effectiveOrder.push(item.path);
+          }
+        }
+      }
+    });
     const orderMap = new Map();
-    order.forEach((p, idx) => orderMap.set(p, idx));
+    effectiveOrder.forEach((p, idx) => orderMap.set(p, idx));
     return [...filtered].sort((a, b) => {
       const idxA = orderMap.has(a.path) ? orderMap.get(a.path) : 999;
       const idxB = orderMap.has(b.path) ? orderMap.get(b.path) : 999;
