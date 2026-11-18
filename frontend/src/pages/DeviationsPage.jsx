@@ -662,39 +662,6 @@ export function DeviationsPage() {
                 </div>
               </div>
 
-              {/* Reason Category Selector */}
-              <div className="deviation-form-section">
-                <label className="deviation-label-with-icon">
-                  <Flame size={14} color="#EF4444" />
-                  <span>Reason Category / Trigger</span>
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
-                  {REASON_CATEGORIES.map((cat) => {
-                    const isSelected = form.reasonCategory === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, reasonCategory: cat.id }))}
-                        style={{
-                          background: isSelected ? `${cat.color}25` : 'rgba(255, 255, 255, 0.05)',
-                          border: `1.5px solid ${isSelected ? cat.color : 'rgba(255, 255, 255, 0.12)'}`,
-                          color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                          borderRadius: '8px',
-                          padding: '6px 12px',
-                          fontSize: '0.8rem',
-                          fontWeight: isSelected ? '700' : '500',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {cat.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Comparative Section: Planned vs Actual Mistake */}
               <div className="deviation-compare-grid">
                 {/* 1. Planned Task Card */}
