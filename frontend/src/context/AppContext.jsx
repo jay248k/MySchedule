@@ -631,8 +631,8 @@ export function AppProvider({ children }) {
       }
       showToast({
         type: isDone ? 'info' : 'success',
-        title: isDone ? 'Task Incomplete' : 'Task Completed',
-        message: `"${target?.title || 'Task'}" is now marked as ${newStatus}.`,
+        title: isDone ? 'Task Incomplete' : 'Task Done',
+        message: `"${target?.title || 'Task'}"`,
       });
     },
     [tasks, dispatch, showToast]

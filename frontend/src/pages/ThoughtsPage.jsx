@@ -79,7 +79,7 @@ export function ThoughtsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [viewMode, setViewMode] = useState('full'); // 'full' or 'grid'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' (compact) or 'full'
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -544,25 +544,25 @@ export function ThoughtsPage() {
 
         {/* Search & View Mode Controls */}
         <div className="flex items-center gap-3 flex-wrap">
-          {/* View Mode Toggle: Full Width (List) vs Grid */}
+          {/* View Mode Toggle: Grid (Compact) vs Full Width */}
           <div className="thoughts-view-toggle">
-            <button
-              type="button"
-              onClick={() => setViewMode('full')}
-              className={`thoughts-view-btn ${viewMode === 'full' ? 'active' : ''}`}
-              title="Full-Width Card Layout"
-            >
-              <Rows3 size={15} />
-              <span>Full Width</span>
-            </button>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
               className={`thoughts-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              title="Multi-Column Grid Layout"
+              title="Compact Multi-Column Grid Layout"
             >
-              <LayoutGrid size={15} />
-              <span>Grid</span>
+              <LayoutGrid size={14} />
+              <span>Compact Grid</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('full')}
+              className={`thoughts-view-btn ${viewMode === 'full' ? 'active' : ''}`}
+              title="Full-Width List Layout"
+            >
+              <Rows3 size={14} />
+              <span>List</span>
             </button>
           </div>
 

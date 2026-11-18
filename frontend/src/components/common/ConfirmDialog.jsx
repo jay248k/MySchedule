@@ -70,31 +70,32 @@ export function ToastContainer() {
   if (!toasts.length) return null;
 
   const icons = {
-    success: <CheckCircle2 size={20} color="var(--success)" />,
-    danger: <XCircle size={20} color="var(--danger)" />,
-    error: <XCircle size={20} color="var(--danger)" />,
-    warning: <AlertTriangle size={20} color="var(--warning)" />,
-    info: <Info size={20} color="var(--primary-color)" />,
+    success: <CheckCircle2 size={16} color="var(--success)" />,
+    danger: <XCircle size={16} color="var(--danger)" />,
+    error: <XCircle size={16} color="var(--danger)" />,
+    warning: <AlertTriangle size={16} color="var(--warning)" />,
+    info: <Info size={16} color="var(--primary-color)" />,
   };
 
   return (
     <div className="toast-container">
       {toasts.map((toast) => (
-        <div key={toast.id} className="toast-item">
-          <div style={{ flexShrink: 0, marginTop: '2px' }}>
+        <div key={toast.id} className={`toast-item toast-${toast.type || 'info'}`}>
+          <div className="toast-icon-wrap">
             {icons[toast.type] || icons.info}
           </div>
-          <div style={{ flex: 1 }}>
-            {toast.title && <div className="toast-title">{toast.title}</div>}
-            {toast.message && <div className="toast-message">{toast.message}</div>}
+          <div className="toast-content-wrap">
+            {toast.title && <span className="toast-title">{toast.title}</span>}
+            {toast.title && toast.message && <span className="toast-dot-sep">·</span>}
+            {toast.message && <span className="toast-message">{toast.message}</span>}
           </div>
           <button
             type="button"
-            className="btn-icon"
-            style={{ width: '24px', height: '24px', flexShrink: 0 }}
+            className="toast-close-btn"
             onClick={() => removeToast(toast.id)}
+            title="Dismiss"
           >
-            <X size={14} />
+            <X size={12} />
           </button>
         </div>
       ))}
