@@ -103,6 +103,7 @@ export function AppProvider({ children }) {
   // Production-level session guards & single shared live ticker (No per-component drift)
   const lastStoppedWorkSessionAtRef = useRef(0);
   const isSessionTransitioningRef = useRef(false);
+  const isRolloverProcessingRef = useRef(false);
   const [masterTimerTicker, setMasterTimerTicker] = useState(() => Date.now());
 
   useEffect(() => {
@@ -1240,6 +1241,175 @@ export function AppProvider({ children }) {
     [dispatch, settings]
   );
 
+  // ---------------------------------------------------------------------------
+  // AUTOMATIC MIDNIGHT WORK SESSION ROLLOVER
+  // If a work session runs past midnight (e.g. 11:00 PM to 1:00 AM),
+  // automatically cut off the previous day's session at 11:59:59 PM (12:00 AM)
+  // and seamlessly start a fresh live session for the new day at 12:00:00 AM without losing time.
+  // ---------------------------------------------------------------------------
+  const executeMidnightSessionRollover = useCallback(
+    async (session, prevDateStr, todayDateStr) => {
+      if (isRolloverProcessingRef.current) return;
+      isRolloverProcessingRef.current = true;
+
+      try {
+        const [y1, m1, d1] = prevDateStr.split('-').map(Number);
+        const day1Date = new Date(y1, m1 - 1, d1);
+        const [y2, m2, d2] = todayDateStr.split('-').map(Number);
+        const day2Date = new Date(y2, m2 - 1, d2);
+        const diffDays = Math.round((day2Date - day1Date) / (1000 * 60 * 60 * 24));
+
+        const midnightToday = new Date(y2, m2 - 1, d2, 0, 0, 0, 0);
+        const midnightTimestamp = midnightToday.getTime();
+
+        const sessionStartTimestamp = Number(session.startTimestamp);
+        if (!sessionStartTimestamp || isNaN(sessionStartTimestamp)) {
+          return;
+        }
+
+        // Calculate duration on Day 1 (from startTimestamp until midnight)
+        const day1DurationSeconds = Math.max(1, Math.round((midnightTimestamp - sessionStartTimestamp) / 1000));
+        const day1EndStr = new Date(y1, m1 - 1, d1, 23, 59, 59).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        const day2StartStr = midnightToday.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+
+        // 1. Cut off and finalize Day 1 session at 11:59:59 PM
+        const day1SessionId = `session-${midnightTimestamp}-${Math.random().toString(36).substring(2, 6)}`;
+        const day1SessionPayload = {
+          id: day1SessionId,
+          date: prevDateStr,
+          startTime: session.startTime || '11:00:00 PM',
+          endTime: day1EndStr,
+          durationSeconds: day1DurationSeconds,
+          stopReason: 'Midnight Day Rollover',
+          notes: `${session.taskTitle ? `[${session.taskTitle}] ` : ''}Automatic cutoff at 12:00 AM midnight rollover`,
+          taskId: session.taskId || null,
+          taskTitle: session.taskTitle || '',
+        };
+
+        const day1WorkNode = {
+          id: `work-${midnightTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+          sessionId: day1SessionId,
+          type: 'work',
+          startTime: session.startTime || '11:00:00 PM',
+          endTime: day1EndStr,
+          durationSeconds: day1DurationSeconds,
+          taskId: session.taskId || null,
+          taskTitle: session.taskTitle || '',
+          stopReason: 'Midnight Day Rollover',
+          notes: 'Auto-closed at midnight transition',
+        };
+
+        // Update Day 1 chain
+        setWorkChains((prev) => {
+          const prevChain = prev[prevDateStr] || { status: 'idle', accumulatedWorkSeconds: 0, chain: [] };
+          const updatedPrevChain = {
+            ...prevChain,
+            status: 'paused',
+            accumulatedWorkSeconds: (Number(prevChain.accumulatedWorkSeconds) || 0) + day1DurationSeconds,
+            lastPausedTimestamp: midnightTimestamp,
+            lastPausedTimeStr: day1EndStr,
+            lastPauseReason: 'Midnight Day Rollover',
+            chain: [...(prevChain.chain || []), day1WorkNode],
+          };
+          const nextChains = { ...prev, [prevDateStr]: updatedPrevChain };
+          storageService.saveWorkChains(nextChains);
+          return nextChains;
+        });
+
+        // Save Day 1 completed session
+        setWorkSessions((prev) => {
+          const updated = [day1SessionPayload, ...prev];
+          storageService.saveWorkSessions(updated);
+          return updated;
+        });
+        api.createWorkSession(day1SessionPayload).catch((err) =>
+          console.warn('Saved Day 1 midnight session locally:', err)
+        );
+
+        // 2. Start Day 2 session
+        // If it was overnight into today (diffDays === 1), start a seamless new live session for today from 12:00 AM
+        if (diffDays === 1) {
+          const currentSessions = storageService.getWorkSessions() || [];
+          const todayRecorded = currentSessions
+            .filter((s) => s.date === todayDateStr)
+            .reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
+
+          const newActiveDay2 = {
+            isRunning: true,
+            startTimestamp: midnightTimestamp,
+            startTime: day2StartStr,
+            date: todayDateStr,
+            taskId: session.taskId || null,
+            taskTitle: session.taskTitle || '',
+            baseAccumulatedSeconds: todayRecorded,
+            status: 'running',
+          };
+
+          setActiveWorkSession(newActiveDay2);
+          storageService.saveActiveWorkSession(newActiveDay2);
+          api.setActiveWorkSession(newActiveDay2).catch(() => {});
+
+          setWorkChains((prev) => {
+            const todayChain = prev[todayDateStr] || {
+              status: 'idle',
+              accumulatedWorkSeconds: todayRecorded,
+              chain: [],
+            };
+            const updatedTodayChain = {
+              ...todayChain,
+              status: 'running',
+              currentSegmentStart: midnightTimestamp,
+              lastPausedTimestamp: null,
+            };
+            const nextChains = { ...prev, [todayDateStr]: updatedTodayChain };
+            storageService.saveWorkChains(nextChains);
+            return nextChains;
+          });
+
+          showToast({
+            type: 'info',
+            title: 'Midnight Work Rollover',
+            message: `Previous day (${prevDateStr}) cut off at 12:00 AM. New session active for today (${todayDateStr}).`,
+          });
+        } else {
+          // If diffDays > 1 (e.g. computer was asleep for days), close active session without running runaway timer
+          setActiveWorkSession(null);
+          storageService.saveActiveWorkSession(null);
+          api.clearActiveWorkSession().catch(() => {});
+        }
+      } catch (err) {
+        console.error('Error during midnight rollover:', err);
+      } finally {
+        setTimeout(() => {
+          isRolloverProcessingRef.current = false;
+        }, 1500);
+      }
+    },
+    [showToast]
+  );
+
+  // Monitor running work session for crossing midnight
+  useEffect(() => {
+    if (!activeWorkSession || !activeWorkSession.isRunning || !activeWorkSession.startTimestamp) {
+      return;
+    }
+
+    const todayStr = getTodayDateString();
+    const sessionDate = activeWorkSession.date;
+
+    if (sessionDate && sessionDate < todayStr && !isRolloverProcessingRef.current) {
+      executeMidnightSessionRollover(activeWorkSession, sessionDate, todayStr);
+    }
+  }, [masterTimerTicker, activeWorkSession, executeMidnightSessionRollover]);
+
   // Work Session Handlers (Start, Stop with Reason & Auto-Gap Chaining)
   const startWorkSession = useCallback((task = null) => {
     if (isSessionTransitioningRef.current) return;
@@ -1347,13 +1517,142 @@ export function AppProvider({ children }) {
 
       const now = new Date();
       const endTimestamp = Date.now();
-      const segmentSeconds = Math.max(1, Math.round((endTimestamp - activeWorkSession.startTimestamp) / 1000));
+      const todayStr = getTodayDateString();
+      const sessionDate = activeWorkSession.date || todayStr;
       const endTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const sessionDate = activeWorkSession.date || getTodayDateString();
 
       const finalTaskId = taskId || activeWorkSession.taskId || null;
       const finalTaskTitle = taskTitle || activeWorkSession.taskTitle || '';
 
+      // If session crossed midnight (e.g. started at 11:00 PM yesterday and stopped at 1:00 AM today):
+      // Cleanly split into Day 1 (before midnight) and Day 2 (today up to now)
+      if (sessionDate < todayStr) {
+        const [y1, m1, d1] = sessionDate.split('-').map(Number);
+        const [y2, m2, d2] = todayStr.split('-').map(Number);
+        const midnightToday = new Date(y2, m2 - 1, d2, 0, 0, 0, 0);
+        const midnightTimestamp = midnightToday.getTime();
+        const startTs = Number(activeWorkSession.startTimestamp);
+
+        const day1DurationSeconds = Math.max(1, Math.round((midnightTimestamp - startTs) / 1000));
+        const day1EndStr = new Date(y1, m1 - 1, d1, 23, 59, 59).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        const day2StartStr = midnightToday.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        const day2DurationSeconds = Math.max(1, Math.round((endTimestamp - midnightTimestamp) / 1000));
+
+        const day1SessionId = `session-${midnightTimestamp}-${Math.random().toString(36).substring(2, 6)}`;
+        const day1SessionPayload = {
+          id: day1SessionId,
+          date: sessionDate,
+          startTime: activeWorkSession.startTime,
+          endTime: day1EndStr,
+          durationSeconds: day1DurationSeconds,
+          stopReason: 'Midnight Day Rollover',
+          notes: `${finalTaskTitle ? `[${finalTaskTitle}] ` : ''}Cut off at midnight transition`,
+          taskId: finalTaskId,
+          taskTitle: finalTaskTitle,
+        };
+
+        const day2SessionId = `session-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`;
+        const day2SessionPayload = {
+          id: day2SessionId,
+          date: todayStr,
+          startTime: day2StartStr,
+          endTime,
+          durationSeconds: day2DurationSeconds,
+          stopReason: stopReason || 'Finished Work',
+          notes: notes || '',
+          taskId: finalTaskId,
+          taskTitle: finalTaskTitle,
+        };
+
+        // Save both completed sessions
+        setWorkSessions((prev) => {
+          const updated = [day2SessionPayload, day1SessionPayload, ...prev];
+          storageService.saveWorkSessions(updated);
+          return updated;
+        });
+
+        // Update chains for both dates
+        setWorkChains((prev) => {
+          const prevChain1 = prev[sessionDate] || { status: 'idle', accumulatedWorkSeconds: 0, chain: [] };
+          const updatedChain1 = {
+            ...prevChain1,
+            status: 'paused',
+            accumulatedWorkSeconds: (Number(prevChain1.accumulatedWorkSeconds) || 0) + day1DurationSeconds,
+            lastPausedTimestamp: midnightTimestamp,
+            lastPausedTimeStr: day1EndStr,
+            chain: [
+              ...(prevChain1.chain || []),
+              {
+                id: `work-${midnightTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+                sessionId: day1SessionId,
+                type: 'work',
+                startTime: activeWorkSession.startTime,
+                endTime: day1EndStr,
+                durationSeconds: day1DurationSeconds,
+                taskId: finalTaskId,
+                taskTitle: finalTaskTitle,
+                stopReason: 'Midnight Day Rollover',
+                notes: 'Auto-closed at midnight transition',
+              },
+            ],
+          };
+
+          const prevChain2 = prev[todayStr] || { status: 'idle', accumulatedWorkSeconds: 0, chain: [] };
+          const updatedChain2 = {
+            ...prevChain2,
+            status: 'paused',
+            accumulatedWorkSeconds: (Number(prevChain2.accumulatedWorkSeconds) || 0) + day2DurationSeconds,
+            lastPausedTimestamp: endTimestamp,
+            lastPausedTimeStr: endTime,
+            lastPauseReason: stopReason || 'Finished Work',
+            lastPauseRemarks: notes || '',
+            chain: [
+              ...(prevChain2.chain || []),
+              {
+                id: `work-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
+                sessionId: day2SessionId,
+                type: 'work',
+                startTime: day2StartStr,
+                endTime,
+                durationSeconds: day2DurationSeconds,
+                taskId: finalTaskId,
+                taskTitle: finalTaskTitle,
+                stopReason: stopReason || 'Finished Work',
+                notes: notes || '',
+              },
+            ],
+          };
+
+          const nextChains = { ...prev, [sessionDate]: updatedChain1, [todayStr]: updatedChain2 };
+          storageService.saveWorkChains(nextChains);
+          return nextChains;
+        });
+
+        setActiveWorkSession(null);
+        storageService.saveActiveWorkSession(null);
+        setIsStopModalOpen(false);
+        api.clearActiveWorkSession().catch(() => {});
+
+        api.createWorkSession(day1SessionPayload).catch(() => {});
+        api.createWorkSession(day2SessionPayload).catch(() => {});
+
+        showToast({
+          type: 'info',
+          title: 'Work Stopped Across Midnight',
+          message: `Split: ${Math.round(day1DurationSeconds / 60)}m on ${sessionDate}, and ${Math.round(day2DurationSeconds / 60)}m on ${todayStr}.`,
+        });
+        return;
+      }
+
+      const segmentSeconds = Math.max(1, Math.round((endTimestamp - activeWorkSession.startTimestamp) / 1000));
       const sessionId = `session-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`;
       const workNode = {
         id: `work-${endTimestamp}-${Math.random().toString(36).substring(2, 6)}`,
@@ -1471,6 +1770,65 @@ export function AppProvider({ children }) {
 
   const addManualWorkSession = useCallback(
     async (sessionData) => {
+      // Check if session crosses midnight (e.g., 23:00 to 01:00)
+      const sParts = (sessionData.startTime || '09:00:00').split(':').map(Number);
+      const eParts = (sessionData.endTime || '10:00:00').split(':').map(Number);
+      const sMinutes = (sParts[0] || 0) * 60 + (sParts[1] || 0);
+      const eMinutes = (eParts[0] || 0) * 60 + (eParts[1] || 0);
+
+      if (eMinutes < sMinutes) {
+        const sessionDate = sessionData.date || getTodayDateString();
+        const [y, m, d] = sessionDate.split('-').map(Number);
+        const nextDate = new Date(y, m - 1, d + 1);
+        const ny = nextDate.getFullYear();
+        const nm = String(nextDate.getMonth() + 1).padStart(2, '0');
+        const nd = String(nextDate.getDate()).padStart(2, '0');
+        const nextDateStr = `${ny}-${nm}-${nd}`;
+
+        const day1DurationSecs = ((24 * 60) - sMinutes) * 60;
+        const day2DurationSecs = eMinutes * 60;
+
+        const payload1 = {
+          id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          date: sessionDate,
+          startTime: sessionData.startTime,
+          endTime: '23:59:59',
+          durationSeconds: day1DurationSecs,
+          stopReason: sessionData.stopReason || 'Finished Work',
+          notes: `${sessionData.notes ? sessionData.notes + ' ' : ''}[Part 1: before midnight]`,
+          taskId: sessionData.taskId || null,
+          taskTitle: sessionData.taskTitle || '',
+        };
+
+        const payload2 = {
+          id: `session-${Date.now() + 1}-${Math.random().toString(36).substring(2, 6)}`,
+          date: nextDateStr,
+          startTime: '00:00:00',
+          endTime: sessionData.endTime,
+          durationSeconds: day2DurationSecs,
+          stopReason: sessionData.stopReason || 'Finished Work',
+          notes: `${sessionData.notes ? sessionData.notes + ' ' : ''}[Part 2: after midnight]`,
+          taskId: sessionData.taskId || null,
+          taskTitle: sessionData.taskTitle || '',
+        };
+
+        setWorkSessions((prev) => {
+          const updated = [payload2, payload1, ...prev];
+          storageService.saveWorkSessions(updated);
+          return updated;
+        });
+
+        api.createWorkSession(payload1).catch(() => {});
+        api.createWorkSession(payload2).catch(() => {});
+
+        showToast({
+          type: 'success',
+          title: 'Session Split Across Midnight',
+          message: `Logged ${Math.round(day1DurationSecs / 60)}m on ${sessionDate} and ${Math.round(day2DurationSecs / 60)}m on ${nextDateStr}.`,
+        });
+        return;
+      }
+
       const payload = {
         id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         date: sessionData.date || getTodayDateString(),
