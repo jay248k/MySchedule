@@ -129,10 +129,14 @@
 }
 
 .redflag-search-box input {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 0.75rem;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: var(--text-primary) !important;
+  font-size: 0.75rem !important;
   width: 100%;
   outline: none;
 }

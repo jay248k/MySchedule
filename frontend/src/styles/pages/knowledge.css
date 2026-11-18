@@ -804,12 +804,17 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
+.knowledge-table-search-box input.knowledge-table-search-input,
 .knowledge-table-search-input {
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 0.78rem;
-  color: #F8FAFC;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 0.78rem !important;
+  color: #F8FAFC !important;
   width: 100%;
 }
 

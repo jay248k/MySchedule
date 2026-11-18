@@ -20,6 +20,7 @@ import {
   Flame,
   TrendingUp,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
@@ -343,10 +344,10 @@ export function ReportsArchive() {
         <div className="archive-controls-bar">
           {/* Search Input */}
           <div className="archive-search-box">
-            <Search size={14} color="var(--text-muted)" />
+            <Search size={14} className="archive-search-icon" />
             <input
               type="text"
-              placeholder="Search accomplishments, dates, or keywords..."
+              placeholder="Search accomplishments, dates, tags..."
               value={archiveSearch}
               onChange={(e) => setArchiveSearch(e.target.value)}
               className="archive-search-input"
@@ -355,9 +356,10 @@ export function ReportsArchive() {
               <button
                 type="button"
                 onClick={() => setArchiveSearch('')}
-                className="btn-icon text-xs text-muted p-0"
+                className="archive-search-clear-btn"
+                title="Clear search"
               >
-                ✕
+                <X size={12} />
               </button>
             )}
           </div>
