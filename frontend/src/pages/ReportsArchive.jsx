@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatDate, getTodayDateString } from '../utils/dateUtils';
+import { formatComprehensiveDailyReport } from '../utils/reportUtils';
 import '../styles/pages/reports-archive.css';
 
 const MOOD_METADATA = {
@@ -74,73 +75,42 @@ export function ReportsArchive() {
     workSessions = [],
     activeWorkSession,
     showToast,
+    deviations = [],
   } = useApp();
   const todayStr = getTodayDateString();
 
   const handleAutoCreateTodayReport = () => {
-    const dayTasks = tasks.filter((t) => t.date === todayStr);
-    const doneTasks = dayTasks.filter((t) => t.status === 'completed' || t.completed);
-
-    const daySessions = (workSessions || []).filter(
-      (s) => s.date === todayStr || s.startTime?.startsWith(todayStr)
-    );
-
-    let sessionSummary = '';
-    let totalSessionMins = 0;
-    if (daySessions.length > 0) {
-      const parts = daySessions.map((s, idx) => {
-        const start = s.startTime ? (s.startTime.includes('T') ? s.startTime.split('T')[1].substring(0, 5) : s.startTime) : 'Start';
-        const end = s.endTime ? (s.endTime.includes('T') ? s.endTime.split('T')[1].substring(0, 5) : s.endTime) : 'Now';
-        const durationMins = s.durationMinutes || (s.durationSeconds ? Math.round(s.durationSeconds / 60) : 60);
-        totalSessionMins += durationMins;
-        return `Timer #${idx + 1}: ${start} – ${end} (${Math.floor(durationMins / 60)}h ${durationMins % 60}m)`;
-      });
-      sessionSummary = parts.join('; ');
-    } else if (activeWorkSession?.isRunning) {
-      const start = activeWorkSession.startTime || 'Active';
-      sessionSummary = `Active session running from ${start}`;
-    }
-
-    const calculatedHours = totalSessionMins > 0
-      ? Number((totalSessionMins / 60).toFixed(1))
-      : (doneTasks.length > 0 ? Number((doneTasks.length * 0.9).toFixed(1)) : 7.0);
-
-    const completedBullets = doneTasks.length > 0
-      ? doneTasks.map((t) => {
-          const time = t.startTime ? ` (${t.startTime}${t.endTime ? ` - ${t.endTime}` : ''})` : '';
-          const cat = categories.find((c) => c.id === t.categoryId)?.name || 'General';
-          return `• ${t.title}${time} [${cat}]`;
-        }).join('\n')
-      : '• Completed scheduled sprint deliverables.';
+    const generated = formatComprehensiveDailyReport({
+      targetDate: todayStr,
+      tasks,
+      categories,
+      workSessions,
+      activeWorkSession,
+      deviations,
+      formattedDateStr: formatDate(todayStr),
+    });
 
     const nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const autoReportText = [
-      `Completed today's scheduled tasks: ${doneTasks.length}/${dayTasks.length} works finished (${dayTasks.length > 0 ? Math.round((doneTasks.length / dayTasks.length) * 100) : 100}% velocity).`,
-      sessionSummary ? `Work Timer Sessions: ${sessionSummary} | Total Logged: ${calculatedHours} hrs.` : `Total Logged Hours: ${calculatedHours} hrs.`,
-      `Accomplished Deliverables:\n${completedBullets}`,
-      `Impediments & Blockers: None. Steady progress without major impediments.`,
-    ].join('\n\n');
 
     saveDailyReport({
       date: todayStr,
       reportingTime: nowTimeStr,
-      dailyReportText: autoReportText,
+      dailyReportText: generated.autoReportText,
       title: `Daily Work Report - ${formatDate(todayStr)}`,
-      accomplishments: autoReportText,
-      highlights: `Delivered ${doneTasks.length}/${dayTasks.length} works on schedule.`,
-      blockers: 'None. Steady progress without major impediments.',
+      accomplishments: generated.completedBullets,
+      highlights: generated.highlights,
+      blockers: generated.blockers,
       tomorrowPlan: 'Continue development on scheduled milestones.',
-      hoursLogged: calculatedHours,
-      mood: doneTasks.length >= Math.ceil(dayTasks.length * 0.7) ? 'fire' : 'rocket',
-      tasksCompletedCount: doneTasks.length,
-      tasksTotalCount: dayTasks.length,
+      hoursLogged: generated.calculatedHours,
+      mood: generated.mood,
+      tasksCompletedCount: generated.doneCount,
+      tasksTotalCount: generated.totalCount,
     });
 
     showToast({
       type: 'success',
       title: 'Report Auto-Generated & Submitted! 🚀',
-      message: `Submitted report for ${formatDate(todayStr)} with ${doneTasks.length} completed work(s) and timer logs.`,
+      message: `Submitted report for ${formatDate(todayStr)} with ${generated.doneCount}/${generated.totalCount} completed work(s) and focus timers.`,
     });
   };
 
