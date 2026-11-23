@@ -41,6 +41,9 @@ import {
   Flag,
   Timer,
   Flame,
+  ChevronDown,
+  ChevronUp,
+  CornerDownRight,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COLOR_COMBINATIONS } from '../utils/themeUtils';
@@ -71,13 +74,30 @@ export function Settings() {
     bulkImportTasks,
   } = useApp();
 
-  // URL query parameter synchronization (e.g. /settings?tab=reports-tabs)
+  // URL query parameter synchronization (e.g. /settings?tab=sidebar-order or /settings?tab=reports-tabs)
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(() => tabParam || 'appearance');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (tabParam === 'reports-tabs') return 'navigation';
+    return tabParam || 'appearance';
+  });
+
+  const [expandedSubmenus, setExpandedSubmenus] = useState(() => ({
+    '/reports': tabParam === 'reports-tabs',
+  }));
+
+  const toggleSubmenuExpand = (path) => {
+    setExpandedSubmenus((prev) => ({
+      ...prev,
+      [path]: !prev[path],
+    }));
+  };
 
   useEffect(() => {
-    if (tabParam) {
+    if (tabParam === 'reports-tabs') {
+      setActiveTab('navigation');
+      setExpandedSubmenus((prev) => ({ ...prev, '/reports': true }));
+    } else if (tabParam) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -150,8 +170,7 @@ export function Settings() {
   // Tab definitions
   const TABS = [
     { id: 'appearance', label: 'Appearance & Themes', icon: Palette, desc: 'Color palettes, OLED, and styles' },
-    { id: 'navigation', label: 'Sidebar Navigation Order', icon: Layers, desc: 'Reorder menu sequence & links' },
-    { id: 'reports-tabs', label: 'Reports Tab Sequence', icon: FileSpreadsheet, desc: 'Reorder reports sub-tabs & view order' },
+    { id: 'navigation', label: 'Sidebar Navigation Order', icon: Layers, desc: 'Reorder menu sequence, submenus & links' },
     { id: 'scheduling', label: 'Scheduling & Calendar', icon: Sliders, desc: 'Work hours, calendar views, format' },
     { id: 'focus', label: 'Focus Mode & Audio', icon: Headphones, desc: 'Pomodoro timer and soundscapes' },
     { id: 'notifications', label: 'Notifications & Alerts', icon: Bell, desc: 'Reminders, standup notifications' },
@@ -1019,7 +1038,7 @@ export function Settings() {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '680px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '720px' }}>
                 {(() => {
                   const ALL_ITEMS = [
                     { path: '/', label: 'Dashboard', color: '#3B82F6' },
@@ -1035,7 +1054,23 @@ export function Settings() {
                     { path: '/categories', label: 'Categories', color: '#10B981' },
                     { path: '/goals', label: 'Goals', color: '#EC4899' },
                     { path: '/habits', label: 'Habits', color: '#10B981' },
-                    { path: '/reports', label: 'Reports', color: '#06B6D4' },
+                    {
+                      path: '/reports',
+                      label: 'Reports',
+                      color: '#06B6D4',
+                      hasSubmenu: true,
+                      subItemsKey: 'reportsOrder',
+                      subItems: [
+                        { path: '/reports', key: 'today-report', label: 'Daily Standup & Work Report', color: '#38BDF8', icon: FileText },
+                        { path: '/reports/pending', key: 'pending', label: 'Pending Tasks Report', color: '#F59E0B', icon: Clock },
+                        { path: '/reports/completed', key: 'completed', label: 'Completed Tasks Report', color: '#10B981', icon: CheckCircle2 },
+                        { path: '/reports/missed', key: 'missed', label: 'Missed & Overdue Report', color: '#EF4444', icon: AlertTriangle },
+                        { path: '/reports/habits', key: 'habits', label: 'Habits Mastery Report', color: '#10B981', icon: Flame },
+                        { path: '/reports/goals', key: 'goals', label: 'Goal Progression & Milestones', color: '#A855F7', icon: Target },
+                        { path: '/reports/red-flags', key: 'red-flags', label: 'Red Flag Diagnostic Report', color: '#DC2626', icon: Flag },
+                        { path: '/reports/tracker-logs', key: 'tracker-logs', label: 'Tracker & Gap Logs', color: '#06B6D4', icon: Timer },
+                      ],
+                    },
                     { path: '/archive', label: 'Reports Archive', color: '#64748B' },
                     { path: '/settings', label: 'Settings', color: '#94A3B8' },
                   ];
@@ -1108,406 +1143,479 @@ export function Settings() {
                     const isDragOver = dragOverNavIdx === idx;
                     const isHidden = hiddenPaths.includes(item.path);
                     const isSettingsItem = item.path === '/settings';
-
-                    return (
-                    <div
-                      key={item.path}
-                      draggable={true}
-                      onDragStart={(e) => {
-                        setDraggedNavIdx(idx);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        if (dragOverNavIdx !== idx) setDragOverNavIdx(idx);
-                      }}
-                      onDragLeave={() => {
-                        if (dragOverNavIdx === idx) setDragOverNavIdx(null);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (draggedNavIdx === null || draggedNavIdx === idx) return;
-                        const newSorted = [...sorted];
-                        const draggedItem = newSorted.splice(draggedNavIdx, 1)[0];
-                        newSorted.splice(idx, 0, draggedItem);
-                        setDraggedNavIdx(null);
-                        setDragOverNavIdx(null);
-                        const newPathOrder = newSorted.map((i) => i.path);
-                        handleUpdate('navigationOrder', newPathOrder);
-                        showToast({
-                          type: 'success',
-                          title: 'Sidebar Reordered',
-                          message: `Moved "${draggedItem.label}" to position #${idx + 1}.`,
-                        });
-                      }}
-                      onDragEnd={() => {
-                        setDraggedNavIdx(null);
-                        setDragOverNavIdx(null);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        background: isDragging
-                          ? 'rgba(23, 105, 255, 0.12)'
-                          : isDragOver
-                          ? 'rgba(16, 185, 129, 0.12)'
-                          : isHidden
-                          ? 'rgba(255, 255, 255, 0.02)'
-                          : 'var(--page-bg)',
-                        border: isDragOver
-                          ? '2px dashed var(--primary-color)'
-                          : isDragging
-                          ? '1px solid var(--primary-color)'
-                          : isHidden
-                          ? '1px dashed var(--border-color)'
-                          : '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        transition: 'all 0.15s ease',
-                        cursor: 'grab',
-                        transform: isDragging ? 'scale(0.98)' : 'none',
-                        opacity: isDragging ? 0.6 : isHidden ? 0.65 : 1,
-                      }}
-                      title="Drag and drop to reorder"
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ color: 'var(--text-muted)', cursor: 'grab', display: 'flex', alignItems: 'center' }}>
-                          <GripVertical size={16} />
-                        </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
-                          #{idx + 1}
-                        </span>
-                        <div
-                          style={{
-                            width: '10px',
-                            height: '10px',
-                            borderRadius: '50%',
-                            background: item.color,
-                            opacity: isHidden ? 0.5 : 1,
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontSize: '0.88rem',
-                            fontWeight: 600,
-                            color: isHidden ? 'var(--text-muted)' : 'var(--text-primary)',
-                            textDecoration: isHidden ? 'line-through' : 'none',
-                          }}
-                        >
-                          {item.label}
-                        </span>
-                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                          ({item.path})
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {/* Visibility Toggle Button */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '3px 8px',
-                            borderRadius: '20px',
-                            background: isHidden
-                              ? 'rgba(239, 68, 68, 0.08)'
-                              : 'rgba(16, 185, 129, 0.08)',
-                            border: `1px solid ${isHidden ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
-                          }}
-                          title={
-                            isSettingsItem
-                              ? 'Settings must remain visible'
-                              : isHidden
-                              ? 'Click toggle to show in sidebar'
-                              : 'Click toggle to hide from sidebar'
-                          }
-                        >
-                          {isHidden ? (
-                            <EyeOff size={13} style={{ color: '#EF4444' }} />
-                          ) : (
-                            <Eye size={13} style={{ color: '#10B981' }} />
-                          )}
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              color: isHidden ? '#EF4444' : '#10B981',
-                              userSelect: 'none',
-                              minWidth: '42px',
-                            }}
-                          >
-                            {isHidden ? 'Hidden' : 'Visible'}
-                          </span>
-                          <ToggleSwitch
-                            id={`toggle-nav-${item.path.replace(/\//g, '') || 'root'}`}
-                            checked={!isHidden}
-                            disabled={isSettingsItem}
-                            title={
-                              isSettingsItem
-                                ? 'Settings must remain visible'
-                                : isHidden
-                                ? 'Show in sidebar'
-                                : 'Hide from sidebar'
-                            }
-                            onChange={() => toggleVisibility(item.path)}
-                          />
-                        </div>
-
-                        {/* Move Up / Down Reorder */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            disabled={idx === 0}
-                            onClick={() => moveItem(idx, -1)}
-                            title="Move Up"
-                            style={{
-                              padding: '4px',
-                              opacity: idx === 0 ? 0.3 : 1,
-                              cursor: idx === 0 ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            <ArrowUp size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            disabled={idx === sorted.length - 1}
-                            onClick={() => moveItem(idx, 1)}
-                            title="Move Down"
-                            style={{
-                              padding: '4px',
-                              opacity: idx === sorted.length - 1 ? 0.3 : 1,
-                              cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            <ArrowDown size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
-          {/* ========================================================================= */}
-          {/* TAB: REPORTS TAB SEQUENCE CUSTOMIZATION                                   */}
-          {/* ========================================================================= */}
-          {activeTab === 'reports-tabs' && (
-            <div className="card" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <FileSpreadsheet size={22} color="var(--primary-color)" />
-                  <div>
-                    <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Reports Tab Sequence & Layout</h2>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      Reorder the reports tabs and sidebar submenu sequence to match your workflow. Changes save immediately.
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => {
-                      handleUpdate('reportsOrder', [
-                        '/reports',
-                        '/reports/pending',
-                        '/reports/completed',
-                        '/reports/missed',
-                        '/reports/habits',
-                        '/reports/goals',
-                        '/reports/red-flags',
-                        '/reports/tracker-logs',
-                      ]);
-                      showToast({
-                        type: 'info',
-                        title: 'Reset Reports Sequence',
-                        message: 'Reports tab sequence restored to default layout.',
-                      });
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <RotateCcw size={14} /> Reset Default Order
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '640px' }}>
-                {(() => {
-                  const ALL_REPORTS = [
-                    { path: '/reports', key: 'today-report', label: 'Daily Standup & Work Report', color: '#38BDF8', icon: FileText },
-                    { path: '/reports/pending', key: 'pending', label: 'Pending Tasks Report', color: '#F59E0B', icon: Clock },
-                    { path: '/reports/completed', key: 'completed', label: 'Completed Tasks Report', color: '#10B981', icon: CheckCircle2 },
-                    { path: '/reports/missed', key: 'missed', label: 'Missed & Overdue Report', color: '#EF4444', icon: AlertTriangle },
-                    { path: '/reports/habits', key: 'habits', label: 'Habits Mastery Report', color: '#10B981', icon: Flame },
-                    { path: '/reports/goals', key: 'goals', label: 'Goal Progression & Milestones', color: '#A855F7', icon: Target },
-                    { path: '/reports/red-flags', key: 'red-flags', label: 'Red Flag Diagnostic Report', color: '#DC2626', icon: Flag },
-                    { path: '/reports/tracker-logs', key: 'tracker-logs', label: 'Tracker & Gap Logs', color: '#06B6D4', icon: Timer },
-                  ];
-
-                  let currentOrder = settings?.reportsOrder;
-                  if (typeof currentOrder === 'string') {
-                    try { currentOrder = JSON.parse(currentOrder); } catch { currentOrder = null; }
-                  }
-                  if (!Array.isArray(currentOrder) || currentOrder.length === 0) {
-                    currentOrder = ALL_REPORTS.map((i) => i.path);
-                  } else {
-                    currentOrder = [...currentOrder];
-                    ALL_REPORTS.forEach((item) => {
-                      if (!currentOrder.includes(item.path) && !currentOrder.includes(item.key)) {
-                        const missedIdx = currentOrder.findIndex((p) => p === '/reports/missed' || p === 'missed');
-                        if (missedIdx !== -1) {
-                          currentOrder.splice(missedIdx + 1, 0, item.path);
-                        } else {
-                          currentOrder.push(item.path);
-                        }
-                      }
-                    });
-                  }
-
-                  // Order items according to currentOrder
-                  const sorted = [...ALL_REPORTS].sort((a, b) => {
-                    const idxA = currentOrder.indexOf(a.path) !== -1 ? currentOrder.indexOf(a.path) : (currentOrder.indexOf(a.key) !== -1 ? currentOrder.indexOf(a.key) : 99);
-                    const idxB = currentOrder.indexOf(b.path) !== -1 ? currentOrder.indexOf(b.path) : (currentOrder.indexOf(b.key) !== -1 ? currentOrder.indexOf(b.key) : 99);
-                    return idxA - idxB;
-                  });
-
-                  const moveItem = (index, direction) => {
-                    const newSorted = [...sorted];
-                    const targetIndex = index + direction;
-                    if (targetIndex < 0 || targetIndex >= newSorted.length) return;
-                    const temp = newSorted[index];
-                    newSorted[index] = newSorted[targetIndex];
-                    newSorted[targetIndex] = temp;
-                    const newPathOrder = newSorted.map((i) => i.path);
-                    handleUpdate('reportsOrder', newPathOrder);
-                  };
-
-                  return sorted.map((item, idx) => {
-                    const ItemIcon = item.icon;
-                    const isDragging = draggedReportIdx === idx;
-                    const isDragOver = dragOverReportIdx === idx;
+                    const isSubmenuExpanded = Boolean(expandedSubmenus[item.path]);
 
                     return (
                       <div
                         key={item.path}
-                        draggable={true}
-                        onDragStart={(e) => {
-                          setDraggedReportIdx(idx);
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          if (dragOverReportIdx !== idx) setDragOverReportIdx(idx);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverReportIdx === idx) setDragOverReportIdx(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (draggedReportIdx === null || draggedReportIdx === idx) return;
-                          const newSorted = [...sorted];
-                          const draggedItem = newSorted.splice(draggedReportIdx, 1)[0];
-                          newSorted.splice(idx, 0, draggedItem);
-                          setDraggedReportIdx(null);
-                          setDragOverReportIdx(null);
-                          const newPathOrder = newSorted.map((i) => i.path);
-                          handleUpdate('reportsOrder', newPathOrder);
-                          showToast({
-                            type: 'success',
-                            title: 'Reports Tab Reordered',
-                            message: `Moved "${item.label}" to position #${idx + 1}.`,
-                          });
-                        }}
-                        onDragEnd={() => {
-                          setDraggedReportIdx(null);
-                          setDragOverReportIdx(null);
-                        }}
                         style={{
                           display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
+                          flexDirection: 'column',
                           background: isDragging
                             ? 'rgba(23, 105, 255, 0.12)'
                             : isDragOver
                             ? 'rgba(16, 185, 129, 0.12)'
+                            : isHidden
+                            ? 'rgba(255, 255, 255, 0.02)'
                             : 'var(--page-bg)',
                           border: isDragOver
                             ? '2px dashed var(--primary-color)'
                             : isDragging
                             ? '1px solid var(--primary-color)'
+                            : isHidden
+                            ? '1px dashed var(--border-color)'
                             : '1px solid var(--border-color)',
                           borderRadius: '8px',
                           transition: 'all 0.15s ease',
-                          cursor: 'grab',
                           transform: isDragging ? 'scale(0.98)' : 'none',
-                          opacity: isDragging ? 0.6 : 1,
+                          opacity: isDragging ? 0.6 : isHidden ? 0.65 : 1,
+                          overflow: 'hidden',
                         }}
-                        title="Drag and drop to reorder"
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ color: 'var(--text-muted)', cursor: 'grab', display: 'flex', alignItems: 'center' }}>
-                            <GripVertical size={16} />
+                        {/* Parent Menu Header Row */}
+                        <div
+                          draggable={true}
+                          onDragStart={(e) => {
+                            setDraggedNavIdx(idx);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (dragOverNavIdx !== idx) setDragOverNavIdx(idx);
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverNavIdx === idx) setDragOverNavIdx(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (draggedNavIdx === null || draggedNavIdx === idx) return;
+                            const newSorted = [...sorted];
+                            const draggedItem = newSorted.splice(draggedNavIdx, 1)[0];
+                            newSorted.splice(idx, 0, draggedItem);
+                            setDraggedNavIdx(null);
+                            setDragOverNavIdx(null);
+                            const newPathOrder = newSorted.map((i) => i.path);
+                            handleUpdate('navigationOrder', newPathOrder);
+                            showToast({
+                              type: 'success',
+                              title: 'Sidebar Reordered',
+                              message: `Moved "${draggedItem.label}" to position #${idx + 1}.`,
+                            });
+                          }}
+                          onDragEnd={() => {
+                            setDraggedNavIdx(null);
+                            setDragOverNavIdx(null);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 14px',
+                            cursor: 'grab',
+                            userSelect: 'none',
+                          }}
+                          title="Drag and drop to reorder"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ color: 'var(--text-muted)', cursor: 'grab', display: 'flex', alignItems: 'center' }}>
+                              <GripVertical size={16} />
+                            </div>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
+                              #{idx + 1}
+                            </span>
+                            <div
+                              style={{
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '50%',
+                                background: item.color,
+                                opacity: isHidden ? 0.5 : 1,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontSize: '0.88rem',
+                                fontWeight: 600,
+                                color: isHidden ? 'var(--text-muted)' : 'var(--text-primary)',
+                                textDecoration: isHidden ? 'line-through' : 'none',
+                              }}
+                            >
+                              {item.label}
+                            </span>
+                            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                              ({item.path})
+                            </span>
+
+                            {/* Submenu Dropdown Expand / Manage Button */}
+                            {item.hasSubmenu && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleSubmenuExpand(item.path);
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  padding: '2px 9px',
+                                  borderRadius: '14px',
+                                  fontSize: '0.73rem',
+                                  fontWeight: 700,
+                                  background: isSubmenuExpanded
+                                    ? 'rgba(6, 182, 212, 0.18)'
+                                    : 'rgba(255, 255, 255, 0.05)',
+                                  color: isSubmenuExpanded ? '#06B6D4' : 'var(--text-secondary)',
+                                  border: `1.2px solid ${isSubmenuExpanded ? '#06B6D4' : 'var(--border-color)'}`,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.18s ease',
+                                }}
+                                title={isSubmenuExpanded ? 'Collapse submenus' : 'Manage submenus sequence'}
+                              >
+                                <CornerDownRight size={12} />
+                                <span>{item.subItems?.length || 0} Submenus</span>
+                                <ChevronDown
+                                  size={13}
+                                  style={{
+                                    transform: isSubmenuExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.2s ease',
+                                  }}
+                                />
+                              </button>
+                            )}
                           </div>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
-                            #{idx + 1}
-                          </span>
-                          <div
-                            style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              background: item.color,
-                              boxShadow: `0 0 6px ${item.color}`,
-                            }}
-                          />
-                          <ItemIcon size={16} color={item.color} style={{ flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {item.label}
-                          </span>
-                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                            ({item.path})
-                          </span>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* Visibility Toggle Button */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '3px 8px',
+                                borderRadius: '20px',
+                                background: isHidden
+                                  ? 'rgba(239, 68, 68, 0.08)'
+                                  : 'rgba(16, 185, 129, 0.08)',
+                                border: `1px solid ${isHidden ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
+                              }}
+                              title={
+                                isSettingsItem
+                                  ? 'Settings must remain visible'
+                                  : isHidden
+                                  ? 'Click toggle to show in sidebar'
+                                  : 'Click toggle to hide from sidebar'
+                              }
+                            >
+                              {isHidden ? (
+                                <EyeOff size={13} style={{ color: '#EF4444' }} />
+                              ) : (
+                                <Eye size={13} style={{ color: '#10B981' }} />
+                              )}
+                              <span
+                                style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  color: isHidden ? '#EF4444' : '#10B981',
+                                  userSelect: 'none',
+                                  minWidth: '42px',
+                                }}
+                              >
+                                {isHidden ? 'Hidden' : 'Visible'}
+                              </span>
+                              <ToggleSwitch
+                                id={`toggle-nav-${item.path.replace(/\//g, '') || 'root'}`}
+                                checked={!isHidden}
+                                disabled={isSettingsItem}
+                                title={
+                                  isSettingsItem
+                                    ? 'Settings must remain visible'
+                                    : isHidden
+                                    ? 'Show in sidebar'
+                                    : 'Hide from sidebar'
+                                }
+                                onChange={() => toggleVisibility(item.path)}
+                              />
+                            </div>
+
+                            {/* Move Up / Down Reorder */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveItem(idx, -1);
+                                }}
+                                title="Move Up"
+                                style={{
+                                  padding: '4px',
+                                  opacity: idx === 0 ? 0.3 : 1,
+                                  cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                                }}
+                              >
+                                <ArrowUp size={15} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                disabled={idx === sorted.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveItem(idx, 1);
+                                }}
+                                title="Move Down"
+                                style={{
+                                  padding: '4px',
+                                  opacity: idx === sorted.length - 1 ? 0.3 : 1,
+                                  cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
+                                }}
+                              >
+                                <ArrowDown size={15} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            disabled={idx === 0}
-                            onClick={() => moveItem(idx, -1)}
-                            title="Move Up"
+                        {/* Expandable Submenu Sequence Manager */}
+                        {item.hasSubmenu && isSubmenuExpanded && (
+                          <div
                             style={{
-                              padding: '4px',
-                              opacity: idx === 0 ? 0.3 : 1,
-                              cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                              borderTop: '1px solid var(--border-color)',
+                              background: 'rgba(0, 0, 0, 0.22)',
+                              padding: '14px 16px 16px 22px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px',
                             }}
                           >
-                            <ArrowUp size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            disabled={idx === sorted.length - 1}
-                            onClick={() => moveItem(idx, 1)}
-                            title="Move Down"
-                            style={{
-                              padding: '4px',
-                              opacity: idx === sorted.length - 1 ? 0.3 : 1,
-                              cursor: idx === sorted.length - 1 ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            <ArrowDown size={15} />
-                          </button>
-                        </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
+                                gap: '8px',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <CornerDownRight size={15} color="#06B6D4" />
+                                <div>
+                                  <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    {item.label} Submenu Sequence & Layout
+                                  </span>
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+                                    Reorder child submenu sequence. Changes sync immediately to sidebar dropdown and page navigation tabs.
+                                  </span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => {
+                                  handleUpdate(item.subItemsKey || 'reportsOrder', [
+                                    '/reports',
+                                    '/reports/pending',
+                                    '/reports/completed',
+                                    '/reports/missed',
+                                    '/reports/habits',
+                                    '/reports/goals',
+                                    '/reports/red-flags',
+                                    '/reports/tracker-logs',
+                                  ]);
+                                  showToast({
+                                    type: 'info',
+                                    title: 'Reset Submenu Sequence',
+                                    message: `${item.label} submenus restored to default order.`,
+                                  });
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  padding: '4px 9px',
+                                  fontSize: '0.72rem',
+                                }}
+                              >
+                                <RotateCcw size={12} /> Reset Order
+                              </button>
+                            </div>
+
+                            {/* Submenu Draggable / Arrow List */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {(() => {
+                                let currentSubOrder = settings?.[item.subItemsKey || 'reportsOrder'];
+                                if (typeof currentSubOrder === 'string') {
+                                  try { currentSubOrder = JSON.parse(currentSubOrder); } catch { currentSubOrder = null; }
+                                }
+                                if (!Array.isArray(currentSubOrder) || currentSubOrder.length === 0) {
+                                  currentSubOrder = item.subItems.map((i) => i.path);
+                                } else {
+                                  currentSubOrder = [...currentSubOrder];
+                                  item.subItems.forEach((sub) => {
+                                    if (!currentSubOrder.includes(sub.path) && !currentSubOrder.includes(sub.key)) {
+                                      const missedIdx = currentSubOrder.findIndex((p) => p === '/reports/missed' || p === 'missed');
+                                      if (missedIdx !== -1) {
+                                        currentSubOrder.splice(missedIdx + 1, 0, sub.path);
+                                      } else {
+                                        currentSubOrder.push(sub.path);
+                                      }
+                                    }
+                                  });
+                                }
+
+                                const sortedSub = [...item.subItems].sort((a, b) => {
+                                  const idxA = currentSubOrder.indexOf(a.path) !== -1 ? currentSubOrder.indexOf(a.path) : (currentSubOrder.indexOf(a.key) !== -1 ? currentSubOrder.indexOf(a.key) : 99);
+                                  const idxB = currentSubOrder.indexOf(b.path) !== -1 ? currentSubOrder.indexOf(b.path) : (currentSubOrder.indexOf(b.key) !== -1 ? currentSubOrder.indexOf(b.key) : 99);
+                                  return idxA - idxB;
+                                });
+
+                                const moveSubItem = (sIdx, dir) => {
+                                  const newSorted = [...sortedSub];
+                                  const target = sIdx + dir;
+                                  if (target < 0 || target >= newSorted.length) return;
+                                  const temp = newSorted[sIdx];
+                                  newSorted[sIdx] = newSorted[target];
+                                  newSorted[target] = temp;
+                                  const newPathOrder = newSorted.map((i) => i.path);
+                                  handleUpdate(item.subItemsKey || 'reportsOrder', newPathOrder);
+                                };
+
+                                return sortedSub.map((subItem, sIdx) => {
+                                  const SubIcon = subItem.icon || FileText;
+                                  const isDraggingSub = draggedReportIdx === sIdx;
+                                  const isDragOverSub = dragOverReportIdx === sIdx;
+
+                                  return (
+                                    <div
+                                      key={subItem.path}
+                                      draggable={true}
+                                      onDragStart={(e) => {
+                                        e.stopPropagation();
+                                        setDraggedReportIdx(sIdx);
+                                        e.dataTransfer.effectAllowed = 'move';
+                                      }}
+                                      onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (dragOverReportIdx !== sIdx) setDragOverReportIdx(sIdx);
+                                      }}
+                                      onDragLeave={(e) => {
+                                        e.stopPropagation();
+                                        if (dragOverReportIdx === sIdx) setDragOverReportIdx(null);
+                                      }}
+                                      onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (draggedReportIdx === null || draggedReportIdx === sIdx) return;
+                                        const newSorted = [...sortedSub];
+                                        const dragged = newSorted.splice(draggedReportIdx, 1)[0];
+                                        newSorted.splice(sIdx, 0, dragged);
+                                        setDraggedReportIdx(null);
+                                        setDragOverReportIdx(null);
+                                        const newPathOrder = newSorted.map((i) => i.path);
+                                        handleUpdate(item.subItemsKey || 'reportsOrder', newPathOrder);
+                                        showToast({
+                                          type: 'success',
+                                          title: 'Submenu Reordered',
+                                          message: `Moved "${dragged.label}" to position #${sIdx + 1}.`,
+                                        });
+                                      }}
+                                      onDragEnd={(e) => {
+                                        e.stopPropagation();
+                                        setDraggedReportIdx(null);
+                                        setDragOverReportIdx(null);
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '7px 12px',
+                                        background: isDraggingSub
+                                          ? 'rgba(23, 105, 255, 0.16)'
+                                          : isDragOverSub
+                                          ? 'rgba(16, 185, 129, 0.16)'
+                                          : 'rgba(255, 255, 255, 0.035)',
+                                        border: isDragOverSub
+                                          ? '2px dashed var(--primary-color)'
+                                          : isDraggingSub
+                                          ? '1px solid var(--primary-color)'
+                                          : '1px solid var(--border-color)',
+                                        borderRadius: '6px',
+                                        cursor: 'grab',
+                                        transition: 'all 0.15s ease',
+                                      }}
+                                      title="Drag and drop to reorder submenu"
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                                          <GripVertical size={14} />
+                                        </div>
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', width: '22px' }}>
+                                          #{sIdx + 1}
+                                        </span>
+                                        <div
+                                          style={{
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: subItem.color || '#06B6D4',
+                                          }}
+                                        />
+                                        <SubIcon size={14} color={subItem.color || '#06B6D4'} />
+                                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                          {subItem.label}
+                                        </span>
+                                        <span style={{ fontSize: '0.70rem', color: 'var(--text-muted)' }}>
+                                          ({subItem.path})
+                                        </span>
+                                      </div>
+
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                        <button
+                                          type="button"
+                                          className="btn-icon"
+                                          disabled={sIdx === 0}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            moveSubItem(sIdx, -1);
+                                          }}
+                                          title="Move Up"
+                                          style={{
+                                            padding: '3px',
+                                            opacity: sIdx === 0 ? 0.3 : 1,
+                                            cursor: sIdx === 0 ? 'not-allowed' : 'pointer',
+                                          }}
+                                        >
+                                          <ArrowUp size={13} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="btn-icon"
+                                          disabled={sIdx === sortedSub.length - 1}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            moveSubItem(sIdx, 1);
+                                          }}
+                                          title="Move Down"
+                                          style={{
+                                            padding: '3px',
+                                            opacity: sIdx === sortedSub.length - 1 ? 0.3 : 1,
+                                            cursor: sIdx === sortedSub.length - 1 ? 'not-allowed' : 'pointer',
+                                          }}
+                                        >
+                                          <ArrowDown size={13} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   });
