@@ -8,7 +8,7 @@ import { EventModal } from '../events/EventModal';
 import { GoalModal } from '../goals/GoalModal';
 import { CategoryModal } from '../categories/CategoryModal';
 import { BulkImportModal } from '../common/BulkImportModal';
-import { ConfirmDialog, ToastContainer } from '../common/ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { StopReasonModal } from '../workTracker/StopReasonModal';
 import MissedTaskFloatingPopup from '../common/MissedTaskFloatingPopup';
 
@@ -43,7 +43,6 @@ export function AppLayout() {
 
       {/* Global Feedback Dialogs & Notifications */}
       <ConfirmDialog />
-      <ToastContainer />
     </div>
   );
 }

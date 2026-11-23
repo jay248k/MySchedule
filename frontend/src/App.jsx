@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { LoginPage } from './pages/LoginPage';
+import { ToastContainer } from './components/common/ConfirmDialog';
+import 'react-toastify/dist/ReactToastify.css';
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
 import { TodaysTasks } from './pages/TodaysTasks';
@@ -102,6 +104,7 @@ export default function App() {
       <AppProvider>
         <BrowserRouter>
           <AppRoutes />
+          <ToastContainer />
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>

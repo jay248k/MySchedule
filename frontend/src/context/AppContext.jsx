@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import {
@@ -173,18 +174,34 @@ export function AppProvider({ children }) {
     dispatch(syncGoalProgressWithTasks(tasks));
   }, [tasks, dispatch]);
 
-  // Toast System (Defined early so sync and handlers can safely reference it)
-  const showToast = useCallback(
-    ({ type = 'info', title = '', message = '' }) => {
-      const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
-      const newToast = { id, type, title, message };
-      dispatch(addToast(newToast));
-      setTimeout(() => {
-        dispatch(removeToast(id));
-      }, 4000);
-    },
-    [dispatch]
-  );
+  // Standard Normal Toastify for all notifications across the application
+  const showToast = useCallback((arg) => {
+    let type = 'info';
+    let title = '';
+    let message = '';
+
+    if (typeof arg === 'string') {
+      message = arg;
+    } else if (arg && typeof arg === 'object') {
+      type = arg.type || 'info';
+      title = arg.title || '';
+      message = arg.message || '';
+    }
+
+    const text = title && message && title !== message
+      ? `${title}: ${message}`
+      : (message || title || '');
+
+    if (!text) return;
+
+    const toastType = type === 'danger' ? 'error' : (type === 'warning' ? 'warn' : type);
+
+    if (typeof toast[toastType] === 'function') {
+      toast[toastType](text);
+    } else {
+      toast(text);
+    }
+  }, []);
 
   const handleRemoveToast = useCallback(
     (id) => {
