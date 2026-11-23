@@ -682,3 +682,30 @@
   font-weight: 700;
 }
 
+/* Reschedule Missed Task Button */
+.deviation-reschedule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10B981;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 6px;
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.deviation-reschedule-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10B981;
+  color: #34D399;
+  transform: translateY(-1px);
+}
+
+

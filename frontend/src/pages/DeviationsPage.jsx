@@ -62,11 +62,70 @@ export function DeviationsPage() {
     addDeviation,
     updateDeviation,
     deleteDeviation,
+    updateTask,
+    addTask,
+    showToast,
   } = useApp();
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
   const isToday = activeDate === todayStr;
+
+  // Reschedule Missed Task State
+  const [reschedulingTask, setReschedulingTask] = useState(null);
+  const [rescheduleForm, setRescheduleForm] = useState({
+    date: todayStr,
+    startTime: '10:00',
+    endTime: '11:00',
+  });
+
+  const handleOpenReschedule = (task) => {
+    const tDate = task.date || activeDate || todayStr;
+    const tStart = task.startTime || '10:00';
+    const tEnd = task.endTime || '11:00';
+    setReschedulingTask(task);
+    setRescheduleForm({
+      date: tDate,
+      startTime: tStart,
+      endTime: tEnd,
+    });
+  };
+
+  const handleConfirmReschedule = async (e) => {
+    e.preventDefault();
+    if (!reschedulingTask) return;
+
+    if (reschedulingTask.id && tasks.some((t) => t.id === reschedulingTask.id)) {
+      if (updateTask) {
+        await updateTask(reschedulingTask.id, {
+          date: rescheduleForm.date,
+          startTime: rescheduleForm.startTime,
+          endTime: rescheduleForm.endTime,
+          status: 'pending',
+        });
+      }
+    } else {
+      if (addTask) {
+        await addTask({
+          title: reschedulingTask.title,
+          date: rescheduleForm.date,
+          startTime: rescheduleForm.startTime,
+          endTime: rescheduleForm.endTime,
+          status: 'pending',
+          priority: 'medium',
+        });
+      }
+    }
+
+    if (showToast) {
+      showToast({
+        type: 'success',
+        title: 'Task Rescheduled! 📅',
+        message: `"${reschedulingTask.title}" rescheduled to ${rescheduleForm.date} (${rescheduleForm.startTime} – ${rescheduleForm.endTime}).`,
+      });
+    }
+    setReschedulingTask(null);
+  };
 
   // Filter deviations for active date
   const dateDeviations = useMemo(
@@ -401,10 +460,15 @@ export function DeviationsPage() {
               };
               const displayCategoryLabel = getSafeReasonLabel(categoryMatch.label);
               const rootCauseClean = cleanRootCause(dev.rootCause);
+              const targetTask = (tasks || []).find(
+                (t) => (dev.taskId && t.id === dev.taskId) ||
+                       (dev.plannedAction && t.title?.trim().toLowerCase() === dev.plannedAction?.trim().toLowerCase())
+              );
+              const isTaskSelected = Boolean(dev.taskId || targetTask || dev.plannedAction);
 
               return (
                 <div key={dev.id} className="deviation-card">
-                  {/* Top Bar: Incident #, Time, Duration, Category & Actions */}
+                  {/* Top Bar: Incident #, Time, Duration & Actions */}
                   <div className="deviation-top-bar">
                     <div className="deviation-tags-wrap">
                       <span className="deviation-incident-pill">
@@ -421,19 +485,6 @@ export function DeviationsPage() {
                         <Calendar size={11} />
                         <span>{dev.date}</span>
                       </span>
-
-                      {safeReason && safeReason !== 'Deviation Event' && (
-                        <span
-                          className="deviation-category-pill"
-                          style={{
-                            background: `${categoryMatch.color}14`,
-                            border: `1px solid ${categoryMatch.color}30`,
-                            color: categoryMatch.color,
-                          }}
-                        >
-                          {displayCategoryLabel}
-                        </span>
-                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -467,6 +518,30 @@ export function DeviationsPage() {
                       <div className="deviation-side-text">
                         {dev.plannedAction}
                       </div>
+
+                      {/* If task was selected/planned, show option to reschedule the missed task */}
+                      {isTaskSelected && (
+                        <button
+                          type="button"
+                          className="deviation-reschedule-btn"
+                          onClick={() =>
+                            handleOpenReschedule(
+                              targetTask || {
+                                id: dev.taskId,
+                                title: dev.plannedAction,
+                                date: dev.date,
+                                startTime: dev.startTime,
+                                endTime: dev.endTime,
+                              }
+                            )
+                          }
+                          title="Reschedule this missed task to a new date and time"
+                        >
+                          <Calendar size={12} />
+                          <span>Reschedule Missed Task</span>
+                          <ArrowRight size={11} />
+                        </button>
+                      )}
                     </div>
 
                     <div className="deviation-split-side is-actual">
@@ -729,6 +804,187 @@ export function DeviationsPage() {
                   className="btn btn-primary deviation-submit-btn"
                 >
                   {editingId ? 'Update Deviation Log' : 'Save Deviation Log'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Reschedule Missed Task */}
+      {reschedulingTask && (
+        <div
+          className="deviation-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReschedulingTask(null);
+          }}
+        >
+          <div className="deviation-modal-dialog" style={{ maxWidth: '440px' }}>
+            <div className="deviation-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calendar size={18} color="var(--primary-color)" />
+                <h3 className="deviation-modal-title">Reschedule Missed Task</h3>
+              </div>
+              <button
+                type="button"
+                className="deviation-modal-close"
+                onClick={() => setReschedulingTask(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmReschedule} className="deviation-modal-form">
+              {/* Task Details Card */}
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Missed Scheduled Commitment
+                </div>
+                <div style={{ fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {reschedulingTask.title}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Clock size={12} />
+                  <span>Originally scheduled on {reschedulingTask.date || activeDate} ({reschedulingTask.startTime || '—'} – {reschedulingTask.endTime || '—'})</span>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  Quick Reschedule Presets
+                </label>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-secondary"
+                    onClick={() => {
+                      const now = new Date();
+                      now.setHours(now.getHours() + 2);
+                      const sh = String(now.getHours()).padStart(2, '0');
+                      const sm = '00';
+                      const eh = String((now.getHours() + 1) % 24).padStart(2, '0');
+                      setRescheduleForm({
+                        date: todayStr,
+                        startTime: `${sh}:${sm}`,
+                        endTime: `${eh}:${sm}`,
+                      });
+                    }}
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                  >
+                    ⚡ Later Today (+2h)
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-secondary"
+                    onClick={() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      const ym = tomorrow.toISOString().split('T')[0];
+                      setRescheduleForm({
+                        date: ym,
+                        startTime: '09:00',
+                        endTime: '10:00',
+                      });
+                    }}
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                  >
+                    🌅 Tomorrow Morning
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-secondary"
+                    onClick={() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      const ym = tomorrow.toISOString().split('T')[0];
+                      setRescheduleForm({
+                        date: ym,
+                        startTime: '18:00',
+                        endTime: '19:00',
+                      });
+                    }}
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                  >
+                    🌆 Tomorrow Evening
+                  </button>
+                </div>
+              </div>
+
+              {/* Date & Time Slot */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div>
+                  <label className="deviation-label-with-icon" style={{ fontSize: '0.75rem' }}>
+                    <Calendar size={13} color="var(--primary-color)" />
+                    <span>New Rescheduled Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={rescheduleForm.date}
+                    onChange={(e) => setRescheduleForm({ ...rescheduleForm, date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label className="deviation-label-with-icon" style={{ fontSize: '0.75rem' }}>
+                      <Clock size={13} color="var(--primary-color)" />
+                      <span>New Start Time</span>
+                    </label>
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={rescheduleForm.startTime}
+                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, startTime: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="deviation-label-with-icon" style={{ fontSize: '0.75rem' }}>
+                      <Clock size={13} color="var(--primary-color)" />
+                      <span>New End Time</span>
+                    </label>
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={rescheduleForm.endTime}
+                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, endTime: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="deviation-modal-footer" style={{ marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setReschedulingTask(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Calendar size={13} />
+                  <span>Confirm Reschedule</span>
                 </button>
               </div>
             </form>
