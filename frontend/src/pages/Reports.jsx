@@ -34,7 +34,6 @@ import {
   ShieldAlert,
   Timer,
   Coffee,
-  Sliders,
   Flame,
 } from 'lucide-react';
 import {
@@ -1721,16 +1720,6 @@ export function Reports() {
             );
           })}
         </div>
-
-        <button
-          type="button"
-          className="reports-tab-settings-btn"
-          onClick={() => navigate('/settings?tab=reports-tabs')}
-          title="Open Settings to resequence reports tabs"
-        >
-          <Sliders size={13} />
-          <span>Resequence Tabs in Settings</span>
-        </button>
       </div>
       {/* ========================================================================= */}
       {/* VIEW: HABITS & STREAKS COMPREHENSIVE REPORT                                */}
