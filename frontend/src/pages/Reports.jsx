@@ -89,6 +89,7 @@ export function Reports() {
     workChains = {},
     settings = {},
     deviations = [],
+    requests = [],
   } = useApp();
 
   // Dynamic ordering support for Reports sub-tabs from settings.reportsOrder
@@ -99,6 +100,7 @@ export function Reports() {
       { key: 'pending', path: '/reports/pending', label: 'Pending Tasks Report', shortLabel: 'Pending Tasks', icon: Clock, color: '#F59E0B' },
       { key: 'completed', path: '/reports/completed', label: 'Completed Tasks Report', shortLabel: 'Completed Tasks', icon: CheckCircle2, color: '#10B981' },
       { key: 'missed', path: '/reports/missed', label: 'Missed & Overdue Report', shortLabel: 'Missed & Overdue', icon: AlertTriangle, color: '#EF4444' },
+      { key: 'rescheduled', path: '/reports/rescheduled', label: 'Rescheduled Tasks Audit Report', shortLabel: 'Rescheduled Tasks', icon: RefreshCw, color: '#3B82F6' },
       { key: 'goals', path: '/reports/goals', label: 'Goal Progression & Milestones', shortLabel: 'Goal Progression', icon: Target, color: '#A855F7' },
       { key: 'red-flags', path: '/reports/red-flags', label: 'Red Flag Diagnostic Report', shortLabel: 'Red Flag Report', icon: Flag, color: '#DC2626' },
       { key: 'tracker-logs', path: '/reports/tracker-logs', label: 'Tracker & Gap Logs', shortLabel: 'Tracker & Gap Logs', icon: Timer, color: '#06B6D4' },
@@ -119,14 +121,14 @@ export function Reports() {
 
   // Active view: sync with route param if present ('pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits')
   const [activeTab, setActiveTab] = useState(() => {
-    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
+    if (reportType && ['pending', 'completed', 'missed', 'rescheduled', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
       return reportType;
     }
     return 'today-report';
   });
 
   useEffect(() => {
-    if (reportType && ['pending', 'completed', 'missed', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
+    if (reportType && ['pending', 'completed', 'missed', 'rescheduled', 'goals', 'red-flags', 'tracker-logs', 'today-report', 'analytics', 'habits'].includes(reportType)) {
       setActiveTab(reportType);
     } else if (!reportType) {
       setActiveTab('today-report');
@@ -604,7 +606,267 @@ export function Reports() {
 
   // Filter tasks within selected date range
   const dateRangeTasks = useMemo(() => {
-    return (tasks || []).filter((t) => {
+  
+  // Rescheduled Tasks Report Data
+  const rescheduledData = useMemo(() => {
+    const list = [];
+    const seenTaskIds = new Set();
+
+    // 1. From work requests where status === 'rescheduled' or rescheduledDate exists
+    const rescheduleRequests = (requests || []).filter(
+      (r) => r.status === 'rescheduled' || !!r.rescheduledDate
+    );
+
+    rescheduleRequests.forEach((r) => {
+      if (r.taskId) seenTaskIds.add(String(r.taskId));
+      const liveTask = tasks.find((t) => String(t.id) === String(r.taskId));
+      const cat = categories.find((c) => c.id === (liveTask?.categoryId || r.categoryId));
+      const goal = goals.find((g) => g.id === (liveTask?.goalId || r.goalId));
+
+      const origDate = r.date || liveTask?.originalDate || '-';
+      const origStart = r.startTime || liveTask?.originalStartTime || '';
+      const origEnd = r.endTime || liveTask?.originalEndTime || '';
+      const newDate = r.rescheduledDate || liveTask?.date || '-';
+      const newStart = r.rescheduledStartTime || liveTask?.startTime || '';
+      const newEnd = r.rescheduledEndTime || liveTask?.endTime || '';
+
+      let daysShifted = 0;
+      if (origDate !== '-' && newDate !== '-') {
+        try {
+          const d1 = new Date(origDate);
+          const d2 = new Date(newDate);
+          daysShifted = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        } catch {}
+      }
+
+      const isCompleted = liveTask ? (liveTask.status === 'completed' || liveTask.completed) : false;
+
+      list.push({
+        id: r.id || `resched-${Math.random()}`,
+        taskId: r.taskId || '-',
+        title: r.title || r.taskTitle || liveTask?.title || 'Rescheduled Task',
+        category: cat?.name || 'General',
+        categoryColor: cat?.color || '#3B82F6',
+        originalDate: origDate,
+        originalTime: origStart && origEnd ? `${origStart} - ${origEnd}` : (origStart || '-'),
+        newDate: newDate,
+        newTime: newStart && newEnd ? `${newStart} - ${newEnd}` : (newStart || '-'),
+        daysShifted: daysShifted >= 0 ? `+${daysShifted}d` : `${daysShifted}d`,
+        rawShift: daysShifted,
+        priority: (liveTask?.priority || r.priority || 'medium').toUpperCase(),
+        goal: goal?.title || 'None',
+        reason: r.reason || 'Schedule adjustment / deviation',
+        remarks: r.actionRemarks || `Rescheduled to ${newDate}`,
+        rescheduledAt: r.createdAt ? formatDate(r.createdAt) : (r.updatedAt ? formatDate(r.updatedAt) : '-'),
+        currentStatus: isCompleted ? 'Completed' : 'Pending in New Slot',
+        isCompleted,
+      });
+    });
+
+    // 2. From tasks that have isRescheduled or rescheduledDate and not already in requests
+    (tasks || []).forEach((t) => {
+      if ((t.isRescheduled || t.rescheduledDate || t.originalDate) && !seenTaskIds.has(String(t.id))) {
+        seenTaskIds.add(String(t.id));
+        const cat = categories.find((c) => c.id === t.categoryId);
+        const goal = goals.find((g) => g.id === t.goalId);
+        const origDate = t.originalDate || '-';
+        const newDate = t.date || t.rescheduledDate || '-';
+
+        let daysShifted = 0;
+        if (origDate !== '-' && newDate !== '-') {
+          try {
+            const d1 = new Date(origDate);
+            const d2 = new Date(newDate);
+            daysShifted = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+          } catch {}
+        }
+
+        const isCompleted = t.status === 'completed' || t.completed;
+
+        list.push({
+          id: `task-resched-${t.id}`,
+          taskId: t.id,
+          title: t.title,
+          category: cat?.name || 'General',
+          categoryColor: cat?.color || '#3B82F6',
+          originalDate: origDate,
+          originalTime: t.originalStartTime ? `${t.originalStartTime} - ${t.originalEndTime || ''}` : '-',
+          newDate: newDate,
+          newTime: t.startTime && t.endTime ? `${t.startTime} - ${t.endTime}` : (t.startTime || '-'),
+          daysShifted: daysShifted >= 0 ? `+${daysShifted}d` : `${daysShifted}d`,
+          rawShift: daysShifted,
+          priority: (t.priority || 'medium').toUpperCase(),
+          goal: goal?.title || 'None',
+          reason: t.rescheduleReason || 'Overdue reschedule',
+          remarks: t.rescheduleRemarks || `Rescheduled to ${newDate}`,
+          rescheduledAt: t.updatedAt ? formatDate(t.updatedAt) : (t.date || '-'),
+          currentStatus: isCompleted ? 'Completed' : 'Pending in New Slot',
+          isCompleted,
+        });
+      }
+    });
+
+    return list;
+  }, [requests, tasks, categories, goals]);
+
+  const rescheduledSummary = useMemo(() => {
+    const total = rescheduledData.length;
+    const completed = rescheduledData.filter((r) => r.isCompleted).length;
+    const pending = total - completed;
+    const avgShift = total > 0
+      ? Math.round(rescheduledData.reduce((acc, r) => acc + (r.rawShift || 0), 0) / total)
+      : 0;
+
+    return [
+      { label: 'Total Rescheduled Tasks', value: total, badge: 'All Logged', color: '#3B82F6' },
+      { label: 'Pending in New Slot', value: pending, badge: 'Upcoming', color: '#F59E0B' },
+      { label: 'Completed Deliverables', value: completed, badge: 'Delivered', color: '#10B981' },
+      { label: 'Avg Timeline Shift', value: `${avgShift > 0 ? '+' : ''}${avgShift} days`, badge: 'Timeline', color: '#8B5CF6' },
+    ];
+  }, [rescheduledData]);
+
+  const rescheduledColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Rescheduled Task',
+      sortable: true,
+      width: '260px',
+      render: (val, row) => (
+        <div className="table-task-cell">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <RefreshCw size={15} color="#3B82F6" />
+            <span className="table-task-title">{val}</span>
+          </div>
+          <div className="table-task-id-badge">ID: {String(row.taskId)?.slice(0, 8) || row.id}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'originalDate',
+      label: 'Original Schedule',
+      sortable: true,
+      width: '160px',
+      render: (val, row) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            📅 {val}
+          </span>
+          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+            ⏰ {row.originalTime}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'newDate',
+      label: 'New Schedule Slot',
+      sortable: true,
+      width: '170px',
+      render: (val, row) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#3B82F6' }}>
+            ➔ {val}
+          </span>
+          <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            ⏰ {row.newTime}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'daysShifted',
+      label: 'Shift',
+      sortable: true,
+      width: '85px',
+      render: (val, row) => (
+        <span
+          style={{
+            fontSize: '0.74rem',
+            fontWeight: 800,
+            padding: '3px 8px',
+            borderRadius: '6px',
+            background: row.rawShift > 3 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+            color: row.rawShift > 3 ? '#EF4444' : '#60A5FA',
+            border: `1px solid ${row.rawShift > 3 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(59, 130, 246, 0.25)'}`,
+            display: 'inline-block',
+          }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      width: '130px',
+      render: (val, row) => (
+        <span
+          className="table-category-badge"
+          style={{
+            background: 'rgba(59, 130, 246, 0.12)',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            color: row.categoryColor || '#3B82F6',
+          }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      width: '95px',
+      render: (val) => (
+        <span className={`table-priority-pill ${String(val).toLowerCase()}`}>
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: 'reason',
+      label: 'Reschedule Reason & Remarks',
+      sortable: true,
+      width: '230px',
+      render: (val, row) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '220px' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }} title={val}>
+            {val}
+          </span>
+          {row.remarks && row.remarks !== val && (
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }} title={row.remarks}>
+              {row.remarks}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'currentStatus',
+      label: 'Current Status',
+      sortable: true,
+      width: '150px',
+      render: (val, row) => (
+        <span className={`table-status-pill ${row.isCompleted ? 'completed' : 'pending'}`}>
+          {row.isCompleted ? <CheckCircle2 size={11} /> : <Clock size={11} />} {val}
+        </span>
+      ),
+    },
+    {
+      key: 'rescheduledAt',
+      label: 'Logged At',
+      sortable: true,
+      width: '120px',
+      render: (val) => (
+        <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+          {val}
+        </span>
+      ),
+    },
+  ], []);
+
+  return (tasks || []).filter((t) => {
       if (!t.date) return false;
       if (reportFromDate && t.date < reportFromDate) return false;
       if (reportToDate && t.date > reportToDate) return false;
@@ -1605,6 +1867,22 @@ export function Reports() {
           defaultSortKey="daysDelayed"
           exportFileName="MySchedule_Missed_Tasks"
           sheetName="MissedTasks"
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW: RESCHEDULED TASKS AUDIT REPORT                                      */}
+      {/* ========================================================================= */}
+      {activeTab === 'rescheduled' && (
+        <ExcelReportTable
+          title="Rescheduled Tasks Report"
+          subtitle="Complete audit trail of all rescheduled tasks, schedule shifts, reason logs, and deliverables"
+          summaryCards={rescheduledSummary}
+          columns={rescheduledColumns}
+          data={rescheduledData}
+          defaultSortKey="rescheduledAt"
+          exportFileName="MySchedule_Rescheduled_Tasks_Report"
+          sheetName="RescheduledTasks"
         />
       )}
 
