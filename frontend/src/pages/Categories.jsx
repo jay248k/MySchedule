@@ -468,9 +468,14 @@ export function Categories() {
                       <PieIcon size={15} strokeWidth={2.4} />
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                        Workload Distribution
-                      </h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                          Workload Distribution
+                        </h3>
+                        <span className="badge badge-primary" style={{ fontSize: '0.68rem', padding: '1px 7px', borderRadius: '999px' }}>
+                          {totalTasksCount} Tasks
+                        </span>
+                      </div>
                       <p style={{ margin: '1px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                         Share of total tasks by category
                       </p>
@@ -478,7 +483,7 @@ export function Categories() {
                   </div>
                 </div>
 
-                <div style={{ width: '100%', height: 180, marginTop: '8px' }}>
+                <div style={{ width: '100%', height: 210, marginTop: '8px' }}>
                   {pieData.length === 0 ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                       No tasks assigned to categories yet.
@@ -513,12 +518,16 @@ export function Categories() {
                           }}
                         />
                         <Legend
-                          wrapperStyle={{ paddingTop: '2px' }}
-                          formatter={(value, entry) => (
-                            <span style={{ color: 'var(--text-primary)', fontSize: '0.74rem', fontWeight: 600 }}>
-                              {entry.payload.name}
-                            </span>
-                          )}
+                          wrapperStyle={{ paddingTop: '6px' }}
+                          formatter={(value, entry) => {
+                            const total = entry.payload.total || 0;
+                            const pct = totalTasksCount > 0 ? Math.round((total / totalTasksCount) * 100) : 0;
+                            return (
+                              <span style={{ color: 'var(--text-primary)', fontSize: '0.74rem', fontWeight: 600 }}>
+                                {entry.payload.name} ({total} · {pct}%)
+                              </span>
+                            );
+                          }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
