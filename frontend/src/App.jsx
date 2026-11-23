@@ -27,8 +27,14 @@ import './styles/layout.css';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [forceReady, setForceReady] = React.useState(false);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    const timer = setTimeout(() => setForceReady(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading && !forceReady) {
     return (
       <div
         style={{
