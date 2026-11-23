@@ -98,7 +98,13 @@ export function AuthModal() {
           message: res.message || `Signed in as ${res.user.name}`,
         });
       } else {
-        setErrorMsg(res.error || 'Invalid email or password');
+        const errorText = res.error || 'Invalid email or password';
+        setErrorMsg(errorText);
+        showToast({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: errorText,
+        });
       }
     } else {
       // Sign Up validation
@@ -131,7 +137,13 @@ export function AuthModal() {
           message: res.message || `Welcome to MySchedule, ${res.user.name}!`,
         });
       } else {
-        setErrorMsg(res.error || 'Failed to create account');
+        const errorText = res.error || 'Failed to create account';
+        setErrorMsg(errorText);
+        showToast({
+          type: 'error',
+          title: 'Sign Up Failed',
+          message: errorText,
+        });
       }
     }
   };

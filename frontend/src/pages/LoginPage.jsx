@@ -68,7 +68,13 @@ export function LoginPage() {
         });
         navigate('/', { replace: true });
       } else {
-        setErrorMsg(res.error || 'Invalid email or password');
+        const errorText = res.error || 'Invalid email or password';
+        setErrorMsg(errorText);
+        showToast({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: errorText,
+        });
       }
     } else {
       if (!name.trim()) {
@@ -101,7 +107,13 @@ export function LoginPage() {
         });
         navigate('/', { replace: true });
       } else {
-        setErrorMsg(res.error || 'Failed to create account');
+        const errorText = res.error || 'Failed to create account';
+        setErrorMsg(errorText);
+        showToast({
+          type: 'error',
+          title: 'Registration Failed',
+          message: errorText,
+        });
       }
     }
   };
@@ -120,7 +132,13 @@ export function LoginPage() {
       });
       navigate('/', { replace: true });
     } else {
-      setErrorMsg(res.error || 'Demo sign in failed. Please check backend connection.');
+      const errorText = res.error || 'Demo sign in failed. Please check backend connection.';
+      setErrorMsg(errorText);
+      showToast({
+        type: 'error',
+        title: 'Demo Sign In Failed',
+        message: errorText,
+      });
     }
   };
 

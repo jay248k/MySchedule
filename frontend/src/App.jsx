@@ -26,15 +26,15 @@ import './styles/global.css';
 import './styles/layout.css';
 
 function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [forceReady, setForceReady] = React.useState(false);
+  const { isAuthenticated } = useAuth();
+  const [initialLoading, setInitialLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setForceReady(true), 2500);
-    return () => clearTimeout(timer);
+    // Dismiss initial loader once app boot is ready
+    setInitialLoading(false);
   }, []);
 
-  if (isLoading && !forceReady) {
+  if (initialLoading) {
     return (
       <div
         style={{
