@@ -475,53 +475,7 @@
   margin-top: 4px;
 }
 
-/* View 2: Sequential Chain View */
-.knowledge-chain-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.knowledge-chain-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.knowledge-chain-heading {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--primary-color);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-
-.knowledge-chain-nodes {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.knowledge-chain-node {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.knowledge-chain-node.is-active {
-  background: rgba(37, 99, 235, 0.2);
-  border: 1.5px solid var(--primary-color);
-}
-
-.knowledge-chain-node:not(.is-active) {
-  background: var(--page-bg);
-  border: 1px solid var(--border-color);
-}
+/* View 2: Sequential Chain View (Full styles defined in section below) */
 
 /* View 3: Detailed Cards */
 .knowledge-cards-list {
@@ -955,135 +909,628 @@
 }
 
 /* ==========================================================================
-   SEQUENTIAL LESSON CHAIN VIEW (A -> B -> C Flow)
+   SEQUENTIAL LESSON CHAIN VIEW (Curriculum Flow Studio)
    ========================================================================== */
 
 .knowledge-chain-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
 }
 
+/* Banner */
+.knowledge-chain-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.knowledge-chain-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10B981;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-bottom: 6px;
+}
+
+.knowledge-chain-banner-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.knowledge-chain-banner-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  max-width: 680px;
+  line-height: 1.45;
+}
+
+.btn-new-chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-new-chain:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  filter: brightness(1.08);
+}
+
+/* Chain Card */
 .knowledge-chain-card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 18px 22px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+  overflow: hidden;
 }
 
 .knowledge-chain-card:hover {
-  border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: var(--shadow-md);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.25);
+}
+
+.knowledge-chain-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10B981 0%, #3B82F6 100%);
 }
 
 .knowledge-chain-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.knowledge-chain-nodes {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
-  padding: 8px 0;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 18px;
 }
 
-.knowledge-chain-node {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--page-bg);
-  border: 1.5px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 14px;
-  min-width: 220px;
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-}
-
-.knowledge-chain-node:hover {
-  transform: translateY(-2px);
-  border-color: #3B82F6;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.18);
-}
-
-.knowledge-chain-node.is-active {
-  border-color: #3B82F6;
-  background: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-}
-
-.knowledge-chain-step-badge {
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: #3B82F6;
-  background: rgba(59, 130, 246, 0.12);
-  padding: 2px 7px;
-  border-radius: 5px;
-  display: inline-block;
-  align-self: flex-start;
-  letter-spacing: 0.04em;
-}
-
-.knowledge-chain-arrow {
+.knowledge-chain-heading-left {
   display: flex;
   align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.knowledge-chain-number-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(59, 130, 246, 0.12) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #10B981;
-  position: relative;
-  padding: 0 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 8px;
 }
 
-.knowledge-chain-unlink-btn {
-  position: absolute;
-  top: -14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  display: flex;
+.knowledge-chain-breadcrumbs {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: #EF4444;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chain-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: all 0.15s ease;
 }
 
-.knowledge-chain-unlink-btn:hover {
-  opacity: 1;
-  transform: scale(1.15);
+.chain-crumb:hover,
+.chain-crumb.is-active {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.12);
 }
 
-.knowledge-chain-add-slot {
-  display: flex;
+.crumb-idx {
+  font-weight: 800;
+  color: #3B82F6;
+  font-size: 0.72rem;
+}
+
+.crumb-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb-arrow {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.knowledge-chain-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.btn-chain-preview {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1.5px dashed var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #3B82F6;
+  font-size: 0.76rem;
   font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
 }
 
-.knowledge-chain-add-slot:hover {
-  border-color: #10B981;
-  color: #10B981;
-  background: rgba(16, 185, 129, 0.06);
+.btn-chain-preview:hover {
+  background: #3B82F6;
+  color: #FFFFFF;
+  border-color: #3B82F6;
 }
+
+/* Horizontal Pipeline Flow Track */
+.knowledge-chain-flow-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 8px 4px 16px;
+  scrollbar-width: thin;
+}
+
+/* Step Node Card */
+.knowledge-chain-node {
+  flex-shrink: 0;
+  width: 250px;
+  background: var(--page-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.knowledge-chain-node:hover {
+  transform: translateY(-3px);
+  border-color: #3B82F6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.18);
+}
+
+.knowledge-chain-node.is-active {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.04);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.knowledge-chain-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.knowledge-chain-step-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-text {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.knowledge-chain-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.node-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.node-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.node-action-btn.is-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+}
+
+.knowledge-chain-node-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.knowledge-chain-node-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.knowledge-chain-node-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.node-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.knowledge-chain-node-footer {
+  margin-top: auto;
+}
+
+.knowledge-chain-link-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: all 0.15s ease;
+}
+
+.knowledge-chain-link-bar.is-linked {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.knowledge-chain-link-bar.is-linked:hover {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.knowledge-chain-link-bar.is-terminal {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
+}
+
+.knowledge-chain-link-bar.is-terminal:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.link-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.link-icon-active {
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+.link-prefix {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.link-target-name {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #10B981;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-icon-end {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.link-end-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.link-bar-select-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.knowledge-chain-select {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Pipeline Connector Arrow Hub */
+.knowledge-chain-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  position: relative;
+}
+
+.connector-line-left,
+.connector-line-right {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.8));
+}
+
+.connector-hub {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1.5px solid #10B981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.connector-hub:hover {
+  transform: scale(1.15);
+  border-color: #EF4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+.connector-icon-arrow {
+  color: #10B981;
+  transition: opacity 0.15s ease;
+}
+
+.connector-hub-unlink {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #EF4444;
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.connector-hub:hover .connector-icon-arrow {
+  opacity: 0;
+}
+
+.connector-hub:hover .connector-hub-unlink {
+  opacity: 1;
+}
+
+/* Append Next Step Slot Card */
+.knowledge-chain-append-wrapper {
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.knowledge-chain-add-slot-card {
+  width: 200px;
+  min-height: 140px;
+  border: 2px dashed rgba(16, 185, 129, 0.3);
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 10px;
+  text-align: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.knowledge-chain-add-slot-card:hover {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.06);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+}
+
+.add-slot-icon-disc {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10B981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.knowledge-chain-add-slot-card:hover .add-slot-icon-disc {
+  transform: scale(1.1);
+  background: #10B981;
+  color: #FFFFFF;
+}
+
+.add-slot-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.add-slot-sub {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.add-slot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.btn-add-slot-create {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10B981;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.btn-add-slot-create:hover {
+  background: #10B981;
+  color: #FFFFFF;
+}
+
+.add-slot-link-existing {
+  position: relative;
+  width: 100%;
+}
+
+.add-slot-link-select {
+  width: 100%;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-slot-link-select:hover {
+  border-color: #3B82F6;
+  color: var(--text-primary);
+}
+
 
