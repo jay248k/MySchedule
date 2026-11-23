@@ -6,6 +6,7 @@ import {
   FileText,
   Table as TableIcon,
   ChevronRight,
+  ChevronLeft,
   Plus,
   Trash2,
   Edit2,
@@ -33,6 +34,7 @@ import {
   ArrowUpDown,
   Link2,
   Play,
+  Tag,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -316,6 +318,37 @@ export function KnowledgePage() {
 
     return chains;
   }, [lessonsInFolder]);
+
+  // Current active lesson's sequential pathway details (position, prev, next)
+  const currentChainInfo = useMemo(() => {
+    if (!activeItem || activeItem.type !== 'lesson') return null;
+    for (let cIdx = 0; cIdx < chainSequence.length; cIdx++) {
+      const chain = chainSequence[cIdx];
+      const sIdx = chain.findIndex((l) => l.id === activeItem.id);
+      if (sIdx !== -1) {
+        return {
+          chain,
+          chainIndex: cIdx,
+          stepIndex: sIdx,
+          totalSteps: chain.length,
+          prevLesson: sIdx > 0 ? chain[sIdx - 1] : null,
+          nextLesson: sIdx < chain.length - 1 ? chain[sIdx + 1] : (items.find((it) => it.id === activeItem.nextLessonId) || null),
+        };
+      }
+    }
+    if (activeItem.nextLessonId) {
+      const nextL = items.find((it) => it.id === activeItem.nextLessonId);
+      return {
+        chain: [activeItem],
+        chainIndex: 0,
+        stepIndex: 0,
+        totalSteps: 1,
+        prevLesson: null,
+        nextLesson: nextL || null,
+      };
+    }
+    return null;
+  }, [activeItem, chainSequence, items]);
 
   const handleOpenFolder = (folder) => {
     setCurrentFolder(folder);
@@ -1378,123 +1411,185 @@ export function KnowledgePage() {
             </div>
           </div>
 
-          {/* Header Banner Deck */}
-          <div className="knowledge-fullpage-header-deck">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`knowledge-preview-type-badge ${activeItem.type}`}>
-                {activeItem.type === 'table' ? (
-                  <>
-                    <TableIcon size={12} /> Structured Data Table
-                  </>
-                ) : (
-                  <>
-                    <BookOpen size={12} /> Knowledge Lesson
-                  </>
-                )}
-              </span>
-              {currentFolder && (
-                <span className="knowledge-meta-folder-tag">
-                  <Folder size={11} /> {currentFolder.title}
-                </span>
-              )}
-              {activeItem.tags && (
-                <span className="knowledge-meta-tags-tag">
-                  🏷️ {activeItem.tags}
-                </span>
-              )}
-              {activeItem.type === 'lesson' && activeItem.content && (
-                <span className="knowledge-meta-stat-tag">
-                  📝 {activeItem.content.trim().split(/\s+/).filter(Boolean).length} words
-                </span>
-              )}
-            </div>
-            <h1 className="knowledge-fullpage-title">
-              {activeItem.title}
-            </h1>
-          </div>
+          {/* Unified Reading Article Container for Lessons */}
+          {activeItem.type === 'lesson' ? (
+            <div className="lesson-reader-document">
+              {/* Top Pathway Progress Bar (if in a sequence) */}
+              {currentChainInfo && (
+                <div className="lesson-pathway-stepper-bar">
+                  <div className="pathway-info-left">
+                    <span className="pathway-badge-chip">
+                      <Layers size={12} /> Pathway #{currentChainInfo.chainIndex + 1}
+                    </span>
+                    <span className="pathway-step-count">
+                      Step {currentChainInfo.stepIndex + 1} of {currentChainInfo.totalSteps}
+                    </span>
+                  </div>
 
-          {/* Sequential Lesson Chaining Selector */}
-          {activeItem.type === 'lesson' && (
-            <div className="knowledge-chain-picker">
-              <div className="knowledge-chain-picker-left">
-                <div className="knowledge-chain-icon-wrap">
-                  <LinkIcon size={15} color="#10B981" />
+                  {/* Micro Stepper Pills */}
+                  <div className="pathway-micro-stepper">
+                    {currentChainInfo.chain.map((l, sIdx) => {
+                      const isCurrent = l.id === activeItem.id;
+                      const isPassed = sIdx < currentChainInfo.stepIndex;
+                      return (
+                        <div
+                          key={l.id}
+                          className={`micro-step-node ${isCurrent ? 'current' : isPassed ? 'completed' : 'upcoming'}`}
+                          onClick={() => setActiveItem(l)}
+                          title={`Step ${sIdx + 1}: ${l.title}`}
+                        >
+                          <span className="micro-step-num">{sIdx + 1}</span>
+                          <span className="micro-step-label">{l.title}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Previous / Next buttons */}
+                  <div className="pathway-nav-controls">
+                    <button
+                      type="button"
+                      disabled={!currentChainInfo.prevLesson}
+                      onClick={() => currentChainInfo.prevLesson && setActiveItem(currentChainInfo.prevLesson)}
+                      className="btn-pathway-nav prev"
+                      title={currentChainInfo.prevLesson ? `Previous: ${currentChainInfo.prevLesson.title}` : 'No previous step'}
+                    >
+                      <ChevronLeft size={14} />
+                      <span>Prev</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!currentChainInfo.nextLesson}
+                      onClick={() => currentChainInfo.nextLesson && setActiveItem(currentChainInfo.nextLesson)}
+                      className="btn-pathway-nav next"
+                      title={currentChainInfo.nextLesson ? `Next: ${currentChainInfo.nextLesson.title}` : 'End of pathway'}
+                    >
+                      <span>Next</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <span className="knowledge-chain-label">
-                    Sequential Progression Chain
+              )}
+
+              {/* Document Header */}
+              <div className="lesson-article-header">
+                <div className="lesson-article-meta-row">
+                  <span className="lesson-type-badge">
+                    <BookOpen size={12} /> Knowledge Module
                   </span>
-                  <p className="knowledge-chain-sub">
-                    Directs the learner to the consecutive lesson upon completion
-                  </p>
+                  {currentFolder && (
+                    <span className="lesson-meta-chip">
+                      <Folder size={11} /> {currentFolder.title}
+                    </span>
+                  )}
+                  {activeItem.tags && (
+                    <span className="lesson-meta-chip">
+                      <Tag size={11} /> {activeItem.tags}
+                    </span>
+                  )}
+                  <span className="lesson-meta-chip word-count">
+                    <FileText size={11} /> {activeItem.content ? activeItem.content.trim().split(/\s+/).filter(Boolean).length : 0} words
+                  </span>
                 </div>
+
+                <h1 className="lesson-article-title">{activeItem.title}</h1>
               </div>
 
-              <div className="knowledge-chain-picker-right">
-                <select
-                  value={activeItem.nextLessonId || ''}
-                  onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
-                  className="knowledge-chain-select"
-                >
-                  <option value="">(None - End of chain)</option>
-                  {lessonsInFolder
-                    .filter((l) => l.id !== activeItem.id)
-                    .map((l) => (
-                      <option key={l.id} value={l.id}>
-                        → {l.title}
-                      </option>
-                    ))}
-                </select>
+              {/* Document Body Content */}
+              <div className="lesson-article-body">
+                {activeItem.content ? (
+                  <div className="lesson-prose-content">
+                    {activeItem.content}
+                  </div>
+                ) : (
+                  <div className="lesson-empty-content-state">
+                    <BookOpen size={32} className="empty-state-icon" />
+                    <h4>No lesson content recorded yet</h4>
+                    <p>Click "Edit Lesson" above to document concepts, guides, protocols, or study materials.</p>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(activeItem)}
+                      className="btn btn-primary btn-sm"
+                    >
+                      <Edit2 size={13} /> Write Lesson Content
+                    </button>
+                  </div>
+                )}
+              </div>
 
-                {activeItem.nextLessonId && (
-                  (() => {
-                    const nextLesson = items.find((l) => l.id === activeItem.nextLessonId);
-                    return nextLesson ? (
+              {/* Document Footer: Next Step / Milestone Completion Navigator */}
+              <div className="lesson-pathway-footer-card">
+                <div className="pathway-footer-main">
+                  <div className="pathway-footer-left">
+                    {currentChainInfo?.prevLesson ? (
                       <button
                         type="button"
-                        onClick={() => setActiveItem(nextLesson)}
-                        className="btn btn-primary btn-sm knowledge-chain-jump-btn"
-                        title={`Open next lesson: ${nextLesson.title}`}
+                        className="btn-pathway-footer-prev"
+                        onClick={() => setActiveItem(currentChainInfo.prevLesson)}
                       >
-                        <span>Next Lesson</span>
-                        <ArrowRight size={13} />
+                        <ChevronLeft size={16} />
+                        <div className="text-left">
+                          <span className="footer-nav-sub">Previous Step</span>
+                          <span className="footer-nav-title">{currentChainInfo.prevLesson.title}</span>
+                        </div>
                       </button>
-                    ) : null;
-                  })()
-                )}
+                    ) : (
+                      <div className="footer-first-step-tag">
+                        <span>🏁 First Step in Pathway</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pathway-footer-right">
+                    {currentChainInfo?.nextLesson ? (
+                      <button
+                        type="button"
+                        className="btn-pathway-footer-next"
+                        onClick={() => setActiveItem(currentChainInfo.nextLesson)}
+                      >
+                        <div className="text-right">
+                          <span className="footer-nav-sub">Next Milestone</span>
+                          <span className="footer-nav-title">{currentChainInfo.nextLesson.title}</span>
+                        </div>
+                        <ArrowRight size={16} />
+                      </button>
+                    ) : (
+                      <div className="footer-terminal-badge">
+                        <span>🏁 Final Milestone of Pathway</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Link Selector in Footer for authoring */}
+                <div className="pathway-footer-link-bar">
+                  <div className="footer-link-label">
+                    <Link2 size={13} color="#10B981" />
+                    <span>Proceeds sequentially to:</span>
+                  </div>
+                  <select
+                    value={activeItem.nextLessonId || ''}
+                    onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
+                    className="pathway-footer-select"
+                  >
+                    <option value="">🏁 (End of Pathway Terminal)</option>
+                    {lessonsInFolder
+                      .filter((l) => l.id !== activeItem.id)
+                      .map((l) => (
+                        <option key={l.id} value={l.id}>
+                          ➔ Step: {l.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
+            </div>
+          ) : (
+            /* Structured Data Table View */
+            <div className="knowledge-fullpage-content">
+              {renderTableContent(activeItem.content, true)}
             </div>
           )}
-
-          {/* Content Display */}
-          <div className="knowledge-fullpage-content">
-            {activeItem.type === 'table' ? (
-              renderTableContent(activeItem.content, true)
-            ) : (
-              <div className="knowledge-lesson-notes-wrapper">
-                <div className="knowledge-lesson-notes-content is-fullpage">
-                  {activeItem.content ? (
-                    activeItem.content
-                  ) : (
-                    <div className="knowledge-notes-empty">
-                      <BookOpen size={28} className="knowledge-notes-empty-icon" />
-                      <p className="knowledge-notes-empty-title">No lesson content recorded yet</p>
-                      <p className="knowledge-notes-empty-sub">
-                        Click "Edit" above to write study notes, checklists, code snippets, or SOP guides.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditModal(activeItem)}
-                        className="btn btn-secondary btn-sm mt-2"
-                      >
-                        <Edit2 size={13} /> Write Lesson Notes
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       ) : (
         /* STANDARD EXPLORER / SPLIT VIEW */

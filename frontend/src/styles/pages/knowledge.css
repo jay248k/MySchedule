@@ -1680,3 +1680,452 @@ html.dark-mode .knowledge-table-cell {
   color: var(--text-muted, #94A3B8);
 }
 
+
+
+/* ========================================================================= */
+/* UNIFIED ENTERPRISE LESSON READER & PATHWAY PROGRESSION                    */
+/* ========================================================================= */
+
+.lesson-reader-document {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card, #0f172a);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-xl, 16px);
+  overflow: hidden;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
+  margin-top: 4px;
+  position: relative;
+}
+
+/* TOP PATHWAY STEPPER BAR */
+.lesson-pathway-stepper-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 24px;
+  background: rgba(15, 23, 42, 0.65);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pathway-info-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pathway-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.pathway-step-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary, #94A3B8);
+}
+
+/* Micro Stepper Nodes */
+.pathway-micro-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.micro-step-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.micro-step-node.completed {
+  background: rgba(16, 185, 129, 0.14);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.micro-step-node.completed:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10B981;
+  transform: translateY(-1px);
+}
+
+.micro-step-node.current {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
+  border: 1px solid #10B981;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+}
+
+.micro-step-node.upcoming {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #64748B);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.micro-step-node.upcoming:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.micro-step-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  opacity: 0.9;
+}
+
+.micro-step-label {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Stepper Bar Quick Buttons */
+.pathway-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pathway-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary, #94A3B8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-pathway-nav:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-pathway-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-pathway-nav.next:not(:disabled) {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60A5FA;
+  border-color: rgba(59, 130, 246, 0.32);
+}
+
+.btn-pathway-nav.next:not(:disabled):hover {
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+/* DOCUMENT HEADER */
+.lesson-article-header {
+  padding: 28px 32px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 100%);
+}
+
+.lesson-article-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lesson-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+.lesson-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94A3B8);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lesson-article-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary, #F8FAFC);
+  line-height: 1.28;
+  margin: 0;
+}
+
+/* DOCUMENT BODY */
+.lesson-article-body {
+  padding: 24px 32px 40px 32px;
+  min-height: 220px;
+}
+
+.lesson-prose-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-secondary, #CBD5E1);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 860px;
+}
+
+.lesson-empty-content-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin: 12px 0;
+}
+
+.lesson-empty-content-state .empty-state-icon {
+  color: var(--text-muted, #64748B);
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+
+.lesson-empty-content-state h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+}
+
+.lesson-empty-content-state p {
+  font-size: 0.85rem;
+  color: var(--text-muted, #94A3B8);
+  max-width: 440px;
+  margin: 0 0 16px 0;
+}
+
+/* DOCUMENT FOOTER: MILESTONE ADVANCEMENT & QUICK LINKING */
+.lesson-pathway-footer-card {
+  margin: 0 32px 28px 32px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.pathway-footer-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pathway-footer-left,
+.pathway-footer-right {
+  display: flex;
+  align-items: center;
+}
+
+.btn-pathway-footer-prev {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.btn-pathway-footer-prev:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(-2px);
+}
+
+.btn-pathway-footer-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  text-align: right;
+}
+
+.btn-pathway-footer-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+  filter: brightness(1.05);
+}
+
+.footer-nav-sub {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.footer-nav-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-first-step-tag,
+.footer-terminal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94A3B8);
+}
+
+.pathway-footer-link-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-link-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.pathway-footer-select {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 220px;
+}
+
+.pathway-footer-select:focus {
+  border-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+/* Light mode overrides for high contrast readability */
+html.light-mode .lesson-reader-document {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+}
+
+html.light-mode .lesson-pathway-stepper-bar {
+  background: #F8FAFC;
+  border-bottom-color: #E2E8F0;
+}
+
+html.light-mode .lesson-article-header {
+  border-bottom-color: #F1F5F9;
+  background: transparent;
+}
+
+html.light-mode .lesson-article-title {
+  color: #0F172A;
+}
+
+html.light-mode .lesson-prose-content {
+  color: #334155;
+}
+
+html.light-mode .lesson-pathway-footer-card {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+html.light-mode .pathway-footer-select {
+  background: #FFFFFF;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+html.light-mode .btn-pathway-footer-prev {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  color: #0F172A;
+}
