@@ -53,6 +53,7 @@ export function Header() {
     setSettings,
     showToast,
     requests,
+    logRescheduledTask,
     completeWorkRequest,
     rescheduleWorkRequest,
     cancelWorkRequest,
@@ -159,6 +160,20 @@ export function Header() {
           rescheduleNotes: remarks || '',
           updatedAt: new Date().toISOString(),
         });
+        if (logRescheduledTask) {
+          logRescheduledTask({
+            taskId: reschedulingRequest.id,
+            taskTitle: reschedulingRequest.title,
+            originalDate: reschedulingRequest.date,
+            originalStartTime: reschedulingRequest.startTime,
+            originalEndTime: reschedulingRequest.endTime,
+            newDate: date,
+            newStartTime: startTime,
+            newEndTime: endTime,
+            reason: remarks || 'Missed task rescheduled via notification',
+            remarks: remarks || `Rescheduled to ${date} (${startTime} - ${endTime})`,
+          });
+        }
         showToast({
           type: 'info',
           title: 'Task Rescheduled',

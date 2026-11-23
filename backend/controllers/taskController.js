@@ -422,7 +422,7 @@ exports.updateTask = async (req, res, next) => {
       color: color !== undefined ? color : task.color,
       priority: priority !== undefined ? normalizePriority(priority) : task.priority,
       goalId: resolvedGoalId,
-      status: status !== undefined ? status : task.status,
+      status: status !== undefined ? (status === 'rescheduled' ? 'pending' : status) : task.status,
       ...(task.userId === null && req.userId ? { userId: req.userId } : {}),
     });
 

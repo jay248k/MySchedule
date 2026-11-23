@@ -64,6 +64,7 @@ export function DeviationsPage() {
     deleteDeviation,
     updateTask,
     addTask,
+    logRescheduledTask,
     showToast,
   } = useApp();
 
@@ -115,6 +116,22 @@ export function DeviationsPage() {
           priority: 'medium',
         });
       }
+    }
+
+    // Log to Work Requests so it appears in /requests under Rescheduled tab with full audit trail
+    if (logRescheduledTask) {
+      await logRescheduledTask({
+        taskId: reschedulingTask.id || null,
+        taskTitle: reschedulingTask.title,
+        originalDate: reschedulingTask.date || activeDate,
+        originalStartTime: reschedulingTask.startTime || '09:00',
+        originalEndTime: reschedulingTask.endTime || '10:00',
+        newDate: rescheduleForm.date,
+        newStartTime: rescheduleForm.startTime,
+        newEndTime: rescheduleForm.endTime,
+        reason: 'Missed schedule deviation rescheduled',
+        remarks: `Rescheduled to ${rescheduleForm.date} (${rescheduleForm.startTime} – ${rescheduleForm.endTime})`,
+      });
     }
 
     if (showToast) {

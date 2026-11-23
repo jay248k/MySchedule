@@ -161,3 +161,4 @@ export function formatComprehensiveDailyReport({
     mood: doneTasks.length >= Math.ceil(dayTasks.length * 0.7) && dayTasks.length > 0 ? 'fire' : 'rocket',
   };
 }
+
