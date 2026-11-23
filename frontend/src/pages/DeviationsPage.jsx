@@ -404,39 +404,36 @@ export function DeviationsPage() {
 
               return (
                 <div key={dev.id} className="deviation-card">
-                  {/* Top Bar: Incident Badge, Date/Time, Category & Action Icons */}
+                  {/* Top Bar: Incident #, Time, Duration, Category & Actions */}
                   <div className="deviation-top-bar">
                     <div className="deviation-tags-wrap">
-                      {/* Incident Tag */}
-                      <span className="deviation-incident-tag">
-                        <span className="deviation-incident-dot" />
-                        INCIDENT #{idx + 1}
+                      <span className="deviation-incident-pill">
+                        #{idx + 1}
                       </span>
 
-                      {/* Date Tag */}
-                      <span className="deviation-date-tag">
-                        <Calendar size={11} color="var(--primary-color)" />
+                      <span className="deviation-time-pill">
+                        <Clock size={11} />
+                        <span>{dev.startTime} — {dev.endTime}</span>
+                        <span className="deviation-duration-badge">-{durationLabel}</span>
+                      </span>
+
+                      <span className="deviation-date-pill">
+                        <Calendar size={11} />
                         <span>{dev.date}</span>
                       </span>
 
-                      {/* Time & Duration Pill */}
-                      <span className="deviation-time-tag">
-                        <Clock size={11} />
-                        <span>{dev.startTime} — {dev.endTime}</span>
-                        <span style={{ opacity: 0.75 }}>• {durationLabel}</span>
-                      </span>
-
-                      {/* Category Chip */}
-                      <span
-                        className="deviation-category-chip"
-                        style={{
-                          background: `${categoryMatch.color}15`,
-                          border: `1px solid ${categoryMatch.color}35`,
-                          color: categoryMatch.color,
-                        }}
-                      >
-                        {displayCategoryLabel}
-                      </span>
+                      {safeReason && safeReason !== 'Deviation Event' && (
+                        <span
+                          className="deviation-category-pill"
+                          style={{
+                            background: `${categoryMatch.color}14`,
+                            border: `1px solid ${categoryMatch.color}30`,
+                            color: categoryMatch.color,
+                          }}
+                        >
+                          {displayCategoryLabel}
+                        </span>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -445,41 +442,39 @@ export function DeviationsPage() {
                         type="button"
                         onClick={() => handleOpenEditModal(dev)}
                         title="Edit deviation details"
-                        className="deviation-btn-edit"
+                        className="deviation-action-btn"
                       >
-                        <Edit2 size={13} />
+                        <Edit2 size={12} />
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteDeviation(dev.id)}
                         title="Delete log"
-                        className="deviation-btn-delete"
+                        className="deviation-action-btn is-delete"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Modern Divergence Flow: Planned Schedule ➔ Actual Deviation */}
-                  <div className="deviation-flow-grid">
-                    {/* Planned Box */}
-                    <div className="deviation-planned-box">
-                      <div className="deviation-box-label-blue">
-                        <Target size={12} color="#38BDF8" />
+                  {/* Contrast Divergence Split: Planned ➔ Actual Mistake */}
+                  <div className="deviation-divergence-container">
+                    <div className="deviation-split-side is-planned">
+                      <div className="deviation-side-badge">
+                        <Target size={12} />
                         <span>Planned Commitment</span>
                       </div>
-                      <div className="deviation-planned-text">
+                      <div className="deviation-side-text">
                         {dev.plannedAction}
                       </div>
                     </div>
 
-                    {/* Actual Deviation Box */}
-                    <div className="deviation-actual-box">
-                      <div className="deviation-box-label-amber">
-                        <AlertTriangle size={12} color="#F59E0B" />
+                    <div className="deviation-split-side is-actual">
+                      <div className="deviation-side-badge">
+                        <AlertTriangle size={12} />
                         <span>Actual Activity (Mistake)</span>
                       </div>
-                      <div className="deviation-actual-text">
+                      <div className="deviation-side-text">
                         {dev.actualAction}
                       </div>
                     </div>
@@ -487,33 +482,20 @@ export function DeviationsPage() {
 
                   {/* Root Cause & Next-Time Prevention Rule */}
                   {(rootCauseClean || dev.lessonLearned) && (
-                    <div
-                      className="deviation-insights-box"
-                      style={{
-                        gridTemplateColumns: rootCauseClean && dev.lessonLearned ? 'repeat(auto-fit, minmax(210px, 1fr))' : '1fr',
-                      }}
-                    >
+                    <div className="deviation-insights-row">
                       {rootCauseClean && (
-                        <div className="deviation-insight-col">
-                          <div className="deviation-insight-label-gray">
-                            <HelpCircle size={12} color="#94A3B8" />
-                            <span>Root Cause Trigger</span>
-                          </div>
-                          <span className="deviation-insight-val-gray">
-                            {rootCauseClean}
-                          </span>
+                        <div className="deviation-insight-tag">
+                          <HelpCircle size={11} className="insight-icon" />
+                          <span className="insight-label">Trigger:</span>
+                          <span className="insight-value">{rootCauseClean}</span>
                         </div>
                       )}
 
                       {dev.lessonLearned && (
-                        <div className="deviation-insight-col">
-                          <div className="deviation-insight-label-green">
-                            <Lightbulb size={12} color="#10B981" />
-                            <span>Next-Time Prevention Rule</span>
-                          </div>
-                          <span className="deviation-insight-val-green">
-                            {dev.lessonLearned}
-                          </span>
+                        <div className="deviation-insight-tag is-rule">
+                          <Lightbulb size={11} className="insight-icon" />
+                          <span className="insight-label">Rule:</span>
+                          <span className="insight-value">{dev.lessonLearned}</span>
                         </div>
                       )}
                     </div>

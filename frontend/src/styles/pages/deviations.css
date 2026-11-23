@@ -255,103 +255,108 @@
 /* Deviation Item Card */
 .deviation-card {
   background: var(--card-bg);
-  border: 1.5px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.1));
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.deviation-card:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 8px 24px -2px rgba(239, 68, 68, 0.12);
+  transform: translateY(-1px);
 }
 
 .deviation-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .deviation-tags-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
 }
 
-.deviation-incident-tag {
-  font-size: 0.68rem;
+.deviation-incident-pill {
+  font-size: 0.7rem;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
   background: rgba(239, 68, 68, 0.12);
   color: #EF4444;
   border: 1px solid rgba(239, 68, 68, 0.25);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.deviation-time-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-}
-
-.deviation-incident-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #EF4444;
-  display: inline-block;
-}
-
-.deviation-date-tag {
-  background: var(--page-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  fontWeight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.deviation-time-tag {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   color: #60A5FA;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
-.deviation-category-chip {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 6px;
+.deviation-duration-badge {
+  background: rgba(245, 158, 11, 0.16);
+  color: #F59E0B;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.deviation-date-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.deviation-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
 .deviation-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.deviation-btn-edit {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+.deviation-action-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
   background: var(--page-bg);
   color: var(--text-secondary);
@@ -362,142 +367,134 @@
   transition: all 0.15s ease;
 }
 
-.deviation-btn-edit:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.deviation-btn-delete {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  background: rgba(239, 68, 68, 0.08);
-  color: #EF4444;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.deviation-btn-delete:hover {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: #EF4444;
-}
-
-/* Comparison Boxes */
-.deviation-flow-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 10px;
-}
-
-.deviation-planned-box {
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.deviation-box-label-blue {
-  font-size: 0.66rem;
-  font-weight: 800;
-  color: #60A5FA;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.deviation-planned-text {
-  font-size: 0.9rem;
-  font-weight: 700;
+.deviation-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  line-height: 1.35;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.deviation-actual-box {
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
+.deviation-action-btn.is-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Contrast Divergence Split Container */
+.deviation-divergence-container {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.deviation-box-label-amber {
-  font-size: 0.66rem;
-  font-weight: 800;
-  color: #F59E0B;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.deviation-actual-text {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #F59E0B;
-  line-height: 1.35;
-}
-
-.deviation-insights-box {
+  align-items: stretch;
   background: var(--page-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 10px 14px;
-  display: grid;
-  gap: 12px;
+  overflow: hidden;
 }
 
-.deviation-insight-col {
+.deviation-split-side {
+  flex: 1;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.deviation-insight-label-gray {
+.deviation-split-side.is-planned {
+  background: rgba(59, 130, 246, 0.03);
+  border-right: 1px solid var(--border-color);
+}
+
+.deviation-split-side.is-actual {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.deviation-side-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.66rem;
+  gap: 4px;
+  font-size: 0.65rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.deviation-split-side.is-planned .deviation-side-badge {
+  color: #38BDF8;
+}
+
+.deviation-split-side.is-actual .deviation-side-badge {
+  color: #F59E0B;
+}
+
+.deviation-side-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.deviation-split-side.is-planned .deviation-side-text {
+  color: var(--text-primary);
+}
+
+.deviation-split-side.is-actual .deviation-side-text {
+  color: #F59E0B;
+}
+
+/* Insights Row (Trigger & Rule) */
+.deviation-insights-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deviation-insight-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.deviation-insight-tag .insight-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.deviation-insight-tag .insight-label {
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
 }
 
-.deviation-insight-val-gray {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.deviation-insight-label-green {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.66rem;
-  font-weight: 800;
-  color: #10B981;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.deviation-insight-val-green {
-  font-size: 0.82rem;
+.deviation-insight-tag .insight-value {
   color: var(--text-primary);
+  font-weight: 600;
+}
+
+.deviation-insight-tag.is-rule {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #10B981;
+}
+
+.deviation-insight-tag.is-rule .insight-icon {
+  color: #10B981;
+}
+
+.deviation-insight-tag.is-rule .insight-label {
+  color: #10B981;
+}
+
+.deviation-insight-tag.is-rule .insight-value {
+  color: #34D399;
   font-weight: 700;
-  line-height: 1.4;
 }
 
 /* Modal Styles */
