@@ -1187,6 +1187,28 @@ export function KnowledgePage() {
             </button>
           </div>
 
+          {viewMode === 'chain' && (
+            <button
+              type="button"
+              onClick={() => {
+                setChainAppendFromId(null);
+                setModalMode('lesson');
+              }}
+              className="btn btn-sm btn-primary shrink-0"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 12px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+              }}
+              title="Create a new sequential lesson chain"
+            >
+              <Plus size={13} /> New Lesson Chain
+            </button>
+          )}
+
           {/* Sort Position Selector: A-Z, Z-A, By Date, By Time, Default Created (A, B, C) */}
           <div className="knowledge-sort-wrap">
             <div className="knowledge-sort-pill">
@@ -1638,36 +1660,6 @@ export function KnowledgePage() {
             /* VIEW 2: LESSON CHAIN VIEW (Sequential Curriculum Flow: A ➔ B ➔ C)         */
             /* ========================================================================= */
             <div className="knowledge-chain-container">
-              {/* High-End Curriculum Banner */}
-              <div className="knowledge-chain-banner">
-                <div className="knowledge-chain-banner-left">
-                  <div className="knowledge-chain-badge-pill">
-                    <GitBranch size={13} />
-                    <span>Curriculum Flow Studio</span>
-                  </div>
-                  <h2 className="knowledge-chain-banner-title">
-                    Sequential Lesson Pathways
-                  </h2>
-                  <p className="knowledge-chain-banner-sub">
-                    Connect lessons into ordered learning curriculums (Step 1 ➔ Step 2 ➔ Step 3). Students and learners advance automatically through each milestone.
-                  </p>
-                </div>
-
-                <div className="knowledge-chain-banner-actions">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChainAppendFromId(null);
-                      setModalMode('lesson');
-                    }}
-                    className="btn-new-chain"
-                  >
-                    <Plus size={15} />
-                    <span>New Lesson Chain</span>
-                  </button>
-                </div>
-              </div>
-
               {chainSequence.length === 0 ? (
                 <div
                   className="card"
