@@ -3,9 +3,9 @@ const { Op } = require('sequelize');
 
 /**
  * Calculates current streak and all-time best streak for a habit.
- * If today is completed, counts from today backwards.
- * If today is not yet checked, counts from yesterday backwards (does not break streak until the day is missed).
- * If a consecutive day is missed, streak restarts!
+ * Groups completed dates into contiguous blocks.
+ * If today or yesterday is part of a streak block, that block's full count (including consecutive future check-ins)
+ * is the active current streak.
  */
 function calculateHabitStreaks(logs = [], todayStr) {
   if (!todayStr) {
@@ -17,56 +17,70 @@ function calculateHabitStreaks(logs = [], todayStr) {
     logs.filter((l) => l.completed).map((l) => l.date)
   );
 
-  const getPrevDateStr = (dateStr) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const getNextDateStr = (dateStr) => {
+    const parts = dateStr.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   };
 
-  let currentStreak = 0;
-  let checkDate = todayStr;
+  const getPrevDateStr = (dateStr) => {
+    const parts = dateStr.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] - 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  };
 
-  if (completedDates.has(todayStr)) {
-    currentStreak++;
-    checkDate = getPrevDateStr(todayStr);
-    while (completedDates.has(checkDate)) {
-      currentStreak++;
-      checkDate = getPrevDateStr(checkDate);
-    }
-  } else {
-    const yesterdayStr = getPrevDateStr(todayStr);
-    if (completedDates.has(yesterdayStr)) {
-      checkDate = yesterdayStr;
-      while (completedDates.has(checkDate)) {
-        currentStreak++;
-        checkDate = getPrevDateStr(checkDate);
+  // Group all completed dates into contiguous streak blocks
+  const sortedDates = Array.from(completedDates).sort();
+  const blocks = [];
+  let currentBlock = null;
+
+  for (const dStr of sortedDates) {
+    if (!currentBlock) {
+      currentBlock = { start: dStr, end: dStr, count: 1 };
+    } else {
+      const expectedNext = getNextDateStr(currentBlock.end);
+      if (dStr === expectedNext) {
+        currentBlock.end = dStr;
+        currentBlock.count++;
+      } else {
+        blocks.push(currentBlock);
+        currentBlock = { start: dStr, end: dStr, count: 1 };
       }
     }
   }
+  if (currentBlock) {
+    blocks.push(currentBlock);
+  }
 
   // All-time longest streak
-  const sortedDates = Array.from(completedDates).sort();
   let longestStreak = 0;
-  let tempStreak = 0;
-  let prevDate = null;
+  for (const b of blocks) {
+    if (b.count > longestStreak) {
+      longestStreak = b.count;
+    }
+  }
 
-  for (const dStr of sortedDates) {
-    if (!prevDate) {
-      tempStreak = 1;
+  // Current active streak:
+  // 1. Block that spans today (start <= todayStr <= end)
+  // 2. Or block that spans yesterday (start <= yesterdayStr <= end) if today isn't logged yet
+  // 3. Or most recent block if logged/planned in advance (start > todayStr)
+  // 4. Otherwise 0
+  const yesterdayStr = getPrevDateStr(todayStr);
+  let currentStreak = 0;
+
+  const blockWithToday = blocks.find((b) => b.start <= todayStr && todayStr <= b.end);
+  if (blockWithToday) {
+    currentStreak = blockWithToday.count;
+  } else {
+    const blockWithYesterday = blocks.find((b) => b.start <= yesterdayStr && yesterdayStr <= b.end);
+    if (blockWithYesterday) {
+      currentStreak = blockWithYesterday.count;
     } else {
-      const expectedNext = new Date(prevDate + 'T00:00:00');
-      expectedNext.setDate(expectedNext.getDate() + 1);
-      const expectedStr = `${expectedNext.getFullYear()}-${String(expectedNext.getMonth() + 1).padStart(2, '0')}-${String(expectedNext.getDate()).padStart(2, '0')}`;
-      if (dStr === expectedStr) {
-        tempStreak++;
-      } else {
-        tempStreak = 1;
+      const latestBlock = blocks[blocks.length - 1];
+      if (latestBlock && latestBlock.start > todayStr) {
+        currentStreak = latestBlock.count;
       }
     }
-    if (tempStreak > longestStreak) {
-      longestStreak = tempStreak;
-    }
-    prevDate = dStr;
   }
 
   // Current month stats
@@ -153,7 +167,9 @@ exports.getHabitById = async (req, res, next) => {
     }
 
     const plain = habit.toJSON();
-    const stats = calculateHabitStreaks(plain.logs || []);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const stats = calculateHabitStreaks(plain.logs || [], todayStr);
 
     res.json({
       success: true,
@@ -250,7 +266,9 @@ exports.updateHabit = async (req, res, next) => {
       include: [{ model: HabitLog, as: 'logs' }],
     });
     const plain = updatedHabit.toJSON();
-    const stats = calculateHabitStreaks(plain.logs || []);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const stats = calculateHabitStreaks(plain.logs || [], todayStr);
 
     res.json({
       success: true,
@@ -326,7 +344,9 @@ exports.toggleHabitDate = async (req, res, next) => {
       include: [{ model: HabitLog, as: 'logs' }],
     });
     const plain = refreshedHabit.toJSON();
-    const stats = calculateHabitStreaks(plain.logs || []);
+    const now = new Date();
+    const todayStr = req.body?.today || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const stats = calculateHabitStreaks(plain.logs || [], todayStr);
 
     res.json({
       success: true,
