@@ -690,11 +690,11 @@ export function HabitsPage() {
             </button>
           </div>
 
-          <div style={{ position: 'relative', width: '200px' }}>
+          <div style={{ position: 'relative', width: '220px', display: 'flex', alignItems: 'center' }}>
             <Search
               size={14}
               color="var(--text-muted)"
-              style={{ position: 'absolute', left: '10px', top: '10px' }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
             />
             <input
               type="text"
@@ -702,7 +702,7 @@ export function HabitsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="form-input"
-              style={{ paddingLeft: '32px', fontSize: '0.82rem' }}
+              style={{ paddingLeft: '38px', borderRadius: '999px', fontSize: '0.82rem' }}
             />
           </div>
         </div>
@@ -893,7 +893,7 @@ export function HabitsPage() {
               {/* Habit Name */}
               <div className="form-group mb-0">
                 <label className="form-label">
-                  Habit Name *
+                  Habit Name <span className="required-star">*</span>
                 </label>
                 <input
                   type="text"

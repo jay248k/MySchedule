@@ -770,7 +770,7 @@ export function ThoughtsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-secondary">
-                    Thought / Quote Text *
+                    Thought / Quote Text <span className="required-star">*</span>
                   </label>
                   <span className="text-xs text-muted font-mono">
                     {addCharCount} chars
@@ -875,7 +875,7 @@ export function ThoughtsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-secondary">
-                    Thought / Quote Text *
+                    Thought / Quote Text <span className="required-star">*</span>
                   </label>
                   <span className="text-xs text-muted font-mono">
                     {editCharCount} chars

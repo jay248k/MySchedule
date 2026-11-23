@@ -334,7 +334,7 @@ export function DailyScheduleTimeline({
                           ? '#EF4444'
                           : itemState === 'event'
                           ? '#8B5CF6'
-                          : 'rgba(20, 27, 45, 0.95)',
+                          : 'var(--card-bg)',
                       borderColor:
                         itemState === 'completed'
                           ? '#34D399'
@@ -344,7 +344,7 @@ export function DailyScheduleTimeline({
                           ? '#F87171'
                           : itemState === 'event'
                           ? '#A78BFA'
-                          : 'rgba(255, 255, 255, 0.22)',
+                          : 'var(--border-color)',
                       boxShadow:
                         itemState === 'in_progress'
                           ? '0 0 14px rgba(56, 189, 248, 0.8)'
@@ -352,7 +352,7 @@ export function DailyScheduleTimeline({
                           ? '0 0 10px rgba(16, 185, 129, 0.5)'
                           : itemState === 'overdue'
                           ? '0 0 12px rgba(239, 68, 68, 0.6)'
-                          : '0 2px 6px rgba(0, 0, 0, 0.3)',
+                          : 'var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08))',
                       cursor: readOnly ? 'default' : 'pointer',
                       marginTop: '14px',
                       display: 'flex',
@@ -396,7 +396,13 @@ export function DailyScheduleTimeline({
                     ) : (
                       <span
                         className="timeline-node-dot"
-                        style={{ backgroundColor: '#94A3B8', width: '5px', height: '5px', borderRadius: '50%' }}
+                        style={{
+                          backgroundColor: 'var(--text-muted)',
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          transition: 'all 0.2s ease',
+                        }}
                       />
                     )}
                   </div>

@@ -3,9 +3,10 @@
    ========================================================================== */
 
 .thoughts-page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* Header Banner */
@@ -126,23 +127,38 @@
 .thoughts-search-wrap {
   position: relative;
   width: 240px;
+  display: flex;
+  align-items: center;
 }
 
 .thoughts-search-icon {
   position: absolute;
-  left: 10px;
-  top: 9px;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 2;
 }
 
-.thoughts-search-input {
+.thoughts-search-wrap input.thoughts-search-input,
+input[type="text"].thoughts-search-input {
   width: 100%;
-  padding: 7px 10px 7px 30px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  padding: 8px 14px 8px 38px !important;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-color);
   background: var(--page-bg);
   color: var(--text-primary);
   font-size: 0.82rem;
   outline: none;
+  transition: all 0.15s ease;
+}
+
+.thoughts-search-wrap input.thoughts-search-input:focus,
+input[type="text"].thoughts-search-input:focus {
+  border-color: var(--primary-color);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* Empty & Loading States */

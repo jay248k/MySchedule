@@ -118,7 +118,7 @@ export default function CancelRemarksModal({ isOpen, onClose, onConfirm, request
                 marginBottom: '8px',
               }}
             >
-              Why are you cancelling this? <span style={{ color: '#EF4444' }}>* (Mandatory)</span>
+              Why are you cancelling this? <span className="required-star">*</span> <span style={{ color: '#EF4444', fontSize: '0.78rem' }}>(Mandatory)</span>
             </label>
             <textarea
               autoFocus

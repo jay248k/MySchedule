@@ -100,7 +100,9 @@ export function EventModal() {
             )}
 
             <div className="form-group">
-              <label className="form-label">Event Title *</label>
+              <label className="form-label">
+                Event Title <span className="required-star">*</span>
+              </label>
               <input
                 type="text"
                 className="form-input"

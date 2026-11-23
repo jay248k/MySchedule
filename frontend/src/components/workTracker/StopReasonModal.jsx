@@ -72,10 +72,10 @@ export function StopReasonModal() {
         style={{
           width: '100%',
           maxWidth: '460px',
-          background: 'var(--card-bg, #10192C)',
-          border: '1px solid rgba(239, 68, 68, 0.35)',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-color)',
           borderRadius: '16px',
-          boxShadow: '0 20px 48px -12px rgba(0, 0, 0, 0.5), 0 0 24px rgba(239, 68, 68, 0.15)',
+          boxShadow: 'var(--shadow-xl)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -85,11 +85,11 @@ export function StopReasonModal() {
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            borderBottom: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.1) 0%, transparent 100%)',
+            background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -98,8 +98,8 @@ export function StopReasonModal() {
                 width: '34px',
                 height: '34px',
                 borderRadius: '8px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -109,10 +109,10 @@ export function StopReasonModal() {
               <Square size={16} fill="#EF4444" />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                 Stop Work Session
               </h2>
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #94A3B8)' }}>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
                 Enter remarks for stopping your timer
               </div>
             </div>
@@ -123,7 +123,7 @@ export function StopReasonModal() {
             className="btn-icon"
             onClick={cancelStopModal}
             title="Resume / Keep Working"
-            style={{ color: 'var(--text-muted, #64748B)' }}
+            style={{ color: 'var(--text-muted)' }}
           >
             <X size={18} />
           </button>
@@ -144,7 +144,7 @@ export function StopReasonModal() {
             }}
           >
             <div>
-              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted, #94A3B8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Session Elapsed Time
               </div>
               <div
@@ -161,17 +161,17 @@ export function StopReasonModal() {
               </div>
             </div>
 
-            <div style={{ textAlign: 'right', fontSize: '0.76rem', color: 'var(--text-secondary, #CBD5E1)', lineHeight: 1.4 }}>
-              <div>Started: <strong style={{ color: 'var(--text-primary, #FFFFFF)' }}>{activeWorkSession.startTime}</strong></div>
-              <div>Stopped: <strong style={{ color: 'var(--text-primary, #FFFFFF)' }}>{nowTime}</strong></div>
+            <div style={{ textAlign: 'right', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              <div>Started: <strong style={{ color: 'var(--text-primary)' }}>{activeWorkSession.startTime}</strong></div>
+              <div>Stopped: <strong style={{ color: 'var(--text-primary)' }}>{nowTime}</strong></div>
             </div>
           </div>
 
           {/* Remarks Input Only */}
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
               <MessageSquare size={14} color="#EF4444" />
-              <span>Remarks:</span>
+              <span>Remarks <span className="required-star">*</span>:</span>
             </label>
             <textarea
               rows={3}
@@ -185,9 +185,9 @@ export function StopReasonModal() {
                 width: '100%',
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                color: 'var(--text-primary, #FFFFFF)',
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
                 fontSize: '0.88rem',
                 resize: 'none',
               }}

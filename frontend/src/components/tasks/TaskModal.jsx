@@ -163,7 +163,9 @@ export function TaskModal() {
 
             {/* Task Title */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Task Title *</label>
+              <label className="form-label">
+                Task Title <span className="required-star">*</span>
+              </label>
               <input
                 type="text"
                 className="form-input"
