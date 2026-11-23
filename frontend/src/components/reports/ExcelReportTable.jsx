@@ -25,9 +25,11 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { exportToExcel, exportToWord, exportToPdf } from '../../utils/reportExporter';
+import '../../styles/components/excel-report-table.css';
 
 /**
  * Excel-Style Production Data Grid Component with Full-Page Flow, Pagination & Date/Month Filters
+ * 100% Theme-Adaptive - Zero Inline CSS - All Design Managed via excel-report-table.css
  */
 export function ExcelReportTable({
   title = 'Report Table',
@@ -264,37 +266,24 @@ export function ExcelReportTable({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div className="excel-report-container">
       {/* 1. Summary Cards Ribbon (Ultra-Compact & Collapsible) */}
       {showSummary && summaryCards && summaryCards.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`,
-            gap: '8px',
-          }}
-        >
+        <div className="excel-summary-grid">
           {summaryCards.map((c, i) => (
             <div
               key={i}
-              className="card"
-              style={{
-                padding: '6px 10px',
-                borderLeft: `3px solid ${c.color || 'var(--primary-color)'}`,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1px',
-                borderRadius: '6px',
-              }}
+              className="excel-summary-card"
+              style={{ '--summary-accent': c.color || 'var(--primary-color)' }}
             >
-              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              <span className="excel-summary-label">
                 {c.label}
               </span>
-              <span style={{ fontSize: '1.15rem', fontWeight: 900, color: c.color || 'var(--text-primary)', lineHeight: 1.1 }}>
+              <span className="excel-summary-val">
                 {c.value}
               </span>
               {c.subtext && (
-                <span style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                <span className="excel-summary-sub">
                   {c.subtext}
                 </span>
               )}
@@ -304,36 +293,14 @@ export function ExcelReportTable({
       )}
 
       {/* 2. Top Action Bar: Search, Filter Toggle Button, Summary Toggle & Export */}
-      <div
-        className="card"
-        style={{
-          padding: '6px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '8px',
-          background: 'var(--card-bg)',
-          borderRadius: 'var(--radius-md)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+      <div className="excel-action-bar">
+        <div className="excel-action-left">
           {/* Toggle Summary Cards Button */}
           {summaryCards && summaryCards.length > 0 && (
             <button
               type="button"
               onClick={() => setShowSummary(!showSummary)}
-              className={`btn btn-sm ${showSummary ? 'btn-ghost' : 'btn-secondary'}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color)',
-              }}
+              className={`btn btn-sm ${showSummary ? 'btn-ghost' : 'btn-secondary'} excel-btn-stats`}
               title={showSummary ? 'Hide summary KPI cards' : 'Show summary KPI cards'}
             >
               <TrendingUp size={12} />
@@ -345,105 +312,45 @@ export function ExcelReportTable({
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-secondary'}`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              padding: '4px 8px',
-              borderRadius: '6px',
-            }}
+            className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-secondary'} excel-btn-filter`}
           >
             <Filter size={12} />
             <span>{showFilters ? 'Hide Filters' : 'Filters'}</span>
             {(monthFilter !== 'all' || skipDate) && (
               <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: showFilters ? '#FFFFFF' : '#10B981',
-                }}
+                className={`excel-filter-dot ${showFilters ? 'is-active' : ''}`}
               />
             )}
           </button>
 
           {/* Active Filter Pill when collapsed */}
           {!showFilters && (monthFilter !== 'all' || skipDate) && (
-            <span
-              style={{
-                fontSize: '0.74rem',
-                color: 'var(--text-secondary)',
-                background: 'var(--page-bg)',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
+            <span className="excel-active-filter-pill">
               <Calendar size={12} color="var(--primary-color)" />
               {skipDate ? `Date: ${skipDate}` : `Month: ${monthFilter}`}
             </span>
           )}
 
           {/* Search Input */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '240px',
-            }}
-          >
-            <Search
-              size={13}
-              style={{
-                position: 'absolute',
-                left: '9px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)',
-              }}
-            />
+          <div className="excel-search-wrap">
+            <Search size={13} className="excel-search-icon" />
             <input
               type="text"
               placeholder="Search records..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '5px 10px 5px 28px',
-                borderRadius: '7px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--page-bg)',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                outline: 'none',
-              }}
+              className="excel-search-input"
             />
           </div>
         </div>
 
         {/* Export Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <div className="excel-export-group">
           <button
             type="button"
-            className="btn btn-sm btn-ghost"
+            className="excel-btn-export btn-export-excel"
             onClick={handleExportExcel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: '7px',
-              border: '1px solid var(--border-color)',
-              color: '#10B981',
-            }}
+            title="Export as Microsoft Excel (.xlsx)"
           >
             <FileSpreadsheet size={13} />
             Excel
@@ -451,19 +358,9 @@ export function ExcelReportTable({
 
           <button
             type="button"
-            className="btn btn-sm btn-ghost"
+            className="excel-btn-export btn-export-word"
             onClick={handleExportWord}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: '7px',
-              border: '1px solid var(--border-color)',
-              color: '#3B82F6',
-            }}
+            title="Export as Microsoft Word (.doc)"
           >
             <FileText size={13} />
             Word
@@ -471,19 +368,9 @@ export function ExcelReportTable({
 
           <button
             type="button"
-            className="btn btn-sm btn-ghost"
+            className="excel-btn-export btn-export-pdf"
             onClick={handleExportPdf}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: '7px',
-              border: '1px solid var(--border-color)',
-              color: '#EF4444',
-            }}
+            title="Export as PDF"
           >
             <Printer size={13} />
             PDF
@@ -493,41 +380,18 @@ export function ExcelReportTable({
 
       {/* 2b. Collapsible Filter Tray (Month Filter & Skip Date) */}
       {showFilters && (
-        <div
-          className="card"
-          style={{
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            flexWrap: 'wrap',
-            background: 'var(--page-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            animation: 'fadeIn 0.15s ease',
-          }}
-        >
+        <div className="excel-filter-tray">
           {/* Default Month Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="excel-filter-group">
             <Calendar size={14} color="var(--primary-color)" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Month:</span>
+            <span className="excel-filter-label">Month:</span>
             <select
               value={monthFilter}
               onChange={(e) => {
                 setMonthFilter(e.target.value);
                 setSkipDate('');
               }}
-              style={{
-                padding: '5px 8px',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                outline: 'none',
-                cursor: 'pointer',
-              }}
+              className="excel-filter-select"
             >
               {monthOptions.map((opt) => (
                 <option key={opt.val} value={opt.val}>
@@ -539,42 +403,24 @@ export function ExcelReportTable({
           </div>
 
           {/* Skip / Jump to Specific Date */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="excel-filter-group">
             <CalendarDays size={14} color="#10B981" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Skip Date:</span>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span className="excel-filter-label">Skip Date:</span>
+            <div className="excel-date-input-wrap">
               <input
                 type="date"
                 value={skipDate}
                 onChange={(e) => setSkipDate(e.target.value)}
                 title="Skip to specific date"
                 placeholder="Skip to date..."
-                style={{
-                  padding: '5px 24px 5px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.78rem',
-                  outline: 'none',
-                }}
+                className="excel-date-input"
               />
               {skipDate && (
                 <button
                   type="button"
                   onClick={() => setSkipDate('')}
                   title="Clear date filter"
-                  style={{
-                    position: 'absolute',
-                    right: '5px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: 0,
-                  }}
+                  className="excel-date-clear-btn"
                 >
                   <X size={12} />
                 </button>
@@ -589,15 +435,7 @@ export function ExcelReportTable({
                 setMonthFilter(defaultCurrentMonth);
                 setSkipDate('');
               }}
-              style={{
-                fontSize: '0.72rem',
-                color: 'var(--primary-color)',
-                cursor: 'pointer',
-                fontWeight: 700,
-                background: 'none',
-                border: 'none',
-                textDecoration: 'underline',
-              }}
+              className="excel-filter-reset-btn"
             >
               Reset to Current Month
             </button>
@@ -606,27 +444,17 @@ export function ExcelReportTable({
       )}
 
       {/* 3. Full-Page Data Grid (No Fixed-Box Scroll) */}
-      <div
-        className="card"
-        style={{
-          padding: 0,
-          overflow: 'hidden',
-          borderRadius: 'var(--radius-lg)',
-          border: '1.5px solid var(--border-color)',
-          background: 'var(--card-bg)',
-          boxShadow: 'var(--shadow-md)',
-        }}
-      >
+      <div className="excel-grid-card">
         {/* Navigation Toolbar: Pan Tip + Horizontal Scroll Controls */}
         <div className="excel-table-nav-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="excel-table-nav-left">
             <Move size={14} color="#38BDF8" />
             <span>
-              <strong style={{ color: 'var(--text-primary)' }}>Table Navigation:</strong> Drag to pan horizontally, or use column scroll controls:
+              <strong>Table Navigation:</strong> Drag to pan horizontally, or use column scroll controls:
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="excel-table-nav-right">
             {/* Left */}
             <button
               type="button"
@@ -668,54 +496,25 @@ export function ExcelReportTable({
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          style={{
-            overflowX: 'auto',
-            overflowY: 'visible',
-            cursor: isPanning ? 'grabbing' : 'grab',
-            userSelect: isPanning ? 'none' : 'auto',
-          }}
+          className={`excel-table-scroll-container ${isPanning ? 'is-panning' : ''}`}
         >
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.82rem',
-              textAlign: 'left',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
+          <table className="excel-grid-table">
             <thead>
-              <tr
-                className="excel-table-header-row"
-                style={{
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 10,
-                }}
-              >
-                <th style={{ width: '40px', padding: '12px 14px', textAlign: 'center', color: '#94A3B8' }}>
+              <tr className="excel-table-header-row">
+                <th className="excel-th-idx">
                   #
                 </th>
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    style={{
-                      padding: '12px 16px',
-                      fontWeight: 800,
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                      fontSize: '0.74rem',
-                      cursor: col.sortable !== false ? 'pointer' : 'default',
-                      userSelect: 'none',
-                      whiteSpace: 'nowrap',
-                      width: col.width,
-                    }}
+                    className={`excel-th-cell ${col.sortable !== false ? 'is-sortable' : ''}`}
+                    style={col.width ? { width: col.width } : undefined}
                     onClick={() => col.sortable !== false && handleSort(col.key)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="excel-th-content">
                       <span>{col.label}</span>
                       {col.sortable !== false && (
-                        <span style={{ color: sortKey === col.key ? '#38BDF8' : '#64748B' }}>
+                        <span className={`excel-th-sort-icon ${sortKey === col.key ? 'is-active' : ''}`}>
                           {sortKey === col.key ? (
                             sortAsc ? <ChevronUp size={13} /> : <ChevronDown size={13} />
                           ) : (
@@ -733,12 +532,7 @@ export function ExcelReportTable({
                 <tr>
                   <td
                     colSpan={columns.length + 1}
-                    style={{
-                      padding: '48px 16px',
-                      textAlign: 'center',
-                      color: 'var(--text-muted)',
-                      fontSize: '0.9rem',
-                    }}
+                    className="excel-table-empty-cell"
                   >
                     No matching records found for the selected month/date.
                   </td>
@@ -749,27 +543,10 @@ export function ExcelReportTable({
                   return (
                     <tr
                       key={row.id || idx}
-                      className="excel-table-row"
+                      className={`excel-table-row ${onRowClick ? 'is-clickable' : ''}`}
                       onClick={() => onRowClick && onRowClick(row)}
-                      style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                        background:
-                          idx % 2 === 0
-                            ? 'transparent'
-                            : 'rgba(255, 255, 255, 0.015)',
-                        cursor: onRowClick ? 'pointer' : 'default',
-                      }}
                     >
-                      <td
-                        className="excel-row-num"
-                        style={{
-                          padding: '11px 14px',
-                          textAlign: 'center',
-                          fontSize: '0.74rem',
-                          borderRight: '1px solid rgba(255, 255, 255, 0.06)',
-                          background: 'rgba(0, 0, 0, 0.12)',
-                        }}
-                      >
+                      <td className="excel-td-idx">
                         {rowNum}
                       </td>
                       {columns.map((col) => {
@@ -777,13 +554,8 @@ export function ExcelReportTable({
                         return (
                           <td
                             key={col.key}
-                            style={{
-                              padding: '11px 16px',
-                              borderRight: '1px solid rgba(255, 255, 255, 0.06)',
-                              color: 'var(--text-primary)',
-                              whiteSpace: col.wrap ? 'normal' : 'nowrap',
-                              maxWidth: col.maxWidth || 'auto',
-                            }}
+                            className={`excel-td-cell ${col.wrap ? 'is-wrap' : ''}`}
+                            style={col.maxWidth ? { maxWidth: col.maxWidth } : undefined}
                           >
                             {col.render ? col.render(val, row) : val !== undefined && val !== null ? String(val) : '-'}
                           </td>
@@ -798,41 +570,19 @@ export function ExcelReportTable({
         </div>
 
         {/* 4. Full Pagination Controls Bar */}
-        <div
-          style={{
-            padding: '12px 18px',
-            background: 'var(--page-bg)',
-            borderTop: '1px solid var(--border-color)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '14px',
-            fontSize: '0.82rem',
-          }}
-        >
+        <div className="excel-pagination-bar">
           {/* Left: Summary + Rows per page */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>
+          <div className="excel-pagination-left">
+            <span className="excel-pagination-info">
               Showing <strong>{startIndex}</strong> to <strong>{endIndex}</strong> of <strong>{totalRecords}</strong> records
             </span>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>Per page:</span>
+            <div className="excel-page-size-group">
+              <span className="excel-page-size-label">Per page:</span>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
+                className="excel-page-size-select"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -846,21 +596,14 @@ export function ExcelReportTable({
 
           {/* Right: Page Navigation & Jump */}
           {!isAll && totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="excel-pagination-right">
               {/* First Page */}
               <button
                 type="button"
-                className="btn-icon"
+                className="btn-icon excel-page-nav-btn"
                 disabled={safePage <= 1}
                 onClick={() => setCurrentPage(1)}
                 title="First Page"
-                style={{
-                  padding: '5px',
-                  opacity: safePage <= 1 ? 0.35 : 1,
-                  cursor: safePage <= 1 ? 'not-allowed' : 'pointer',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                }}
               >
                 <ChevronsLeft size={14} />
               </button>
@@ -868,23 +611,16 @@ export function ExcelReportTable({
               {/* Previous Page */}
               <button
                 type="button"
-                className="btn-icon"
+                className="btn-icon excel-page-nav-btn"
                 disabled={safePage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 title="Previous Page"
-                style={{
-                  padding: '5px',
-                  opacity: safePage <= 1 ? 0.35 : 1,
-                  cursor: safePage <= 1 ? 'not-allowed' : 'pointer',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                }}
               >
                 <ChevronLeft size={14} />
               </button>
 
               {/* Page Number Chips */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className="excel-page-nums">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pNum;
                   if (totalPages <= 5) {
@@ -903,19 +639,7 @@ export function ExcelReportTable({
                       key={pNum}
                       type="button"
                       onClick={() => setCurrentPage(pNum)}
-                      style={{
-                        minWidth: '28px',
-                        height: '28px',
-                        padding: '0 6px',
-                        borderRadius: '6px',
-                        border: isActive ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                        background: isActive ? 'var(--primary-color)' : 'var(--card-bg)',
-                        color: isActive ? '#FFFFFF' : 'var(--text-primary)',
-                        fontSize: '0.78rem',
-                        fontWeight: isActive ? 800 : 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
+                      className={`excel-page-num-btn ${isActive ? 'is-active' : ''}`}
                     >
                       {pNum}
                     </button>
@@ -926,17 +650,10 @@ export function ExcelReportTable({
               {/* Next Page */}
               <button
                 type="button"
-                className="btn-icon"
+                className="btn-icon excel-page-nav-btn"
                 disabled={safePage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 title="Next Page"
-                style={{
-                  padding: '5px',
-                  opacity: safePage >= totalPages ? 0.35 : 1,
-                  cursor: safePage >= totalPages ? 'not-allowed' : 'pointer',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                }}
               >
                 <ChevronRight size={14} />
               </button>
@@ -944,24 +661,17 @@ export function ExcelReportTable({
               {/* Last Page */}
               <button
                 type="button"
-                className="btn-icon"
+                className="btn-icon excel-page-nav-btn"
                 disabled={safePage >= totalPages}
                 onClick={() => setCurrentPage(totalPages)}
                 title="Last Page"
-                style={{
-                  padding: '5px',
-                  opacity: safePage >= totalPages ? 0.35 : 1,
-                  cursor: safePage >= totalPages ? 'not-allowed' : 'pointer',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                }}
               >
                 <ChevronsRight size={14} />
               </button>
 
               {/* Jump to page form */}
-              <form onSubmit={handleJumpToPage} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>Page:</span>
+              <form onSubmit={handleJumpToPage} className="excel-jump-form">
+                <span className="excel-jump-label">Page:</span>
                 <input
                   type="number"
                   min={1}
@@ -969,18 +679,7 @@ export function ExcelReportTable({
                   placeholder={String(safePage)}
                   value={jumpPageInput}
                   onChange={(e) => setJumpPageInput(e.target.value)}
-                  style={{
-                    width: '44px',
-                    height: '28px',
-                    padding: '2px 4px',
-                    textAlign: 'center',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.78rem',
-                    outline: 'none',
-                  }}
+                  className="excel-jump-input"
                 />
               </form>
             </div>

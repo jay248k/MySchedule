@@ -273,7 +273,7 @@ export function CustomSelect({
                 size={14}
                 style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--text-muted, #94A3B8)',
@@ -288,7 +288,7 @@ export function CustomSelect({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '7px 28px 7px 32px',
+                  padding: '7px 28px 7px 36px',
                   background: 'var(--page-bg, #090D16)',
                   border: '1px solid var(--border-color, rgba(255, 255, 255, 0.12))',
                   borderRadius: 'var(--radius-sm, 6px)',

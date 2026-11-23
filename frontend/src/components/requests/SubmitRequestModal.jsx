@@ -189,7 +189,7 @@ export default function SubmitRequestModal({ isOpen, onClose }) {
                 marginBottom: '6px',
               }}
             >
-              Work / Task Title <span style={{ color: '#EF4444' }}>*</span>
+              Work / Task Title <span className="required-star">*</span>
             </label>
             <input
               type="text"
@@ -319,7 +319,7 @@ export default function SubmitRequestModal({ isOpen, onClose }) {
                 marginBottom: '6px',
               }}
             >
-              Reason For Missing / Request <span style={{ color: '#EF4444' }}>* (Mandatory)</span>
+              Reason For Missing / Request <span className="required-star">*</span> <span style={{ color: '#EF4444', fontSize: '0.78rem' }}>(Mandatory)</span>
             </label>
             <textarea
               required

@@ -101,7 +101,9 @@ export function CategoryModal() {
             )}
 
             <div className="form-group">
-              <label className="form-label">Category Name *</label>
+              <label className="form-label">
+                Category Name <span className="required-star">*</span>
+              </label>
               <input
                 type="text"
                 className="form-input"

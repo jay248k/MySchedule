@@ -17,6 +17,7 @@
 
   --page-bg: #F4F7FC;
   --card-bg: #FFFFFF;
+  --header-bg: var(--card-bg);
   --card-hover: #F8FAFC;
 
   --bg-primary: var(--page-bg);

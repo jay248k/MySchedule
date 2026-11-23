@@ -209,6 +209,7 @@
   font-weight: 600;
   text-decoration: none;
   transition: all 0.15s ease;
+  border: 1px solid transparent;
 }
 
 .sidebar-sub-item:hover {
@@ -217,10 +218,33 @@
 }
 
 .sidebar-sub-item.active {
-  color: #ffffff !important;
-  background: rgba(23, 105, 255, 0.22);
+  color: var(--primary-color, #1769FF) !important;
+  background: var(--sidebar-active, rgba(23, 105, 255, 0.12));
   font-weight: 700;
+  border: 1px solid rgba(23, 105, 255, 0.28);
+  box-shadow: 0 1px 3px rgba(23, 105, 255, 0.08);
+}
+
+[data-theme='dark'] .sidebar-sub-item.active,
+html.dark-mode:not([data-theme='light']):not([data-theme='warm']) .sidebar-sub-item.active {
+  color: #38BDF8 !important;
+  background: rgba(56, 189, 248, 0.15);
   border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme='oled'] .sidebar-sub-item.active {
+  color: #38BDF8 !important;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: none;
+}
+
+[data-theme='warm'] .sidebar-sub-item.active {
+  color: #1769FF !important;
+  background: var(--sidebar-active, #E8DEC8);
+  border: 1px solid rgba(23, 105, 255, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Sidebar Motivational Card */
@@ -314,7 +338,7 @@
 .search-input {
   width: 100%;
   height: 32px;
-  padding: 0 70px 0 34px;
+  padding: 0 70px 0 38px !important;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
   background: var(--page-bg);
@@ -1349,10 +1373,33 @@ body.calendar-fullpage-active .page-container,
   box-shadow: none !important;
 }
 
-.timeline-node.pending {
+.timeline-node.pending,
+.timeline-node.node-upcoming,
+.timeline-node.node-pending {
   background: var(--card-bg) !important;
   border-color: var(--border-color) !important;
-  box-shadow: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.timeline-node.node-upcoming .timeline-node-dot,
+.timeline-node.node-pending .timeline-node-dot,
+.timeline-node.pending .timeline-node-dot {
+  background-color: var(--text-muted) !important;
+}
+
+.timeline-node.node-upcoming:hover,
+.timeline-node.node-pending:hover,
+.timeline-node.pending:hover {
+  border-color: var(--primary-color) !important;
+  background: var(--card-hover) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 23, 105, 255), 0.15) !important;
+}
+
+.timeline-node.node-upcoming:hover .timeline-node-dot,
+.timeline-node.node-pending:hover .timeline-node-dot,
+.timeline-node.pending:hover .timeline-node-dot {
+  background-color: var(--primary-color) !important;
+  transform: scale(1.25);
 }
 
 .timeline-node-dot {

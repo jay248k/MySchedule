@@ -104,7 +104,9 @@ export function GoalModal() {
             )}
 
             <div className="form-group">
-              <label className="form-label">Goal Title *</label>
+              <label className="form-label">
+                Goal Title <span className="required-star">*</span>
+              </label>
               <input
                 type="text"
                 className="form-input"

@@ -123,7 +123,7 @@ export default function RescheduleRequestModal({ isOpen, onClose, onConfirm, req
                 marginBottom: '6px',
               }}
             >
-              New Date
+              New Date <span className="required-star">*</span>
             </label>
             <input
               type="date"
@@ -155,7 +155,7 @@ export default function RescheduleRequestModal({ isOpen, onClose, onConfirm, req
                   marginBottom: '6px',
                 }}
               >
-                Start Time
+                Start Time <span className="required-star">*</span>
               </label>
               <input
                 type="time"
@@ -185,7 +185,7 @@ export default function RescheduleRequestModal({ isOpen, onClose, onConfirm, req
                   marginBottom: '6px',
                 }}
               >
-                End Time
+                End Time <span className="required-star">*</span>
               </label>
               <input
                 type="time"

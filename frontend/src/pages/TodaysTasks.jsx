@@ -426,7 +426,7 @@ export function TodaysTasks() {
           }}
         >
           {/* Search Input */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Search
               size={15}
               style={{
@@ -435,12 +435,13 @@ export function TodaysTasks() {
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-muted)',
+                pointerEvents: 'none',
               }}
             />
             <input
               type="text"
               className="form-input"
-              style={{ paddingLeft: '34px', fontSize: '0.85rem' }}
+              style={{ paddingLeft: '38px', borderRadius: '999px', fontSize: '0.85rem' }}
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

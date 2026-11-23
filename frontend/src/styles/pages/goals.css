@@ -70,15 +70,23 @@
   flex-direction: column;
   gap: 12px;
   position: relative;
-  background: linear-gradient(145deg, rgba(18, 24, 38, 0.85) 0%, rgba(11, 16, 28, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-top: 2.5px solid var(--accent-color, #3B82F6);
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.2s ease;
+}
+
+[data-theme='dark'] .goal-modern-card,
+html.dark-mode .goal-modern-card {
+  background: linear-gradient(145deg, rgba(18, 24, 38, 0.85) 0%, rgba(11, 16, 28, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2.5px solid var(--accent-color, #3B82F6);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .goal-modern-card::before {
@@ -95,6 +103,12 @@
 
 .goal-modern-card:hover {
   transform: translateY(-2px);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme='dark'] .goal-modern-card:hover,
+html.dark-mode .goal-modern-card:hover {
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
 }
@@ -134,13 +148,13 @@
 
 .goal-status-pill.in-progress {
   background: rgba(59, 130, 246, 0.12);
-  color: #60A5FA;
+  color: #3B82F6;
   border: 1px solid rgba(59, 130, 246, 0.28);
 }
 
 .goal-status-pill.completed {
   background: rgba(16, 185, 129, 0.12);
-  color: #34D399;
+  color: #10B981;
   border: 1px solid rgba(16, 185, 129, 0.28);
 }
 
@@ -171,8 +185,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
 }
 
@@ -191,26 +205,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .goal-action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-subtle);
   color: var(--text-primary);
+  border-color: var(--primary-color);
 }
 
 .goal-action-btn.edit:hover {
-  color: #60A5FA;
-  border-color: rgba(96, 165, 250, 0.35);
+  color: #3B82F6;
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .goal-action-btn.delete:hover {
-  color: #F87171;
-  border-color: rgba(248, 113, 113, 0.35);
+  color: #EF4444;
+  border-color: rgba(239, 68, 68, 0.35);
   background: rgba(239, 68, 68, 0.12);
 }
 
@@ -224,7 +239,7 @@
 .goal-card-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #F8FAFC;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -236,7 +251,7 @@
 
 .goal-card-desc {
   font-size: 0.8rem;
-  color: #94A3B8;
+  color: var(--text-secondary);
   line-height: 1.4;
   margin: 0;
   display: -webkit-box;
@@ -270,7 +285,7 @@
 
 /* Interactive Tasks Section */
 .goal-tasks-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--border-color);
   padding-top: 10px;
   margin-top: 2px;
   display: flex;
@@ -284,21 +299,21 @@
   align-items: center;
   padding: 6px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   user-select: none;
   transition: all 0.15s ease;
 }
 
 .goal-tasks-bar-toggle:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--border-subtle);
+  border-color: var(--primary-color);
 }
 
 .goal-tasks-bar-toggle.expanded {
-  background: rgba(59, 130, 246, 0.06);
-  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
 }
 
 .goal-tasks-toggle-label {
@@ -319,7 +334,7 @@
   font-weight: 700;
   padding: 1px 7px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border-subtle);
   color: var(--text-secondary);
 }
 
@@ -385,7 +400,7 @@
 /* Footer */
 .goal-card-footer {
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border-color);
   padding-top: 10px;
   display: flex;
   justify-content: space-between;

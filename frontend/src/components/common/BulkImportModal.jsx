@@ -801,7 +801,7 @@ export function BulkImportModal() {
                         }}
                       >
                         <span>{col.name}</span>
-                        {col.required && <span style={{ color: '#FDE047' }}>*</span>}
+                        {col.required && <span className="required-star">*</span>}
                         <span style={{ fontSize: '0.68rem', opacity: col.required ? 0.9 : 0.65, fontWeight: 400, fontFamily: 'inherit' }}>
                           ({col.required ? 'required' : 'optional'})
                         </span>

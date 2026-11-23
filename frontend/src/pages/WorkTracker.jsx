@@ -1041,10 +1041,10 @@ export function WorkTracker() {
             style={{
               width: '100%',
               maxWidth: '480px',
-              background: 'var(--card-bg, #10192D)',
-              border: '1px solid rgba(23, 105, 255, 0.25)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '16px',
-              boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 28px rgba(23, 105, 255, 0.12)',
+              boxShadow: 'var(--shadow-xl)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -1053,11 +1053,11 @@ export function WorkTracker() {
             <div
               style={{
                 padding: '16px 20px',
-                borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'linear-gradient(180deg, rgba(23, 105, 255, 0.12) 0%, transparent 100%)',
+                background: 'linear-gradient(180deg, rgba(var(--primary-rgb, 23, 105, 255), 0.08) 0%, transparent 100%)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1066,21 +1066,21 @@ export function WorkTracker() {
                     width: '34px',
                     height: '34px',
                     borderRadius: '9px',
-                    background: 'rgba(23, 105, 255, 0.15)',
-                    border: '1px solid rgba(23, 105, 255, 0.35)',
+                    background: 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)',
+                    border: '1px solid rgba(var(--primary-rgb, 23, 105, 255), 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#60A5FA',
+                    color: 'var(--primary-color)',
                   }}
                 >
                   <Plus size={16} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                     Log Past Work Session
                   </h3>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                     Manually add a completed focus interval
                   </div>
                 </div>
@@ -1097,7 +1097,7 @@ export function WorkTracker() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--text-muted, #64748B)',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
               >
@@ -1107,8 +1107,8 @@ export function WorkTracker() {
 
             <form onSubmit={handleSaveManualSession} style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
-                  <Calendar size={13} style={{ color: '#60A5FA' }} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  <Calendar size={13} style={{ color: 'var(--primary-color)' }} />
                   <span>Date:</span>
                 </label>
                 <input
@@ -1121,9 +1121,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 />
@@ -1131,7 +1131,7 @@ export function WorkTracker() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     <Clock size={13} style={{ color: '#10B981' }} />
                     <span>Start Time:</span>
                   </label>
@@ -1145,15 +1145,15 @@ export function WorkTracker() {
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                      border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                      color: 'var(--text-primary, #FFFFFF)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
                       fontSize: '0.86rem',
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     <Clock size={13} style={{ color: '#F59E0B' }} />
                     <span>End Time:</span>
                   </label>
@@ -1167,9 +1167,9 @@ export function WorkTracker() {
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                      border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                      color: 'var(--text-primary, #FFFFFF)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
                       fontSize: '0.86rem',
                     }}
                   />
@@ -1177,7 +1177,7 @@ export function WorkTracker() {
               </div>
 
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <Timer size={13} style={{ color: '#10B981' }} />
                   <span>Duration (Minutes):</span>
                 </label>
@@ -1193,16 +1193,16 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <Coffee size={13} style={{ color: '#F59E0B' }} />
                   <span>Reason for Stopping / Pause:</span>
                 </label>
@@ -1214,9 +1214,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 >
@@ -1234,7 +1234,7 @@ export function WorkTracker() {
               </div>
 
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <Target size={13} style={{ color: '#8B5CF6' }} />
                   <span>Linked Task (Optional):</span>
                 </label>
@@ -1246,9 +1246,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 >
@@ -1262,7 +1262,7 @@ export function WorkTracker() {
               </div>
 
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <FileText size={13} style={{ color: '#06B6D4' }} />
                   <span>Notes / Progress:</span>
                 </label>
@@ -1276,9 +1276,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                     resize: 'vertical',
                   }}
@@ -1292,7 +1292,7 @@ export function WorkTracker() {
                   justifyContent: 'flex-end',
                   gap: '10px',
                   paddingTop: '8px',
-                  borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                  borderTop: '1px solid var(--border-color)',
                 }}
               >
                 <button
@@ -1356,10 +1356,10 @@ export function WorkTracker() {
             style={{
               width: '100%',
               maxWidth: '490px',
-              background: 'var(--card-bg, #10192D)',
-              border: '1px solid rgba(23, 105, 255, 0.28)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '16px',
-              boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.65), 0 0 28px rgba(23, 105, 255, 0.12)',
+              boxShadow: 'var(--shadow-xl)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -1369,11 +1369,11 @@ export function WorkTracker() {
             <div
               style={{
                 padding: '16px 20px',
-                borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'linear-gradient(180deg, rgba(23, 105, 255, 0.12) 0%, transparent 100%)',
+                background: 'linear-gradient(180deg, rgba(var(--primary-rgb, 23, 105, 255), 0.08) 0%, transparent 100%)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1382,21 +1382,21 @@ export function WorkTracker() {
                     width: '34px',
                     height: '34px',
                     borderRadius: '9px',
-                    background: 'rgba(23, 105, 255, 0.15)',
-                    border: '1px solid rgba(23, 105, 255, 0.35)',
+                    background: 'rgba(var(--primary-rgb, 23, 105, 255), 0.12)',
+                    border: '1px solid rgba(var(--primary-rgb, 23, 105, 255), 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#60A5FA',
+                    color: 'var(--primary-color)',
                   }}
                 >
                   <Edit2 size={16} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                     Edit Work Session Details
                   </h3>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                     Update stop reason, notes, or linked task
                   </div>
                 </div>
@@ -1413,7 +1413,7 @@ export function WorkTracker() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--text-muted, #64748B)',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
               >
@@ -1431,13 +1431,13 @@ export function WorkTracker() {
                     justifyContent: 'space-between',
                     padding: '9px 13px',
                     borderRadius: '10px',
-                    background: 'rgba(23, 105, 255, 0.06)',
-                    border: '1px solid rgba(23, 105, 255, 0.18)',
+                    background: 'rgba(var(--primary-rgb, 23, 105, 255), 0.08)',
+                    border: '1px solid rgba(var(--primary-rgb, 23, 105, 255), 0.2)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <Clock size={13} style={{ color: '#60A5FA' }} />
-                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary, #FFFFFF)' }}>
+                    <Clock size={13} style={{ color: 'var(--primary-color)' }} />
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {editingSession.startTime || 'Start'} → {editingSession.endTime || 'Present'}
                     </span>
                   </div>
@@ -1454,7 +1454,7 @@ export function WorkTracker() {
 
               {/* Stop / Break Reason Field */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <Coffee size={13} style={{ color: '#F59E0B' }} />
                   <span>Stop Reason:</span>
                 </label>
@@ -1483,13 +1483,13 @@ export function WorkTracker() {
                           borderRadius: '6px',
                           border: isSelected
                             ? '1px solid var(--primary-color, #1769FF)'
-                            : '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                            : '1px solid var(--border-color)',
                           background: isSelected
-                            ? 'rgba(23, 105, 255, 0.2)'
-                            : 'rgba(255, 255, 255, 0.03)',
+                            ? 'rgba(var(--primary-rgb, 23, 105, 255), 0.14)'
+                            : 'var(--card-hover)',
                           color: isSelected
-                            ? '#60A5FA'
-                            : 'var(--text-secondary, #94A3B8)',
+                            ? 'var(--primary-color, #1769FF)'
+                            : 'var(--text-secondary)',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                         }}
@@ -1511,9 +1511,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 />
@@ -1521,7 +1521,7 @@ export function WorkTracker() {
 
               {/* Linked Task Field */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <Target size={13} style={{ color: '#8B5CF6' }} />
                   <span>Linked Task:</span>
                 </label>
@@ -1541,9 +1541,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                   }}
                 >
@@ -1558,7 +1558,7 @@ export function WorkTracker() {
 
               {/* Notes / Accomplishments Field */}
               <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <FileText size={13} style={{ color: '#06B6D4' }} />
                   <span>Notes / Accomplishments:</span>
                 </label>
@@ -1572,9 +1572,9 @@ export function WorkTracker() {
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    background: 'var(--input-bg, rgba(255, 255, 255, 0.04))',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
-                    color: 'var(--text-primary, #FFFFFF)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
                     fontSize: '0.86rem',
                     resize: 'vertical',
                   }}
@@ -1589,7 +1589,7 @@ export function WorkTracker() {
                   justifyContent: 'flex-end',
                   gap: '10px',
                   paddingTop: '8px',
-                  borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                  borderTop: '1px solid var(--border-color)',
                 }}
               >
                 <button

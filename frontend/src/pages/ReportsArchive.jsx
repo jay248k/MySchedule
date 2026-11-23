@@ -208,7 +208,7 @@ export function ReportsArchive() {
   };
 
   return (
-    <div className="page-container archive-container">
+    <div className="archive-container">
       {/* Page Header */}
       <div className="archive-header">
         <div>

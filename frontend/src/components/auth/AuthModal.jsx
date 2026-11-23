@@ -352,7 +352,7 @@ export function AuthModal() {
                   marginBottom: '6px',
                 }}
               >
-                Full Name <span style={{ color: '#ef4444' }}>*</span>
+                Full Name <span className="required-star">*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <User
@@ -398,7 +398,7 @@ export function AuthModal() {
                 marginBottom: '6px',
               }}
             >
-              Email Address <span style={{ color: '#ef4444' }}>*</span>
+              Email Address <span className="required-star">*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <Mail
@@ -496,7 +496,7 @@ export function AuthModal() {
                   color: 'var(--text-secondary, #94a3b8)',
                 }}
               >
-                Password <span style={{ color: '#ef4444' }}>*</span>
+                Password <span className="required-star">*</span>
               </label>
               {authModalTab === 'signup' && (
                 <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>min 6 characters</span>
