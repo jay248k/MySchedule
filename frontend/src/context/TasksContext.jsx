@@ -129,15 +129,15 @@ export function TasksProvider({ children, selectedDate }) {
   }, [deleteTaskMutation, showToast]);
 
   const toggleTaskComplete = useCallback(async (taskId) => {
+    const target = tasks.find((t) => t.id === taskId);
+    const isDone = target?.status === 'completed';
+    showToast({
+      type: isDone ? 'info' : 'success',
+      title: isDone ? 'Task Incomplete' : 'Task Done',
+      message: `"${target?.title || 'Task'}"`,
+    });
     try {
       await toggleTaskCompleteMutation.mutateAsync(taskId);
-      const target = tasks.find((t) => t.id === taskId);
-      const isDone = target?.status === 'completed';
-      showToast({
-        type: isDone ? 'info' : 'success',
-        title: isDone ? 'Task Incomplete' : 'Task Done',
-        message: `"${target?.title || 'Task'}"`,
-      });
     } catch (err) {
       showToast({ type: 'error', title: 'Error', message: 'Failed to toggle task' });
     }

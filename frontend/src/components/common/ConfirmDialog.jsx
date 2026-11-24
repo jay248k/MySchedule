@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { ToastContainer as ReactToastifyContainer } from 'react-toastify';
+import { ToastContainer as ReactToastifyContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export function ConfirmDialog() {
@@ -70,15 +70,18 @@ export function ToastContainer() {
   return (
     <ReactToastifyContainer
       position="top-right"
-      autoClose={3000}
+      autoClose={2200}
       hideProgressBar={false}
-      newestOnTop={false}
+      newestOnTop={true}
       closeOnClick
       rtl={false}
-      pauseOnFocusLoss
+      pauseOnFocusLoss={false}
       draggable
       pauseOnHover
+      transition={Slide}
       theme="light"
+      limit={4}
     />
   );
 }
+

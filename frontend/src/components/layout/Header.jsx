@@ -121,11 +121,6 @@ export function Header() {
 
   const handleMarkTaskComplete = (task) => {
     toggleTaskComplete(task.id);
-    showToast({
-      type: 'success',
-      title: 'Task Completed',
-      message: `"${task.title}" has been marked as completed.`,
-    });
   };
 
   const handleConfirmCancelItem = (remarks) => {

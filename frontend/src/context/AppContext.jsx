@@ -103,6 +103,7 @@ export function AppProvider({ children }) {
 
   // Production-level session guards & single shared live ticker (No per-component drift)
   const lastStoppedWorkSessionAtRef = useRef(0);
+  const lastStartedWorkSessionAtRef = useRef(0);
   const isSessionTransitioningRef = useRef(false);
   const isRolloverProcessingRef = useRef(false);
   const [masterTimerTicker, setMasterTimerTicker] = useState(() => Date.now());
@@ -304,7 +305,7 @@ export function AppProvider({ children }) {
               typeof serverSettings.notificationSettings === 'string'
                 ? JSON.parse(serverSettings.notificationSettings)
                 : serverSettings.notificationSettings;
-          } catch {}
+          } catch { }
         }
         // Preserve active local theme if user has selected one in this browser (e.g. OLED)
         const currentSavedTheme = storageService.getTheme() || settings?.theme;
@@ -323,14 +324,17 @@ export function AppProvider({ children }) {
 
         // Keep backend database in sync if server had a different theme
         if (serverSettings.theme !== effectiveTheme) {
-          api.updateSettings({ ...mergedSettings, theme: effectiveTheme }).catch(() => {});
+          api.updateSettings({ ...mergedSettings, theme: effectiveTheme }).catch(() => { });
         }
       }
 
       // Synchronize Live Active Work Session with Mobile & Backend
       if (activeSessionRes && activeSessionRes.success !== false) {
         const s = activeSessionRes.data;
-        if (s && s.isRunning) {
+        const recentlyStopped = Date.now() - lastStoppedWorkSessionAtRef.current < 6000;
+        const recentlyStarted = Date.now() - lastStartedWorkSessionAtRef.current < 6000;
+
+        if (s && s.isRunning && !recentlyStopped) {
           const syncedActive = {
             isRunning: true,
             startTimestamp: Number(s.startTimestamp),
@@ -343,7 +347,7 @@ export function AppProvider({ children }) {
           };
           setActiveWorkSession(syncedActive);
           storageService.saveActiveWorkSession(syncedActive);
-        } else if (!s || !s.isRunning) {
+        } else if ((!s || !s.isRunning) && !recentlyStopped && !recentlyStarted) {
           setActiveWorkSession((prev) => {
             if (prev?.isRunning) {
               storageService.saveActiveWorkSession(null);
@@ -386,6 +390,7 @@ export function AppProvider({ children }) {
         if (res && res.success !== false) {
           const s = res.data;
           const recentlyStopped = Date.now() - lastStoppedWorkSessionAtRef.current < 6000;
+          const recentlyStarted = Date.now() - lastStartedWorkSessionAtRef.current < 6000;
           if (s && s.isRunning && !recentlyStopped) {
             setActiveWorkSession((prev) => {
               if (!prev || !prev.isRunning || Math.abs(Number(prev.startTimestamp) - Number(s.startTimestamp)) > 1000) {
@@ -404,7 +409,7 @@ export function AppProvider({ children }) {
               }
               return prev;
             });
-          } else if (!recentlyStopped) {
+          } else if (!recentlyStopped && !recentlyStarted) {
             setActiveWorkSession((prev) => {
               if (prev && prev.isRunning) {
                 storageService.saveActiveWorkSession(null);
@@ -414,7 +419,7 @@ export function AppProvider({ children }) {
                     setWorkSessions(sessRes.data);
                     storageService.saveWorkSessions(sessRes.data);
                   }
-                }).catch(() => {});
+                }).catch(() => { });
                 return null;
               }
               return prev;
@@ -664,6 +669,11 @@ export function AppProvider({ children }) {
       }
 
       dispatch(updateTaskAction({ id: taskId, ...sanitizedUpdates }));
+      showToast({
+        type: 'info',
+        title: 'Task Updated',
+        message: 'Changes saved successfully.',
+      });
       try {
         await api.updateTask(taskId, updates);
       } catch (err) {
@@ -681,11 +691,6 @@ export function AppProvider({ children }) {
         }
         console.warn('Backend task update failed:', err);
       }
-      showToast({
-        type: 'info',
-        title: 'Task Updated',
-        message: 'Changes saved successfully.',
-      });
       return true;
     },
     [dispatch, showToast, tasks]
@@ -701,16 +706,16 @@ export function AppProvider({ children }) {
         isDanger: true,
         onConfirm: async () => {
           dispatch(deleteTaskAction(taskId));
-          try {
-            await api.deleteTask(taskId);
-          } catch (err) {
-            console.warn('Backend task delete failed:', err);
-          }
           showToast({
             type: 'info',
             title: 'Task Deleted',
             message: `"${target?.title || 'Task'}" was removed.`,
           });
+          try {
+            await api.deleteTask(taskId);
+          } catch (err) {
+            console.warn('Backend task delete failed:', err);
+          }
         },
       });
     },
@@ -721,19 +726,23 @@ export function AppProvider({ children }) {
     async (taskId) => {
       const target = tasks.find((t) => t.id === taskId);
       const isDone = target?.status === 'completed';
-      const newStatus = isDone ? 'pending' : 'completed';
 
+      // 1. Instant optimistic state update
       dispatch(toggleTaskCompleteAction(taskId));
-      try {
-        await api.toggleTaskComplete(taskId);
-      } catch (err) {
-        console.warn('Backend task toggle failed:', err);
-      }
+
+      // 2. Immediate zero-latency Toastify notification
       showToast({
         type: isDone ? 'info' : 'success',
         title: isDone ? 'Task Incomplete' : 'Task Done',
         message: `"${target?.title || 'Task'}"`,
       });
+
+      // 3. Asynchronous backend persistence
+      try {
+        await api.toggleTaskComplete(taskId);
+      } catch (err) {
+        console.warn('Backend task toggle failed:', err);
+      }
     },
     [tasks, dispatch, showToast]
   );
@@ -1454,7 +1463,7 @@ export function AppProvider({ children }) {
 
           setActiveWorkSession(newActiveDay2);
           storageService.saveActiveWorkSession(newActiveDay2);
-          api.setActiveWorkSession(newActiveDay2).catch(() => {});
+          api.setActiveWorkSession(newActiveDay2).catch(() => { });
 
           setWorkChains((prev) => {
             const todayChain = prev[todayDateStr] || {
@@ -1482,7 +1491,7 @@ export function AppProvider({ children }) {
           // If diffDays > 1 (e.g. computer was asleep for days), close active session without running runaway timer
           setActiveWorkSession(null);
           storageService.saveActiveWorkSession(null);
-          api.clearActiveWorkSession().catch(() => {});
+          api.clearActiveWorkSession().catch(() => { });
         }
       } catch (err) {
         console.error('Error during midnight rollover:', err);
@@ -1513,6 +1522,8 @@ export function AppProvider({ children }) {
   const startWorkSession = useCallback((task = null) => {
     if (isSessionTransitioningRef.current) return;
     isSessionTransitioningRef.current = true;
+    lastStartedWorkSessionAtRef.current = Date.now();
+    lastStoppedWorkSessionAtRef.current = 0;
     setTimeout(() => { isSessionTransitioningRef.current = false; }, 800);
 
     const today = getTodayDateString();
@@ -1585,7 +1596,7 @@ export function AppProvider({ children }) {
     };
     setActiveWorkSession(newActive);
     storageService.saveActiveWorkSession(newActive);
-    api.setActiveWorkSession(newActive).catch(() => {});
+    api.setActiveWorkSession(newActive).catch(() => { });
 
     showToast({
       type: 'success',
@@ -1607,6 +1618,7 @@ export function AppProvider({ children }) {
       if (isSessionTransitioningRef.current) return;
       isSessionTransitioningRef.current = true;
       lastStoppedWorkSessionAtRef.current = Date.now();
+      lastStartedWorkSessionAtRef.current = 0;
       setTimeout(() => { isSessionTransitioningRef.current = false; }, 800);
 
       if (!activeWorkSession) {
@@ -1738,10 +1750,10 @@ export function AppProvider({ children }) {
         setActiveWorkSession(null);
         storageService.saveActiveWorkSession(null);
         setIsStopModalOpen(false);
-        api.clearActiveWorkSession().catch(() => {});
+        api.clearActiveWorkSession().catch(() => { });
 
-        api.createWorkSession(day1SessionPayload).catch(() => {});
-        api.createWorkSession(day2SessionPayload).catch(() => {});
+        api.createWorkSession(day1SessionPayload).catch(() => { });
+        api.createWorkSession(day2SessionPayload).catch(() => { });
 
         showToast({
           type: 'info',
@@ -1806,7 +1818,7 @@ export function AppProvider({ children }) {
       setActiveWorkSession(null);
       storageService.saveActiveWorkSession(null);
       setIsStopModalOpen(false);
-      api.clearActiveWorkSession().catch(() => {});
+      api.clearActiveWorkSession().catch(() => { });
 
       // Save locally to historical workSessions
       setWorkSessions((prev) => {
@@ -1845,9 +1857,10 @@ export function AppProvider({ children }) {
 
   const finishDayWorkSession = useCallback((dateStr = getTodayDateString()) => {
     lastStoppedWorkSessionAtRef.current = Date.now();
+    lastStartedWorkSessionAtRef.current = 0;
     setActiveWorkSession(null);
     storageService.saveActiveWorkSession(null);
-    api.clearActiveWorkSession().catch(() => {});
+    api.clearActiveWorkSession().catch(() => { });
     setWorkChains((prev) => {
       const current = prev[dateStr] || { accumulatedWorkSeconds: 0, chain: [] };
       const updated = {
@@ -1917,8 +1930,8 @@ export function AppProvider({ children }) {
           return updated;
         });
 
-        api.createWorkSession(payload1).catch(() => {});
-        api.createWorkSession(payload2).catch(() => {});
+        api.createWorkSession(payload1).catch(() => { });
+        api.createWorkSession(payload2).catch(() => { });
 
         showToast({
           type: 'success',
