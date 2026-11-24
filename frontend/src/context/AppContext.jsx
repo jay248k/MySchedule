@@ -1,3 +1,4 @@
+import { toast } from 'react-toastify';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import {
@@ -173,18 +174,34 @@ export function AppProvider({ children }) {
     dispatch(syncGoalProgressWithTasks(tasks));
   }, [tasks, dispatch]);
 
-  // Toast System (Defined early so sync and handlers can safely reference it)
-  const showToast = useCallback(
-    ({ type = 'info', title = '', message = '' }) => {
-      const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
-      const newToast = { id, type, title, message };
-      dispatch(addToast(newToast));
-      setTimeout(() => {
-        dispatch(removeToast(id));
-      }, 4000);
-    },
-    [dispatch]
-  );
+  // Standard Normal Toastify for all notifications across the application
+  const showToast = useCallback((arg) => {
+    let type = 'info';
+    let title = '';
+    let message = '';
+
+    if (typeof arg === 'string') {
+      message = arg;
+    } else if (arg && typeof arg === 'object') {
+      type = arg.type || 'info';
+      title = arg.title || '';
+      message = arg.message || '';
+    }
+
+    const text = title && message && title !== message
+      ? `${title}: ${message}`
+      : (message || title || '');
+
+    if (!text) return;
+
+    const toastType = type === 'danger' ? 'error' : (type === 'warning' ? 'warn' : type);
+
+    if (typeof toast[toastType] === 'function') {
+      toast[toastType](text);
+    } else {
+      toast(text);
+    }
+  }, []);
 
   const handleRemoveToast = useCallback(
     (id) => {
@@ -533,12 +550,79 @@ export function AppProvider({ children }) {
     [categories, dispatch, showToast, tasks]
   );
 
+  const logRescheduledTask = useCallback(
+    async ({
+      taskId,
+      taskTitle,
+      originalDate,
+      originalStartTime,
+      originalEndTime,
+      newDate,
+      newStartTime,
+      newEndTime,
+      reason,
+      remarks,
+    }) => {
+      const origDate = originalDate || getTodayDateString();
+      const origStart = originalStartTime || '09:00';
+      const origEnd = originalEndTime || '10:00';
+      const targetDate = newDate || origDate;
+      const targetStart = newStartTime || origStart;
+      const targetEnd = newEndTime || origEnd;
+      const defaultRemarks = `Rescheduled to ${targetDate} (${targetStart} – ${targetEnd})`;
+
+      const payload = {
+        id: `req-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        title: (taskTitle || 'Rescheduled Task').trim(),
+        date: origDate,
+        startTime: origStart,
+        endTime: origEnd,
+        rescheduledDate: targetDate,
+        rescheduledStartTime: targetStart,
+        rescheduledEndTime: targetEnd,
+        reason: (reason || 'Rescheduled missed task / schedule deviation').trim(),
+        status: 'rescheduled',
+        actionRemarks: remarks || defaultRemarks,
+        taskId: taskId ? String(taskId) : null,
+        taskTitle: taskTitle || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setRequests((prev) => {
+        const updated = [payload, ...prev];
+        storageService.saveRequests(updated);
+        return updated;
+      });
+
+      try {
+        const res = await api.createRequest(payload);
+        if (res?.data) {
+          setRequests((prev) =>
+            prev.map((r) => (r.id === payload.id ? res.data : r))
+          );
+        }
+      } catch (e) {
+        console.warn('Saved rescheduled work request locally:', e);
+      }
+
+      return payload;
+    },
+    []
+  );
+
   const updateTask = useCallback(
     async (taskId, updates) => {
       const existing = tasks.find((t) => t.id === taskId);
       const targetDate = updates.date !== undefined ? updates.date : existing?.date;
       const targetStart = updates.startTime !== undefined ? updates.startTime : existing?.startTime;
       const targetEnd = updates.endTime !== undefined ? updates.endTime : existing?.endTime;
+
+      // Rescheduled tasks always remain normal tasks in all views (status: 'pending')
+      const sanitizedUpdates = { ...updates };
+      if (sanitizedUpdates.status === 'rescheduled') {
+        sanitizedUpdates.status = 'pending';
+      }
 
       const isTimeChange =
         (updates.date !== undefined && updates.date !== existing?.date) ||
@@ -564,7 +648,22 @@ export function AppProvider({ children }) {
         }
       }
 
-      dispatch(updateTaskAction({ id: taskId, ...updates }));
+      if (updates.logAsRescheduled) {
+        logRescheduledTask({
+          taskId,
+          taskTitle: existing?.title || updates.title || 'Task',
+          originalDate: existing?.date || updates.originalDate,
+          originalStartTime: existing?.startTime || updates.originalStartTime,
+          originalEndTime: existing?.endTime || updates.originalEndTime,
+          newDate: targetDate,
+          newStartTime: targetStart,
+          newEndTime: targetEnd,
+          reason: updates.rescheduleReason || 'Rescheduled missed task / schedule deviation',
+          remarks: updates.rescheduleRemarks || `Rescheduled to ${targetDate} (${targetStart} – ${targetEnd})`,
+        });
+      }
+
+      dispatch(updateTaskAction({ id: taskId, ...sanitizedUpdates }));
       try {
         await api.updateTask(taskId, updates);
       } catch (err) {
@@ -2106,16 +2205,22 @@ export function AppProvider({ children }) {
 
   const rescheduleWorkRequest = useCallback(
     async (requestId, { date, startTime, endTime, remarks = '' }) => {
+      const targetReq = requests.find((r) => r.id === requestId);
+      const targetDate = date || targetReq?.date;
+      const targetStart = startTime || targetReq?.startTime;
+      const targetEnd = endTime || targetReq?.endTime;
+      const finalRemarks = remarks || `Rescheduled to ${targetDate}${targetStart ? ` (${targetStart} - ${targetEnd})` : ''}`;
+
       setRequests((prev) => {
         const updated = prev.map((r) =>
           r.id === requestId
             ? {
               ...r,
               status: 'rescheduled',
-              rescheduledDate: date || r.date,
-              rescheduledStartTime: startTime || r.startTime,
-              rescheduledEndTime: endTime || r.endTime,
-              actionRemarks: remarks || 'Rescheduled by user',
+              rescheduledDate: targetDate,
+              rescheduledStartTime: targetStart,
+              rescheduledEndTime: targetEnd,
+              actionRemarks: finalRemarks,
               updatedAt: new Date().toISOString(),
             }
             : r
@@ -2124,8 +2229,24 @@ export function AppProvider({ children }) {
         return updated;
       });
 
+      // If linked to a task in tasks, update the task to normal pending task
+      if (targetReq?.taskId) {
+        updateTask(targetReq.taskId, {
+          date: targetDate,
+          startTime: targetStart,
+          endTime: targetEnd,
+          status: 'pending',
+        });
+      }
+
       try {
-        await api.rescheduleRequest(requestId, { date, startTime, endTime, remarks });
+        await api.rescheduleRequest(requestId, {
+          date: targetDate,
+          startTime: targetStart,
+          endTime: targetEnd,
+          remarks: finalRemarks,
+          actionRemarks: finalRemarks,
+        });
       } catch (e) {
         console.warn('Rescheduled work request locally:', e);
       }
@@ -2133,10 +2254,10 @@ export function AppProvider({ children }) {
       showToast({
         type: 'info',
         title: 'Work Rescheduled',
-        message: `Rescheduled to ${date || 'new date'}${startTime ? ` at ${startTime}` : ''}.`,
+        message: `Rescheduled to ${targetDate}${targetStart ? ` at ${targetStart}` : ''}.`,
       });
     },
-    [showToast]
+    [requests, showToast, updateTask]
   );
 
   const cancelWorkRequest = useCallback(
@@ -2275,6 +2396,7 @@ export function AppProvider({ children }) {
         deleteDeviation,
         requests,
         submitWorkRequest,
+        logRescheduledTask,
         completeWorkRequest,
         rescheduleWorkRequest,
         cancelWorkRequest,

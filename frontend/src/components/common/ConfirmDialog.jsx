@@ -1,6 +1,8 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, Info, XCircle, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { ToastContainer as ReactToastifyContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export function ConfirmDialog() {
   const { confirmDialog } = useApp();
@@ -65,40 +67,18 @@ export function ConfirmDialog() {
 }
 
 export function ToastContainer() {
-  const { toasts, removeToast } = useApp();
-
-  if (!toasts.length) return null;
-
-  const icons = {
-    success: <CheckCircle2 size={16} color="var(--success)" />,
-    danger: <XCircle size={16} color="var(--danger)" />,
-    error: <XCircle size={16} color="var(--danger)" />,
-    warning: <AlertTriangle size={16} color="var(--warning)" />,
-    info: <Info size={16} color="var(--primary-color)" />,
-  };
-
   return (
-    <div className="toast-container">
-      {toasts.map((toast) => (
-        <div key={toast.id} className={`toast-item toast-${toast.type || 'info'}`}>
-          <div className="toast-icon-wrap">
-            {icons[toast.type] || icons.info}
-          </div>
-          <div className="toast-content-wrap">
-            {toast.title && <span className="toast-title">{toast.title}</span>}
-            {toast.title && toast.message && <span className="toast-dot-sep">·</span>}
-            {toast.message && <span className="toast-message">{toast.message}</span>}
-          </div>
-          <button
-            type="button"
-            className="toast-close-btn"
-            onClick={() => removeToast(toast.id)}
-            title="Dismiss"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      ))}
-    </div>
+    <ReactToastifyContainer
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="light"
+    />
   );
 }

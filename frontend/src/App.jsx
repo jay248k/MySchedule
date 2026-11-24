@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContextNew';
 import { LoginPage } from './pages/LoginPage';
+import { ToastContainer } from './components/common/ConfirmDialog';
+import 'react-toastify/dist/ReactToastify.css';
 import { AppLayout } from './components/layout/AppLayout';
 import { NotFound } from './pages/NotFound';
 
@@ -38,9 +40,15 @@ const PageLoader = () => (
 );
 
 function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [initialLoading, setInitialLoading] = React.useState(true);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    // Dismiss initial loader once app boot is ready
+    setInitialLoading(false);
+  }, []);
+
+  if (initialLoading) {
     return (
       <div
         style={{
@@ -109,6 +117,7 @@ export default function App() {
       <AppProvider>
         <BrowserRouter>
           <AppRoutes />
+          <ToastContainer />
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>

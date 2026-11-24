@@ -68,6 +68,11 @@ exports.createRequest = async (req, res, next) => {
       startTime,
       endTime,
       reason,
+      status,
+      actionRemarks,
+      rescheduledDate,
+      rescheduledStartTime,
+      rescheduledEndTime,
       taskId,
     } = req.body;
 
@@ -98,10 +103,26 @@ exports.createRequest = async (req, res, next) => {
       startTime: startTime || null,
       endTime: endTime || null,
       reason,
-      status: 'pending',
+      status: status || 'pending',
+      actionRemarks: actionRemarks || null,
+      rescheduledDate: rescheduledDate || null,
+      rescheduledStartTime: rescheduledStartTime || null,
+      rescheduledEndTime: rescheduledEndTime || null,
       taskId: resolvedTaskId,
       userId,
     });
+
+    if (status === 'rescheduled' && resolvedTaskId && Task) {
+      await Task.update(
+        {
+          date: rescheduledDate || date,
+          ...(rescheduledStartTime && { startTime: rescheduledStartTime }),
+          ...(rescheduledEndTime && { endTime: rescheduledEndTime }),
+          status: 'pending',
+        },
+        { where: { id: resolvedTaskId } }
+      ).catch(() => {});
+    }
 
     res.status(201).json({
       success: true,

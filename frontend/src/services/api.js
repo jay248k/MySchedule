@@ -1,15 +1,27 @@
 import axios from 'axios';
 import { cookieUtils, purgeLegacyLocalStorage } from '../utils/cookieUtils';
 
-// Smart Base URL resolver: on localhost, prioritize local backend on port 5000 for instant response
+// Smart Base URL resolver: prioritize local development server on port 5000
 const resolveApiBaseUrl = () => {
-  if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ) {
-    return 'http://localhost:5000/api';
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // Localhost loopback or LAN IP (Wi-Fi testing on phone/tablet)
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.') ||
+      host.startsWith('172.')
+    ) {
+      return `http://${host}:5000/api`;
+    }
   }
-  return import.meta.env.VITE_API_URL || 'https://myschedule-w52y.onrender.com/api';
+  const envUrl = import.meta.env.VITE_API_URL;
+  // If env URL is pointing to suspended Render, fallback to local backend
+  if (envUrl && !envUrl.includes('onrender.com')) {
+    return envUrl;
+  }
+  return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = resolveApiBaseUrl();

@@ -56,6 +56,88 @@ const CATEGORIES = [
   'Wisdom',
 ];
 
+function computeHabitStreaks(logs = [], todayStr) {
+  if (!todayStr) {
+    const now = new Date();
+    todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  const completedDates = new Set(
+    logs.filter((l) => l.completed).map((l) => l.date)
+  );
+
+  const getNextDateStr = (dateStr) => {
+    const parts = dateStr.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  };
+
+  const getPrevDateStr = (dateStr) => {
+    const parts = dateStr.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] - 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  };
+
+  const sortedDates = Array.from(completedDates).sort();
+  const blocks = [];
+  let currentBlock = null;
+
+  for (const dStr of sortedDates) {
+    if (!currentBlock) {
+      currentBlock = { start: dStr, end: dStr, count: 1 };
+    } else {
+      const expectedNext = getNextDateStr(currentBlock.end);
+      if (dStr === expectedNext) {
+        currentBlock.end = dStr;
+        currentBlock.count++;
+      } else {
+        blocks.push(currentBlock);
+        currentBlock = { start: dStr, end: dStr, count: 1 };
+      }
+    }
+  }
+  if (currentBlock) {
+    blocks.push(currentBlock);
+  }
+
+  let longestStreak = 0;
+  for (const b of blocks) {
+    if (b.count > longestStreak) {
+      longestStreak = b.count;
+    }
+  }
+
+  const yesterdayStr = getPrevDateStr(todayStr);
+  let currentStreak = 0;
+
+  const blockWithToday = blocks.find((b) => b.start <= todayStr && todayStr <= b.end);
+  if (blockWithToday) {
+    currentStreak = blockWithToday.count;
+  } else {
+    const blockWithYesterday = blocks.find((b) => b.start <= yesterdayStr && yesterdayStr <= b.end);
+    if (blockWithYesterday) {
+      currentStreak = blockWithYesterday.count;
+    } else {
+      const latestBlock = blocks[blocks.length - 1];
+      if (latestBlock && latestBlock.start > todayStr) {
+        currentStreak = latestBlock.count;
+      }
+    }
+  }
+
+  const [currentYear, currentMonth] = todayStr.split('-').slice(0, 2);
+  const monthPrefix = `${currentYear}-${currentMonth}`;
+  const thisMonthLogs = logs.filter((l) => l.date && l.date.startsWith(monthPrefix) && l.completed);
+
+  return {
+    currentStreak,
+    longestStreak: Math.max(longestStreak, currentStreak),
+    totalCompleted: completedDates.size,
+    isCompletedToday: completedDates.has(todayStr),
+    thisMonthCompleted: thisMonthLogs.length,
+  };
+}
+
 export function HabitsPage() {
   const { showToast } = useApp();
   const [habits, setHabits] = useState([]);
@@ -125,10 +207,13 @@ export function HabitsPage() {
     let totalCheckinsAll = 0;
 
     habits.forEach((h) => {
-      if ((h.currentStreak || 0) > maxCurrentStreak) maxCurrentStreak = h.currentStreak;
-      if ((h.longestStreak || 0) > maxBestStreak) maxBestStreak = h.longestStreak;
-      totalCheckinsThisMonth += (h.thisMonthCompleted || 0);
-      totalCheckinsAll += (h.totalCompleted || 0);
+      const computed = computeHabitStreaks(h.logs || [], todayDateStr);
+      const cur = computed.currentStreak;
+      const best = Math.max(computed.longestStreak, h.longestStreak || 0);
+      if (cur > maxCurrentStreak) maxCurrentStreak = cur;
+      if (best > maxBestStreak) maxBestStreak = best;
+      totalCheckinsThisMonth += (h.thisMonthCompleted || computed.thisMonthCompleted || 0);
+      totalCheckinsAll += (h.totalCompleted || computed.totalCompleted || 0);
     });
 
     const daysPassed = now.getDate();
@@ -194,19 +279,21 @@ export function HabitsPage() {
         } else {
           newLogs = [...logs, { id: `temp-${Date.now()}`, date: dateStr, completed: true }];
         }
+        const updatedStats = computeHabitStreaks(newLogs, todayDateStr);
         return {
           ...h,
           logs: newLogs,
+          ...updatedStats,
         };
       })
     );
 
     try {
-      const res = await api.toggleHabitDate(habitId, { date: dateStr });
+      const res = await api.toggleHabitDate(habitId, { date: dateStr, today: todayDateStr });
       if (res?.data) {
         // Sync with exact backend recalculated streaks
         setHabits((prev) =>
-          prev.map((h) => (h.id === habitId ? res.data : h))
+          prev.map((h) => (h.id === habitId ? { ...h, ...res.data } : h))
         );
       }
     } catch (err) {
@@ -647,10 +734,11 @@ export function HabitsPage() {
         <div className="habits-cards-list">
           {filteredHabits.map((habit) => {
             const IconComp = getIconComponent(habit.icon);
-            const currentStreak = habit.currentStreak || 0;
-            const bestStreak = habit.longestStreak || 0;
-            const thisMonthCount = habit.thisMonthCompleted || 0;
-            const totalCount = habit.totalCompleted || 0;
+            const computedStats = computeHabitStreaks(habit.logs || [], todayDateStr);
+            const currentStreak = computedStats.currentStreak;
+            const bestStreak = Math.max(computedStats.longestStreak, habit.longestStreak || 0);
+            const thisMonthCount = computedStats.thisMonthCompleted || habit.thisMonthCompleted || 0;
+            const totalCount = computedStats.totalCompleted || habit.totalCompleted || 0;
 
             return (
               <div

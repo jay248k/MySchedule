@@ -319,17 +319,17 @@ export default function RequestsPage() {
                 )}
 
                 {/* Audit remarks if any */}
-                {req.actionRemarks && (
+                {(req.actionRemarks || req.rescheduledDate) && (
                   <div
                     className="requests-card-audit"
                     style={{
                       color: isCancelled ? '#EF4444' : isCompleted ? '#10B981' : '#3B82F6',
                     }}
                   >
-                    Audit: {req.actionRemarks}
-                    {req.rescheduledDate && (
+                    Audit: {req.actionRemarks || `Rescheduled to ${req.rescheduledDate}`}
+                    {req.rescheduledDate && !req.actionRemarks?.includes(req.rescheduledDate) && (
                       <span className="text-secondary ml-1">
-                        (Rescheduled: {req.rescheduledDate})
+                        (New Date: {req.rescheduledDate})
                       </span>
                     )}
                   </div>

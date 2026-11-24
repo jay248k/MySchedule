@@ -105,25 +105,25 @@ export function MonthlySchedule() {
     : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* 1. Header with Month Navigator & View Toggles */}
       <div
         className="card"
         style={{
-          padding: '20px 28px',
+          padding: '14px 22px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
         }}
       >
         <div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Monthly Schedule
           </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '3px' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary-color)' }}>
               {formatMonthYear(currentYear, currentMonth)}
             </span>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -158,7 +158,7 @@ export function MonthlySchedule() {
         </div>
 
         {/* View Options (Month, Week, Day) & Add Task */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div
             style={{
               display: 'flex',
@@ -174,7 +174,7 @@ export function MonthlySchedule() {
                 key={v}
                 type="button"
                 className={`btn btn-sm ${viewMode === v ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ textTransform: 'capitalize', padding: '6px 14px' }}
+                style={{ textTransform: 'capitalize', padding: '5px 12px' }}
                 onClick={() => setViewMode(v)}
               >
                 {v} View
@@ -198,40 +198,40 @@ export function MonthlySchedule() {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '16px',
+          gap: '10px',
         }}
       >
-        <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Month Tasks</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '2px' }}>{monthStats.total}</div>
+        <div className="card" style={{ padding: '12px 18px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Month Tasks</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: '2px' }}>{monthStats.total}</div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Completed</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
+        <div className="card" style={{ padding: '12px 18px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Completed</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
             {monthStats.completed}
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--warning)', marginTop: '2px' }}>
+        <div className="card" style={{ padding: '12px 18px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--warning)', marginTop: '2px' }}>
             {monthStats.pending}
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Overdue</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
+        <div className="card" style={{ padding: '12px 18px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Overdue</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
             {monthStats.overdue}
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Monthly Progress</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+        <div className="card" style={{ padding: '12px 18px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Monthly Progress</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
             <ProgressBar progress={monthStats.percentage} color="var(--primary-color)" />
-            <strong style={{ fontSize: '0.95rem' }}>{monthStats.percentage}%</strong>
+            <strong style={{ fontSize: '0.92rem' }}>{monthStats.percentage}%</strong>
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@ export function MonthlySchedule() {
       <div
         className="card"
         style={{
-          padding: '12px 20px',
+          padding: '8px 18px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',

@@ -24,6 +24,7 @@ export default function MissedTaskFloatingPopup() {
     requests,
     settings,
     updateTask,
+    logRescheduledTask,
     toggleTaskComplete,
     completeWorkRequest,
     rescheduleWorkRequest,
@@ -189,6 +190,20 @@ export default function MissedTaskFloatingPopup() {
           rescheduleNotes: payload.remarks || '',
           updatedAt: new Date().toISOString(),
         });
+        if (logRescheduledTask) {
+          logRescheduledTask({
+            taskId: item.id,
+            taskTitle: item.title,
+            originalDate: item.date,
+            originalStartTime: item.startTime,
+            originalEndTime: item.endTime,
+            newDate: payload.date,
+            newStartTime: payload.startTime,
+            newEndTime: payload.endTime,
+            reason: payload.remarks || 'Missed task rescheduled from notification popup',
+            remarks: payload.remarks || `Rescheduled to ${payload.date} (${payload.startTime} - ${payload.endTime})`,
+          });
+        }
       } else {
         rescheduleWorkRequest(item.id, {
           date: payload.date,

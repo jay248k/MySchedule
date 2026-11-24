@@ -30,7 +30,7 @@ function minutesToTime(mins) {
 }
 
 export function SmartRescheduleModal({ isOpen, onClose }) {
-  const { tasks, updateTask, showToast } = useApp();
+  const { tasks, updateTask, logRescheduledTask, showToast } = useApp();
   const todayStr = getTodayDateString();
 
   // Find overdue / unfinished tasks
@@ -186,6 +186,20 @@ export function SmartRescheduleModal({ isOpen, onClose }) {
         endTime: item.proposedEndTime,
         status: 'pending',
       });
+      if (logRescheduledTask) {
+        logRescheduledTask({
+          taskId: item.task.id,
+          taskTitle: item.task.title,
+          originalDate: item.task.date,
+          originalStartTime: item.task.startTime,
+          originalEndTime: item.task.endTime,
+          newDate: item.proposedDate,
+          newStartTime: item.proposedStartTime,
+          newEndTime: item.proposedEndTime,
+          reason: 'Smart auto-rescheduled overdue task',
+          remarks: `Smart rescheduled to ${item.proposedDate} (${item.proposedStartTime} – ${item.proposedEndTime})`,
+        });
+      }
       updatedCount++;
     }
 
