@@ -98,7 +98,7 @@ function calculateHabitStreaks(logs = [], todayStr) {
   };
 }
 
-// 1. GET ALL HABITS (with cached streaks - O(1) retrieval)
+// 1. GET ALL HABITS (with individual calendar logs & calculated streaks)
 exports.getHabits = async (req, res, next) => {
   try {
     const where = { isArchived: false };
@@ -120,25 +120,30 @@ exports.getHabits = async (req, res, next) => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Lightweight query - no logs include, use cached streak fields
     const habits = await Habit.findAll({
       where,
-      attributes: {
-        exclude: ['createdAt', 'updatedAt'], // Exclude timestamps for lighter payload
-      },
-      order: [['createdAt', 'ASC']],
+      include: [
+        {
+          model: HabitLog,
+          as: 'logs',
+          attributes: ['id', 'date', 'completed', 'completedAt', 'notes'],
+        },
+      ],
+      order: [
+        ['createdAt', 'ASC'],
+        [{ model: HabitLog, as: 'logs' }, 'date', 'ASC'],
+      ],
     });
 
     const enrichedHabits = habits.map((habit) => {
       const plain = habit.toJSON();
-      // Use cached streaks + check if completed today
-      const isCompletedToday = plain.lastCompletedDate === todayStr;
+      const logs = plain.logs || [];
+      const stats = calculateHabitStreaks(logs, todayStr);
       return {
         ...plain,
-        currentStreak: plain.streakCurrent,
-        longestStreak: plain.streakLongest,
-        isCompletedToday,
-        // totalCompleted would need a separate query - compute on demand or cache
+        ...stats,
+        streakCurrent: stats.currentStreak,
+        streakLongest: Math.max(plain.streakLongest || 0, stats.longestStreak || 0),
       };
     });
 
@@ -152,14 +157,20 @@ exports.getHabits = async (req, res, next) => {
   }
 };
 
-// 2. GET SINGLE HABIT BY ID (with optional logs include)
+// 2. GET SINGLE HABIT BY ID (with logs & streaks)
 exports.getHabitById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { includeLogs } = req.query;
 
     const habit = await Habit.findByPk(id, {
-      include: includeLogs === 'true' ? [{ model: HabitLog, as: 'logs' }] : [],
+      include: [
+        {
+          model: HabitLog,
+          as: 'logs',
+          attributes: ['id', 'date', 'completed', 'completedAt', 'notes'],
+        },
+      ],
+      order: [[{ model: HabitLog, as: 'logs' }, 'date', 'ASC']],
     });
 
     if (!habit) {
@@ -168,24 +179,16 @@ exports.getHabitById = async (req, res, next) => {
 
     const plain = habit.toJSON();
     const todayStr = new Date().toISOString().split('T')[0];
-
-    // Use cached streaks by default
-    const data = {
-      ...plain,
-      currentStreak: plain.streakCurrent,
-      longestStreak: plain.streakLongest,
-      isCompletedToday: plain.lastCompletedDate === todayStr,
-    };
-
-    // If logs included, can compute totalCompleted
-    if (includeLogs === 'true' && plain.logs) {
-      const completedDates = new Set(plain.logs.filter(l => l.completed).map(l => l.date));
-      data.totalCompleted = completedDates.size;
-    }
+    const stats = calculateHabitStreaks(plain.logs || [], todayStr);
 
     res.json({
       success: true,
-      data,
+      data: {
+        ...plain,
+        ...stats,
+        streakCurrent: stats.currentStreak,
+        streakLongest: Math.max(plain.streakLongest || 0, stats.longestStreak || 0),
+      },
     });
   } catch (error) {
     next(error);
@@ -348,56 +351,37 @@ exports.toggleHabitDate = async (req, res, next) => {
       });
     }
 
-    // Incrementally update streak fields (O(1) instead of O(n))
-    // Only recalculate current streak - longest streak only increases
-    const todayStr = new Date().toISOString().split('T')[0];
-    const completedLogs = await HabitLog.findAll({
-      where: { habitId: id, completed: true },
-      order: [['date', 'DESC']],
-      attributes: ['date'],
-      limit: 400, // Max streak length to check
+    const todayStr = req.body?.today || new Date().toISOString().split('T')[0];
+
+    // Refetch the habit with full updated logs to recalculate streaks and return complete logs
+    const refreshedHabit = await Habit.findByPk(id, {
+      include: [
+        {
+          model: HabitLog,
+          as: 'logs',
+          attributes: ['id', 'date', 'completed', 'completedAt', 'notes'],
+        },
+      ],
+      order: [[{ model: HabitLog, as: 'logs' }, 'date', 'ASC']],
     });
 
-    const completedDates = new Set(completedLogs.map(l => l.date));
-    let currentStreak = 0;
-    let checkDate = todayStr;
+    const plain = refreshedHabit.toJSON();
+    const stats = calculateHabitStreaks(plain.logs || [], todayStr);
 
-    if (completedDates.has(todayStr)) {
-      currentStreak++;
-      checkDate = getPrevDateStr(todayStr);
-      while (completedDates.has(checkDate)) {
-        currentStreak++;
-        checkDate = getPrevDateStr(checkDate);
-      }
-    } else {
-      const yesterdayStr = getPrevDateStr(todayStr);
-      if (completedDates.has(yesterdayStr)) {
-        checkDate = yesterdayStr;
-        while (completedDates.has(checkDate)) {
-          currentStreak++;
-          checkDate = getPrevDateStr(checkDate);
-        }
-      }
-    }
+    // Update cached streak fields on habit table
+    await habit.update({
+      streakCurrent: stats.currentStreak,
+      streakLongest: Math.max(habit.streakLongest || 0, stats.longestStreak || 0),
+      lastCompletedDate: log.completed ? date : habit.lastCompletedDate,
+    });
 
-    // Update only the cached streak fields
-    const updates = {
-      streakCurrent: currentStreak,
-      streakLongest: Math.max(habit.streakLongest, currentStreak),
-    };
-    if (log.completed) {
-      updates.lastCompletedDate = date;
-    }
-    await habit.update(updates);
-
-    // Return lightweight response without full logs
-    const plain = habit.toJSON();
     res.json({
       success: true,
       data: {
         ...plain,
-        ...updates,
-        isCompletedToday: completedDates.has(todayStr),
+        ...stats,
+        streakCurrent: stats.currentStreak,
+        streakLongest: Math.max(habit.streakLongest || 0, stats.longestStreak || 0),
       },
       message: `Habit ${log.completed ? 'completed' : 'unmarked'} for ${date}`,
     });
