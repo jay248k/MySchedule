@@ -606,7 +606,14 @@ export function Reports() {
 
   // Filter tasks within selected date range
   const dateRangeTasks = useMemo(() => {
-  
+    return (tasks || []).filter((t) => {
+      if (!t.date) return false;
+      if (reportFromDate && t.date < reportFromDate) return false;
+      if (reportToDate && t.date > reportToDate) return false;
+      return true;
+    });
+  }, [tasks, reportFromDate, reportToDate]);
+
   // Rescheduled Tasks Report Data
   const rescheduledData = useMemo(() => {
     const list = [];
@@ -865,14 +872,6 @@ export function Reports() {
       ),
     },
   ], []);
-
-  return (tasks || []).filter((t) => {
-      if (!t.date) return false;
-      if (reportFromDate && t.date < reportFromDate) return false;
-      if (reportToDate && t.date > reportToDate) return false;
-      return true;
-    });
-  }, [tasks, reportFromDate, reportToDate]);
 
   // 1. Pending Tasks Report Data
   const pendingTasks = useMemo(() => {

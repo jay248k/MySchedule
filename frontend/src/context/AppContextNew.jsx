@@ -117,6 +117,3 @@ export function useApp() {
     ...reports,
   }), [context, tasks, categories, goals, events, ui, workSessions, habits, reports]);
 }
-
-// Re-export React for useEffect, useContext, useMemo, useCallback
-import React from 'react';

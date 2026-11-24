@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { AppProvider } from './context/AppContextNew';
+import { AppProvider } from './context/AppContext';
 import { LoginPage } from './pages/LoginPage';
 import { ToastContainer } from './components/common/ConfirmDialog';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,22 +12,22 @@ import './styles/global.css';
 import './styles/layout.css';
 
 // Lazy load all pages for code splitting
-const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
-const TodaysTasks = lazy(() => import('./pages/TodaysTasks').then(m => ({ default: m.TodaysTasks })));
-const MonthlySchedule = lazy(() => import('./pages/MonthlySchedule').then(m => ({ default: m.MonthlySchedule })));
-const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
-const Categories = lazy(() => import('./pages/Categories').then(m => ({ default: m.Categories })));
-const Goals = lazy(() => import('./pages/Goals').then(m => ({ default: m.Goals })));
-const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
-const RedFlagPage = lazy(() => import('./pages/RedFlagPage').then(m => ({ default: m.RedFlagPage })));
-const ReportsArchive = lazy(() => import('./pages/ReportsArchive').then(m => ({ default: m.ReportsArchive })));
-const WorkTracker = lazy(() => import('./pages/WorkTracker').then(m => ({ default: m.WorkTracker })));
-const DeviationsPage = lazy(() => import('./pages/DeviationsPage').then(m => ({ default: m.DeviationsPage })));
-const RequestsPage = lazy(() => import('./pages/RequestsPage').then(m => ({ default: m.RequestsPage })));
-const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
-const ThoughtsPage = lazy(() => import('./pages/ThoughtsPage').then(m => ({ default: m.ThoughtsPage })));
-const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then(m => ({ default: m.KnowledgePage })));
-const HabitsPage = lazy(() => import('./pages/HabitsPage').then(m => ({ default: m.HabitsPage })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard || m.default })));
+const TodaysTasks = lazy(() => import('./pages/TodaysTasks').then(m => ({ default: m.TodaysTasks || m.default })));
+const MonthlySchedule = lazy(() => import('./pages/MonthlySchedule').then(m => ({ default: m.MonthlySchedule || m.default })));
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage || m.default })));
+const Categories = lazy(() => import('./pages/Categories').then(m => ({ default: m.Categories || m.default })));
+const Goals = lazy(() => import('./pages/Goals').then(m => ({ default: m.Goals || m.default })));
+const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports || m.default })));
+const RedFlagPage = lazy(() => import('./pages/RedFlagPage').then(m => ({ default: m.RedFlagPage || m.default })));
+const ReportsArchive = lazy(() => import('./pages/ReportsArchive').then(m => ({ default: m.ReportsArchive || m.default })));
+const WorkTracker = lazy(() => import('./pages/WorkTracker').then(m => ({ default: m.WorkTracker || m.default })));
+const DeviationsPage = lazy(() => import('./pages/DeviationsPage').then(m => ({ default: m.DeviationsPage || m.default })));
+const RequestsPage = lazy(() => import('./pages/RequestsPage').then(m => ({ default: m.default || m.RequestsPage })));
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings || m.default })));
+const ThoughtsPage = lazy(() => import('./pages/ThoughtsPage').then(m => ({ default: m.ThoughtsPage || m.default })));
+const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then(m => ({ default: m.KnowledgePage || m.default })));
+const HabitsPage = lazy(() => import('./pages/HabitsPage').then(m => ({ default: m.HabitsPage || m.default })));
 
 // Loading fallback component
 const PageLoader = () => (
