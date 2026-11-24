@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Plus,
   Calendar as CalendarIcon,
-  Target,
   Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -562,27 +561,6 @@ export function MonthlySchedule() {
               )}
             </div>
           </div>
-
-          {/* Widget 2: Monthly Goals */}
-          <div className="card" style={{ padding: '20px' }}>
-            <h3 className="card-title" style={{ fontSize: '1.05rem', marginBottom: '14px' }}>
-              <Target size={18} color="var(--primary-color)" />
-              Monthly Goals
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {goals.slice(0, 3).map((g) => (
-                <div key={g.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 600 }}>{g.title}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{g.progress}%</span>
-                  </div>
-                  <ProgressBar progress={g.progress} color="var(--primary-color)" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Schedule Insights widget removed per user request */}
         </div>
       </div>
     </div>
