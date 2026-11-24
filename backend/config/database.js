@@ -50,8 +50,13 @@ const sequelize = new Sequelize(connectionString, {
     keepAlive: true,
     statement_timeout: 30000,
   },
-  logging: process.env.DEBUG_SQL === 'true' ? (msg) => console.log(`[Sequelize] ${msg}`) : false,
-  benchmark: false,
+  logging: process.env.DEBUG_SQL === 'true' ? (msg, timing) => {
+    if (timing && timing > 100) {
+      console.warn(`🐌 SLOW QUERY (${timing}ms): ${msg.substring(0, 200)}`);
+    }
+    console.log(`[Sequelize] ${msg}`);
+  } : false,
+  benchmark: process.env.DEBUG_SQL === 'true',
   retry: {
     match: [
       /Connection terminated unexpectedly/,
@@ -70,11 +75,21 @@ const sequelize = new Sequelize(connectionString, {
     backoffExponent: 1.5,
   },
   pool: {
-    max: 10,
-    min: 0,
-    acquire: 45000,
-    idle: 5000,
-    evict: 1000,
+    // Production-optimized pool settings
+    max: process.env.NODE_ENV === 'production' ? 20 : 10,
+    min: process.env.NODE_ENV === 'production' ? 5 : 0,
+    acquire: 30000,
+    idle: process.env.NODE_ENV === 'production' ? 30000 : 10000,
+    evict: process.env.NODE_ENV === 'production' ? 60000 : 10000,
+    // Validate connections before use
+    validate: async (connection) => {
+      try {
+        await connection.query('SELECT 1');
+        return true;
+      } catch {
+        return false;
+      }
+    },
   },
 });
 

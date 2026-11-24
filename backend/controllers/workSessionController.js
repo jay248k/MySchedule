@@ -137,10 +137,11 @@ exports.getAllWorkSessions = async (req, res, next) => {
       }] : [],
       ...(limit !== undefined && !isNaN(limit) && { limit }),
       ...(offset !== undefined && !isNaN(offset) && { offset }),
+      distinct: true, // Required for accurate count with includes
     };
 
-    const sessions = await WorkSession.findAll(findOptions);
-    const total = (limit !== undefined || offset !== undefined) ? await WorkSession.count({ where }) : sessions.length;
+    // Use findAndCountAll for single query with pagination count
+    const { count: total, rows: sessions } = await WorkSession.findAndCountAll(findOptions);
 
     res.json({
       success: true,

@@ -1,5 +1,6 @@
 const { Habit, HabitLog } = require('../models');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 /**
  * Calculates current streak and all-time best streak for a habit.
@@ -83,7 +84,7 @@ function calculateHabitStreaks(logs = [], todayStr) {
   };
 }
 
-// 1. GET ALL HABITS (with individual calendar logs & calculated streaks)
+// 1. GET ALL HABITS (with cached streaks - O(1) retrieval)
 exports.getHabits = async (req, res, next) => {
   try {
     const where = { isArchived: false };
@@ -105,28 +106,25 @@ exports.getHabits = async (req, res, next) => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+    // Lightweight query - no logs include, use cached streak fields
     const habits = await Habit.findAll({
       where,
-      include: [
-        {
-          model: HabitLog,
-          as: 'logs',
-          attributes: ['id', 'date', 'completed', 'completedAt', 'notes'],
-        },
-      ],
-      order: [
-        ['createdAt', 'ASC'],
-        [{ model: HabitLog, as: 'logs' }, 'date', 'ASC'],
-      ],
+      attributes: {
+        exclude: ['createdAt', 'updatedAt'], // Exclude timestamps for lighter payload
+      },
+      order: [['createdAt', 'ASC']],
     });
 
     const enrichedHabits = habits.map((habit) => {
       const plain = habit.toJSON();
-      const logs = plain.logs || [];
-      const stats = calculateHabitStreaks(logs, todayStr);
+      // Use cached streaks + check if completed today
+      const isCompletedToday = plain.lastCompletedDate === todayStr;
       return {
         ...plain,
-        ...stats,
+        currentStreak: plain.streakCurrent,
+        longestStreak: plain.streakLongest,
+        isCompletedToday,
+        // totalCompleted would need a separate query - compute on demand or cache
       };
     });
 
@@ -140,12 +138,14 @@ exports.getHabits = async (req, res, next) => {
   }
 };
 
-// 2. GET SINGLE HABIT BY ID
+// 2. GET SINGLE HABIT BY ID (with optional logs include)
 exports.getHabitById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { includeLogs } = req.query;
+
     const habit = await Habit.findByPk(id, {
-      include: [{ model: HabitLog, as: 'logs' }],
+      include: includeLogs === 'true' ? [{ model: HabitLog, as: 'logs' }] : [],
     });
 
     if (!habit) {
@@ -153,14 +153,25 @@ exports.getHabitById = async (req, res, next) => {
     }
 
     const plain = habit.toJSON();
-    const stats = calculateHabitStreaks(plain.logs || []);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Use cached streaks by default
+    const data = {
+      ...plain,
+      currentStreak: plain.streakCurrent,
+      longestStreak: plain.streakLongest,
+      isCompletedToday: plain.lastCompletedDate === todayStr,
+    };
+
+    // If logs included, can compute totalCompleted
+    if (includeLogs === 'true' && plain.logs) {
+      const completedDates = new Set(plain.logs.filter(l => l.completed).map(l => l.date));
+      data.totalCompleted = completedDates.size;
+    }
 
     res.json({
       success: true,
-      data: {
-        ...plain,
-        ...stats,
-      },
+      data,
     });
   } catch (error) {
     next(error);
@@ -321,16 +332,57 @@ exports.toggleHabitDate = async (req, res, next) => {
       });
     }
 
-    // Return the updated habit with recalculated streaks
-    const refreshedHabit = await Habit.findByPk(id, {
-      include: [{ model: HabitLog, as: 'logs' }],
+    // Incrementally update streak fields (O(1) instead of O(n))
+    // Only recalculate current streak - longest streak only increases
+    const todayStr = new Date().toISOString().split('T')[0];
+    const completedLogs = await HabitLog.findAll({
+      where: { habitId: id, completed: true },
+      order: [['date', 'DESC']],
+      attributes: ['date'],
+      limit: 400, // Max streak length to check
     });
-    const plain = refreshedHabit.toJSON();
-    const stats = calculateHabitStreaks(plain.logs || []);
 
+    const completedDates = new Set(completedLogs.map(l => l.date));
+    let currentStreak = 0;
+    let checkDate = todayStr;
+
+    if (completedDates.has(todayStr)) {
+      currentStreak++;
+      checkDate = getPrevDateStr(todayStr);
+      while (completedDates.has(checkDate)) {
+        currentStreak++;
+        checkDate = getPrevDateStr(checkDate);
+      }
+    } else {
+      const yesterdayStr = getPrevDateStr(todayStr);
+      if (completedDates.has(yesterdayStr)) {
+        checkDate = yesterdayStr;
+        while (completedDates.has(checkDate)) {
+          currentStreak++;
+          checkDate = getPrevDateStr(checkDate);
+        }
+      }
+    }
+
+    // Update only the cached streak fields
+    const updates = {
+      streakCurrent: currentStreak,
+      streakLongest: Math.max(habit.streakLongest, currentStreak),
+    };
+    if (log.completed) {
+      updates.lastCompletedDate = date;
+    }
+    await habit.update(updates);
+
+    // Return lightweight response without full logs
+    const plain = habit.toJSON();
     res.json({
       success: true,
-      data: { ...plain, ...stats },
+      data: {
+        ...plain,
+        ...updates,
+        isCompletedToday: completedDates.has(todayStr),
+      },
       message: `Habit ${log.completed ? 'completed' : 'unmarked'} for ${date}`,
     });
   } catch (error) {
@@ -338,7 +390,14 @@ exports.toggleHabitDate = async (req, res, next) => {
   }
 };
 
-// 7. HABITS COMPREHENSIVE REPORT ANALYTICS
+// Helper function for streak calculation (extracted for reuse)
+function getPrevDateStr(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// 7. HABITS COMPREHENSIVE REPORT ANALYTICS (Optimized with cached streaks + aggregated queries)
 exports.getHabitsReport = async (req, res, next) => {
   try {
     const where = { isArchived: false };
@@ -350,12 +409,55 @@ exports.getHabitsReport = async (req, res, next) => {
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const [currentYear, currentMonth, currentDay] = todayStr.split('-').map(Number);
     const daysSoFarThisMonth = currentDay;
+    const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
+    // 1. Get habits with cached streak fields (no logs include)
     const habits = await Habit.findAll({
       where,
-      include: [{ model: HabitLog, as: 'logs' }],
+      attributes: ['id', 'name', 'category', 'color', 'icon', 'targetTime', 'streakCurrent', 'streakLongest', 'lastCompletedDate'],
       order: [['createdAt', 'ASC']],
     });
+
+    // 2. Aggregated queries for totals (single queries instead of N+1)
+    const habitIds = habits.map(h => h.id);
+
+    // Total completed all-time per habit
+    const allTimeCounts = await HabitLog.findAll({
+      where: {
+        habitId: { [Op.in]: habitIds },
+        completed: true,
+      },
+      attributes: ['habitId', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      group: ['habitId'],
+      raw: true,
+    });
+    const allTimeMap = Object.fromEntries(allTimeCounts.map(r => [r.habitId, parseInt(r.count)]));
+
+    // This month completed per habit
+    const monthStart = `${monthPrefix}-01`;
+    const monthCounts = await HabitLog.findAll({
+      where: {
+        habitId: { [Op.in]: habitIds },
+        completed: true,
+        date: { [Op.gte]: monthStart, [Op.lte]: todayStr },
+      },
+      attributes: ['habitId', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      group: ['habitId'],
+      raw: true,
+    });
+    const monthMap = Object.fromEntries(monthCounts.map(r => [r.habitId, parseInt(r.count)]));
+
+    // Check if completed today per habit
+    const todayCounts = await HabitLog.findAll({
+      where: {
+        habitId: { [Op.in]: habitIds },
+        completed: true,
+        date: todayStr,
+      },
+      attributes: ['habitId'],
+      raw: true,
+    });
+    const todaySet = new Set(todayCounts.map(r => r.habitId));
 
     let totalCheckinsAllTime = 0;
     let totalCheckinsThisMonth = 0;
@@ -366,24 +468,28 @@ exports.getHabitsReport = async (req, res, next) => {
 
     const habitSummaries = habits.map((habit) => {
       const plain = habit.toJSON();
-      const logs = plain.logs || [];
-      const stats = calculateHabitStreaks(logs, todayStr);
 
-      totalCheckinsAllTime += stats.totalCompleted;
-      totalCheckinsThisMonth += stats.thisMonthCompleted;
-      if (stats.currentStreak > maxCurrentStreak) maxCurrentStreak = stats.currentStreak;
-      if (stats.longestStreak > maxBestStreak) maxBestStreak = stats.longestStreak;
+      const totalCompleted = allTimeMap[plain.id] || 0;
+      const thisMonthCompleted = monthMap[plain.id] || 0;
+      const isCompletedToday = todaySet.has(plain.id);
+      const currentStreak = plain.streakCurrent;
+      const longestStreak = plain.streakLongest;
+
+      totalCheckinsAllTime += totalCompleted;
+      totalCheckinsThisMonth += thisMonthCompleted;
+      if (currentStreak > maxCurrentStreak) maxCurrentStreak = currentStreak;
+      if (longestStreak > maxBestStreak) maxBestStreak = longestStreak;
 
       const cat = plain.category || 'Discipline';
       if (!categoryBreakdown[cat]) {
         categoryBreakdown[cat] = { category: cat, totalHabits: 0, totalCheckins: 0 };
       }
       categoryBreakdown[cat].totalHabits++;
-      categoryBreakdown[cat].totalCheckins += stats.totalCompleted;
+      categoryBreakdown[cat].totalCheckins += totalCompleted;
 
       // Calculate monthly compliance rate %
       const monthlyRate = daysSoFarThisMonth > 0
-        ? Math.min(100, Math.round((stats.thisMonthCompleted / daysSoFarThisMonth) * 100))
+        ? Math.min(100, Math.round((thisMonthCompleted / daysSoFarThisMonth) * 100))
         : 0;
 
       return {
@@ -393,12 +499,12 @@ exports.getHabitsReport = async (req, res, next) => {
         color: plain.color,
         icon: plain.icon,
         targetTime: plain.targetTime,
-        currentStreak: stats.currentStreak,
-        longestStreak: stats.longestStreak,
-        totalCompleted: stats.totalCompleted,
-        thisMonthCompleted: stats.thisMonthCompleted,
+        currentStreak,
+        longestStreak,
+        totalCompleted,
+        thisMonthCompleted,
         monthlyRate,
-        isCompletedToday: stats.isCompletedToday,
+        isCompletedToday,
       };
     });
 

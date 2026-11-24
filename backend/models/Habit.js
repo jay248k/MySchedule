@@ -41,6 +41,19 @@ module.exports = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      // Cached streak fields for O(1) retrieval
+      streakCurrent: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
+      streakLongest: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
+      lastCompletedDate: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,

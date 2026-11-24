@@ -47,10 +47,11 @@ exports.getAllTasks = async (req, res, next) => {
       ],
       ...(limit !== undefined && !isNaN(limit) && { limit }),
       ...(offset !== undefined && !isNaN(offset) && { offset }),
+      distinct: true, // Required for accurate count with includes
     };
 
-    const tasks = await Task.findAll(findOptions);
-    const total = (limit !== undefined || offset !== undefined) ? await Task.count({ where }) : tasks.length;
+    // Use findAndCountAll for single query with pagination count
+    const { count: total, rows: tasks } = await Task.findAndCountAll(findOptions);
 
     res.json({ success: true, count: tasks.length, total, data: tasks });
   } catch (error) {

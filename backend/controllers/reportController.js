@@ -25,8 +25,8 @@ exports.getAllReports = async (req, res, next) => {
       ...(offset !== undefined && !isNaN(offset) && { offset }),
     };
 
-    const reports = await DailyReport.findAll(findOptions);
-    const total = (limit !== undefined || offset !== undefined) ? await DailyReport.count({ where }) : reports.length;
+    // Use findAndCountAll for single query with pagination count
+    const { count: total, rows: reports } = await DailyReport.findAndCountAll(findOptions);
 
     if (!limit && !offset) {
       cacheManager.set(cacheKey, reports, 60);

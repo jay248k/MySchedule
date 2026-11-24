@@ -190,7 +190,7 @@ export const api = {
 
   // Habits & Streaks
   getHabits: (params = {}) => apiClient.get('/habits', { params }),
-  getHabit: (id) => apiClient.get(`/habits/${id}`),
+  getHabit: (id, params = {}) => apiClient.get(`/habits/${id}`, { params }),
   createHabit: (payload) => apiClient.post('/habits', payload),
   updateHabit: (id, payload) => apiClient.put(`/habits/${id}`, payload),
   deleteHabit: (id) => apiClient.delete(`/habits/${id}`),
