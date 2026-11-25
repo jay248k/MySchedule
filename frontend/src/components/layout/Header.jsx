@@ -219,7 +219,7 @@ export function Header() {
           <input
             type="text"
             className="search-input"
-            placeholder="Search tasks, meetings, priorities..."
+            placeholder="Search tasks, meetings, priorities"
             readOnly
             onClick={() => setIsGlobalSearchOpen(true)}
           />

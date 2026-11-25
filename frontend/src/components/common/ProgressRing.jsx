@@ -10,6 +10,7 @@ export function ProgressRing({
   label = '',
   subtitle = '',
   animateOnMount = true,
+  showPercentageInCenter = true, // New prop to show percentage in center
 }) {
   const [currentProgress, setCurrentProgress] = useState(animateOnMount ? 0 : progress);
   const gradId = React.useId ? React.useId().replace(/:/g, '') : `ring-grad-${Math.random().toString(36).substr(2, 9)}`;
@@ -84,41 +85,44 @@ export function ProgressRing({
           />
         </svg>
 
-        {/* Center Readout */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            lineHeight: 1,
-            gap: '3px',
-          }}
-        >
-          <span
+        {/* Center Readout - Percentage in Circle */}
+        {showPercentageInCenter && (
+          <div
             style={{
-              fontSize: `${Math.round(radius * 0.44)}px`,
-              fontWeight: 900,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.025em',
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1,
+              gap: '3px',
+              zIndex: 2,
             }}
           >
-            {Math.round(currentProgress)}%
-          </span>
-          {subtitle && (
             <span
               style={{
-                fontSize: `${Math.max(11, Math.round(radius * 0.22))}px`,
-                fontWeight: 700,
-                color: 'var(--text-muted)',
+                fontSize: `${Math.round(radius * 0.44)}px`,
+                fontWeight: 900,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.025em',
               }}
             >
-              {subtitle}
+              {Math.round(currentProgress)}%
             </span>
-          )}
-        </div>
+            {subtitle && (
+              <span
+                style={{
+                  fontSize: `${Math.max(11, Math.round(radius * 0.22))}px`,
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {subtitle}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       {label && (
         <span

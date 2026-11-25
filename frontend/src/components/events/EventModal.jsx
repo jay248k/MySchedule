@@ -101,7 +101,7 @@ export function EventModal() {
 
             <div className="form-group">
               <label className="form-label">
-                Event Title <span className="required-star">*</span>
+                Event Title*
               </label>
               <input
                 type="text"
@@ -192,7 +192,7 @@ export function EventModal() {
               <textarea
                 className="form-textarea"
                 rows={2}
-                placeholder="Details, agendas, attendees..."
+                placeholder="Enter details, agendas, attendees"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

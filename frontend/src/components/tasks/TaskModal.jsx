@@ -164,7 +164,7 @@ export function TaskModal() {
             {/* Task Title */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">
-                Task Title <span className="required-star">*</span>
+                Task Title*
               </label>
               <input
                 type="text"
@@ -182,7 +182,7 @@ export function TaskModal() {
               <textarea
                 className="form-textarea"
                 rows={2}
-                placeholder="Add context, subtasks, or deliverables..."
+                placeholder="Enter context, subtasks, or deliverables"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -216,7 +216,7 @@ export function TaskModal() {
                     label: c.name,
                     color: c.color,
                   }))}
-                  placeholder="Select Category"
+                  placeholder="Select category"
                   searchPlaceholder="Search categories..."
                   showSearch={categories.length > 5}
                 />
@@ -435,7 +435,7 @@ export function TaskModal() {
                       description: g.category || 'General',
                     })),
                   ]}
-                  placeholder="None (No Goal)"
+                  placeholder="None (no goal)"
                   searchPlaceholder="Search goals..."
                   showSearch={goals.length > 4}
                   isClearable={true}

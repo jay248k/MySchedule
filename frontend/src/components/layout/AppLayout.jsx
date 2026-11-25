@@ -11,10 +11,14 @@ import { BulkImportModal } from '../common/BulkImportModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { StopReasonModal } from '../workTracker/StopReasonModal';
 import MissedTaskFloatingPopup from '../common/MissedTaskFloatingPopup';
+import { ScrollToTop } from '../common/ScrollToTop';
 
 export function AppLayout() {
   return (
     <div className="app-layout">
+      {/* Scroll to top on every route change */}
+      <ScrollToTop />
+
       {/* Sidebar Navigation */}
       <Sidebar />
 
@@ -22,7 +26,7 @@ export function AppLayout() {
       <div className="main-wrapper">
         <Header />
 
-        <main className="page-container">
+        <main className="page-container" data-main-content>
           <Outlet />
         </main>
 

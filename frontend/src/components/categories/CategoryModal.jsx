@@ -102,7 +102,7 @@ export function CategoryModal() {
 
             <div className="form-group">
               <label className="form-label">
-                Category Name <span className="required-star">*</span>
+                Category Name*
               </label>
               <input
                 type="text"
@@ -143,7 +143,7 @@ export function CategoryModal() {
               <textarea
                 className="form-textarea"
                 rows={2}
-                placeholder="Brief summary of tasks in this category..."
+                placeholder="Enter brief summary of tasks in this category"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

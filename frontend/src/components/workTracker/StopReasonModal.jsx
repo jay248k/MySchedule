@@ -171,7 +171,7 @@ export function StopReasonModal() {
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
               <MessageSquare size={14} color="#EF4444" />
-              <span>Remarks <span className="required-star">*</span>:</span>
+              <span>Remarks*:</span>
             </label>
             <textarea
               rows={3}

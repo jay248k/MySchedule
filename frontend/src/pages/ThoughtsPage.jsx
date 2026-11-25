@@ -76,6 +76,7 @@ export function ThoughtsPage() {
   const { showToast } = useApp();
   const [searchParams] = useSearchParams();
   const [thoughts, setThoughts] = useState([]);
+  const [thoughtsMeta, setThoughtsMeta] = useState({ total: 0, page: 1, limit: 50, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -132,12 +133,17 @@ export function ThoughtsPage() {
     }
   }, [editingThought]);
 
-  const fetchThoughts = async () => {
+  const fetchThoughts = async (page = 1, limit = 50) => {
     try {
       setLoading(true);
-      const res = await api.getThoughts();
-      const thoughtsList = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+      const params = { page, limit };
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (selectedCategory !== 'all') params.category = selectedCategory;
+      const res = await api.getThoughts(params);
+      const thoughtsList = Array.isArray(res?.data) ? res.data : [];
+      const total = res?.total || thoughtsList.length;
       setThoughts(thoughtsList);
+      setThoughtsMeta({ total, page, limit, totalPages: res?.totalPages || 1 });
     } catch (err) {
       console.warn('Failed to load thoughts:', err);
     } finally {
@@ -147,7 +153,7 @@ export function ThoughtsPage() {
 
   useEffect(() => {
     fetchThoughts();
-  }, []);
+  }, [searchQuery, selectedCategory]);
 
   // Handle deep-link from Global Search (?thought=<id>)
   useEffect(() => {
@@ -770,7 +776,7 @@ export function ThoughtsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-secondary">
-                    Thought / Quote Text <span className="required-star">*</span>
+                    Thought / Quote Text*
                   </label>
                   <span className="text-xs text-muted font-mono">
                     {addCharCount} chars
@@ -875,7 +881,7 @@ export function ThoughtsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-secondary">
-                    Thought / Quote Text <span className="required-star">*</span>
+                    Thought / Quote Text*
                   </label>
                   <span className="text-xs text-muted font-mono">
                     {editCharCount} chars
