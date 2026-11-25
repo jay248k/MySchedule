@@ -20,6 +20,7 @@ const ThoughtModel = require('./Thought');
 const KnowledgeItemModel = require('./KnowledgeItem');
 const HabitModel = require('./Habit');
 const HabitLogModel = require('./HabitLog');
+const NotificationLogModel = require('./notificationlog');
 
 // Initialize models
 const db = {
@@ -41,6 +42,7 @@ const db = {
   KnowledgeItem: KnowledgeItemModel(sequelize),
   Habit: HabitModel(sequelize),
   HabitLog: HabitLogModel(sequelize),
+  NotificationLog: NotificationLogModel(sequelize),
 };
 
 // Establish associations

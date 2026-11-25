@@ -105,7 +105,7 @@ export function GoalModal() {
 
             <div className="form-group">
               <label className="form-label">
-                Goal Title <span className="required-star">*</span>
+                Goal Title*
               </label>
               <input
                 type="text"
@@ -122,7 +122,7 @@ export function GoalModal() {
               <textarea
                 className="form-textarea"
                 rows={3}
-                placeholder="What will success look like?"
+                placeholder="Enter what success will look like"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

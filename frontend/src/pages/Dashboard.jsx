@@ -600,7 +600,7 @@ export function Dashboard() {
                       color: cat.color,
                     })),
                   ]}
-                  placeholder="Select Category"
+                  placeholder="Select category"
                   searchPlaceholder="Filter category..."
                   showSearch={allUniqueCategories.length > 4}
                   style={{ minWidth: '185px' }}
@@ -986,7 +986,7 @@ export function Dashboard() {
             </span>
           </div>
 
-          {/* Dual Large Circular Rings with Glow & Gradients */}
+          {/* Dual Large Circular Rings with Glow & Gradients - Percentage in Center */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '4px 0', flex: 1 }}>
             <ProgressRing
               radius={60}
@@ -998,6 +998,7 @@ export function Dashboard() {
               label="Today"
               subtitle={`${todayStats.completed}/${todayStats.total}`}
               animateOnMount={true}
+              showPercentageInCenter={true}
             />
             <ProgressRing
               radius={60}
@@ -1009,6 +1010,7 @@ export function Dashboard() {
               label="This Month"
               subtitle={`${currentMonthStats.completed}/${currentMonthStats.total}`}
               animateOnMount={true}
+              showPercentageInCenter={true}
             />
           </div>
 
@@ -1277,7 +1279,7 @@ export function Dashboard() {
                     description: g.category || 'Goal',
                   })),
                 ]}
-                placeholder="Filter by Goal"
+                placeholder="Filter by goal"
                 searchPlaceholder="Search goals..."
                 showSearch={goals.length > 4}
               />

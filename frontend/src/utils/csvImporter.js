@@ -393,7 +393,36 @@ export function validateAndPrepareImport(type, rawRows, context = {}) {
       if (errors.length > 0) {
         invalidItems.push({ rowNum, raw: row, errors });
       } else {
-        validItems.push(validRecord);
+        // Check for time conflicts with already validated items in this import
+        if (startTime && endTime) {
+          const [sh, sm] = startTime.split(':').map(Number);
+          const [eh, em] = endTime.split(':').map(Number);
+          const startMins = sh * 60 + sm;
+          const endMins = eh * 60 + em;
+
+          if (endMins > startMins) {
+            const conflict = validItems.find((existing) => {
+              if (existing.date !== date) return false;
+              if (!existing.startTime || !existing.endTime) return false;
+              const [esh, esm] = existing.startTime.split(':').map(Number);
+              const [eeh, eem] = existing.endTime.split(':').map(Number);
+              const existingStart = esh * 60 + esm;
+              const existingEnd = eeh * 60 + eem;
+              // Check overlap: start < existingEnd && end > existingStart
+              return startMins < existingEnd && endMins > existingStart;
+            });
+
+            if (conflict) {
+              errors.push(`Time conflict with "${conflict.title}" (${conflict.startTime} - ${conflict.endTime}) on same date`);
+            }
+          }
+        }
+
+        if (errors.length > 0) {
+          invalidItems.push({ rowNum, raw: row, errors });
+        } else {
+          validItems.push(validRecord);
+        }
       }
     }
   });

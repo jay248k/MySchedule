@@ -364,7 +364,7 @@ export function AuthModal() {
                   marginBottom: '6px',
                 }}
               >
-                Full Name <span className="required-star">*</span>
+                Full Name*
               </label>
               <div style={{ position: 'relative' }}>
                 <User
@@ -379,7 +379,7 @@ export function AuthModal() {
                 />
                 <input
                   type="text"
-                  placeholder="Full name"
+                  placeholder="Enter full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   style={{
@@ -410,7 +410,7 @@ export function AuthModal() {
                 marginBottom: '6px',
               }}
             >
-              Email Address <span className="required-star">*</span>
+              Email Address*
             </label>
             <div style={{ position: 'relative' }}>
               <Mail
@@ -425,7 +425,7 @@ export function AuthModal() {
               />
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder="Enter email address"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -479,7 +479,7 @@ export function AuthModal() {
                 />
                 <input
                   type="text"
-                  placeholder="Role or designation"
+                  placeholder="Enter role or designation"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   style={{
@@ -508,7 +508,7 @@ export function AuthModal() {
                   color: 'var(--text-secondary, #94a3b8)',
                 }}
               >
-                Password <span className="required-star">*</span>
+                Password*
               </label>
               {authModalTab === 'signup' && (
                 <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>min 6 characters</span>
@@ -527,7 +527,7 @@ export function AuthModal() {
               />
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••••••"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);

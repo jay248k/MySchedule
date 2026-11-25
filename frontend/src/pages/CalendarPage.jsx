@@ -222,7 +222,7 @@ export function CalendarPage() {
                 { value: 'events', label: 'Events Only' },
                 { value: 'tasks', label: 'Tasks Only' },
               ]}
-              placeholder="Item Type"
+              placeholder="Select item type"
               showSearch={false}
             />
           </div>
@@ -240,7 +240,7 @@ export function CalendarPage() {
                   color: c.color,
                 })),
               ]}
-              placeholder="All Categories"
+              placeholder="Select category"
               searchPlaceholder="Search categories..."
               showSearch={categories.length > 5}
             />

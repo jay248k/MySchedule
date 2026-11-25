@@ -698,7 +698,7 @@ export function HabitsPage() {
             />
             <input
               type="text"
-              placeholder="Search habits..."
+              placeholder="Search habits"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="form-input"
@@ -893,12 +893,12 @@ export function HabitsPage() {
               {/* Habit Name */}
               <div className="form-group mb-0">
                 <label className="form-label">
-                  Habit Name <span className="required-star">*</span>
+                  Habit Name*
                 </label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Wake up at 5:00 AM, Morning Workout, Read 20 Pages"
+                  placeholder="Enter habit name"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   required
@@ -991,7 +991,7 @@ export function HabitsPage() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. 5:00 AM wake up unlocks deep focus before the world wakes up"
+                  placeholder="Enter habit description"
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                 />

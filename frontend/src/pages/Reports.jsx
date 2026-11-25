@@ -35,6 +35,9 @@ import {
   Timer,
   Coffee,
   Flame,
+  Zap,
+  X,
+  Today,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -461,11 +464,23 @@ export function Reports() {
 
     const nowTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // Build enhanced message with completed/not completed tasks + work timer hours
+    const dayTasks = tasks.filter((t) => t.date === targetDate);
+    const doneTasks = dayTasks.filter((t) => t.status === 'completed' || t.completed);
+    const pendingTasks = dayTasks.filter((t) => t.status !== 'completed' && !t.completed);
+    const daySessions = workSessions.filter((s) => s.date === targetDate);
+    const totalTimerHours = daySessions.reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0) / 3600;
+    const activeSessionHours = activeWorkSession?.isRunning && activeWorkSession?.date === targetDate
+      ? (currentLiveWorkSeconds || 0) / 3600 : 0;
+    const totalWorkHours = (totalTimerHours + activeSessionHours).toFixed(1);
+
+    const enhancedMessage = `✅ Completed: ${doneTasks.length} | ⏳ Pending: ${pendingTasks.length} | ⏱️ Work Timer: ${totalWorkHours} hrs`;
+
     setReportingTime(nowTimeStr);
     setDailyReportText(generated.autoReportText);
     setAccomplishments(generated.completedBullets);
     setHoursLogged(String(generated.calculatedHours));
-    setHighlights(generated.highlights);
+    setHighlights(enhancedMessage); // Enhanced message with work timer
     setBlockers(generated.blockers);
     setMood(generated.mood);
 
@@ -476,7 +491,7 @@ export function Reports() {
         dailyReportText: generated.autoReportText,
         title: `Daily Work Report - ${formatDate(targetDate)}`,
         accomplishments: generated.completedBullets,
-        highlights: generated.highlights,
+        highlights: enhancedMessage,
         blockers: generated.blockers,
         tomorrowPlan: tomorrowPlan || 'Continue development on scheduled milestones.',
         hoursLogged: generated.calculatedHours,
@@ -488,13 +503,13 @@ export function Reports() {
       showToast({
         type: 'success',
         title: 'Report Auto-Generated & Submitted! 🚀',
-        message: `Submitted report for ${formatDate(targetDate)} with ${generated.doneCount}/${generated.totalCount} completed work(s) and focus timers.`,
+        message: `Submitted report for ${formatDate(targetDate)} — ${doneTasks.length}/${dayTasks.length} done | ${totalWorkHours} hrs tracked`,
       });
     } else {
       showToast({
         type: 'info',
         title: 'Report Draft Auto-Generated',
-        message: `Populated rich draft with ${generated.doneCount} completed work(s), ${generated.pendingCount} pipeline priorities, and focus logs.`,
+        message: `Populated rich draft: ${doneTasks.length} completed, ${pendingTasks.length} pending, ${totalWorkHours} hrs tracked`,
       });
     }
   };
@@ -563,6 +578,41 @@ export function Reports() {
   const daysReport = getDaysReportingData(tasks, daysRangeMode);
   const selectedDayAnalyticsData =
     daysReport.days.find((d) => d.dateStr === selectedAnalyticsDate) || daysReport.days[0];
+
+  // Work Timer Chart Data - Daily timer hours for the last 30 days
+  const workTimerChartData = useMemo(() => {
+    const data = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const dayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      // Get work sessions for this date
+      const daySessions = workSessions.filter((s) => s.date === dateStr);
+      const totalSeconds = daySessions.reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
+      const totalHours = Number((totalSeconds / 3600).toFixed(2));
+
+      // Format as HH:MM:SS
+      const hours = Math.floor(totalHours);
+      const minutes = Math.floor((totalHours % 1) * 60);
+      const seconds = Math.round(((totalHours % 1) * 60 - minutes) * 60);
+      const timeDisplay = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      data.push({
+        date: dateStr,
+        label: dayLabel,
+        hours: totalHours,
+        timeDisplay,
+        sessionCount: daySessions.length,
+      });
+    }
+    return data;
+  }, [workSessions]);
 
   // =========================================================================
   // SUB-REPORTS DATA & CONFIGURATIONS (Excel-Style Reports)
@@ -1982,42 +2032,75 @@ export function Reports() {
         <>
           {/* Day Selector & Action Ribbon */}
           <div className="daily-report-header">
-            {/* Left: Date Navigator */}
+            {/* Left: Date Navigator with From/To Range Filter */}
             <div className="daily-date-nav">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => handleOffsetDay(-1)}
-                title="Previous Day"
-              >
-                <ChevronLeft size={16} /> Prev Day
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => handleOffsetDay(-1)}
+                  title="Previous Day"
+                >
+                  <ChevronLeft size={16} /> Prev Day
+                </button>
 
-              <button
-                type="button"
-                className={`btn btn-sm ${isSelectedToday ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setSelectedReportDate(todayStr)}
-              >
-                <Calendar size={14} /> Today
-              </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${isSelectedToday ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setSelectedReportDate(todayStr)}
+                >
+                  <Today size={14} /> Today
+                </button>
 
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => handleOffsetDay(1)}
-                title="Next Day"
-              >
-                Next Day <ChevronRight size={16} />
-              </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => handleOffsetDay(1)}
+                  title="Next Day"
+                >
+                  Next Day <ChevronRight size={16} />
+                </button>
+              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Jump to:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>From:</span>
                 <input
                   type="date"
                   className="date-input-picker"
-                  value={selectedReportDate}
-                  onChange={(e) => e.target.value && setSelectedReportDate(e.target.value)}
+                  value={reportFromDate}
+                  onChange={(e) => { if (e.target.value) { setReportFromDate(e.target.value); setSelectedReportDate(e.target.value); }}}
+                  style={{ minWidth: '140px' }}
                 />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: '8px' }}>To:</span>
+                <input
+                  type="date"
+                  className="date-input-picker"
+                  value={reportToDate}
+                  onChange={(e) => { if (e.target.value) setReportToDate(e.target.value); }}
+                  style={{ minWidth: '140px' }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => {
+                    setReportFromDate(todayStr);
+                    setReportToDate(todayStr);
+                    setSelectedReportDate(todayStr);
+                  }}
+                  title="Set both dates to today"
+                  style={{ marginLeft: '4px' }}
+                >
+                  <Today size={12} /> Today
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => handleApplyPreset('month')}
+                  title="Set to current month"
+                  style={{ marginLeft: '4px' }}
+                >
+                  <CalendarDays size={12} /> Month
+                </button>
               </div>
             </div>
 
@@ -3473,6 +3556,145 @@ export function Reports() {
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Work Timer Chart - New Chart Showing Daily Timer Hours */}
+          <div style={{ gridColumn: 'span 12', marginTop: '24px' }}>
+            <div className="card" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'rgba(245, 158, 11, 0.14)',
+                      color: '#F59E0B',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                    }}
+                  >
+                    <Timer size={20} strokeWidth={2.4} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Work Timer Daily Trend (Last 30 Days)
+                    </h3>
+                    <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      Daily focused work hours tracked via timer sessions — click bar to view session details
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    // Navigate to Work Tracker page or open modal with chart
+                    navigate('/work-tracker');
+                  }}
+                >
+                  <Zap size={14} /> Open Work Tracker Chart
+                </button>
+              </div>
+
+              <div style={{ width: '100%', height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={workTimerChartData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    onClick={(e) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        const clickedDate = e.activePayload[0].payload.date;
+                        // Show toast with session details
+                        const dayData = workTimerChartData.find(d => d.date === clickedDate);
+                        if (dayData) {
+                          showToast({
+                            type: 'info',
+                            title: `Work Timer — ${dayData.label}`,
+                            message: `${dayData.sessionCount} session(s) • ${dayData.timeDisplay} tracked`,
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      stroke="var(--text-muted)"
+                      fontSize={11}
+                      tickLine={false}
+                      dy={6}
+                      interval={0}
+                    />
+                    <YAxis
+                      stroke="var(--text-muted)"
+                      fontSize={11}
+                      tickLine={false}
+                      tickFormatter={(val) => `${val}h`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'var(--card-bg)',
+                        borderColor: 'var(--border-color)',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value, name) => [`${value}h`, 'Hours Tracked']}
+                      labelFormatter={(label) => {
+                        const dayData = workTimerChartData.find(d => d.label === label);
+                        return dayData ? `${dayData.label} (${dayData.timeDisplay})` : label;
+                      }}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="hours"
+                      name="Hours Worked"
+                      radius={[6, 6, 0, 0]}
+                      fill="#F59E0B"
+                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#FFFFFF', fill: '#F59E0B' }}
+                    >
+                      {workTimerChartData.map((entry, index) => (
+                        <Cell key={`timer-cell-${index}`} fill={entry.hours > 0 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Summary Stats */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '24px',
+                  marginTop: '16px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid var(--border-color)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Timer size={14} color="#F59E0B" />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Total: {workTimerChartData.reduce((acc, d) => acc + d.hours, 0).toFixed(1)} hrs
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={14} color="#38BDF8" />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Avg/Day: {(workTimerChartData.reduce((acc, d) => acc + d.hours, 0) / 30).toFixed(1)} hrs
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={14} color="#10B981" />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Active Days: {workTimerChartData.filter(d => d.hours > 0).length} / 30
+                  </span>
                 </div>
               </div>
             </div>

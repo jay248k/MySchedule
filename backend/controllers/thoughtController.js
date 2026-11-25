@@ -7,22 +7,37 @@ exports.getThoughts = async (req, res, next) => {
     if (req.userId && process.env.ISOLATE_USER_KNOWLEDGE === 'true') {
       where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
-    const { category, search } = req.query;
+    const { category, search, page = 1, limit = 50 } = req.query;
     if (category && category !== 'All') {
       where.category = category;
     }
+    if (search && search.trim()) {
+      where[Op.or] = [
+        { text: { [Op.like]: `%${search.trim()}%` } },
+        { category: { [Op.like]: `%${search.trim()}%` } },
+      ];
+    }
 
-    const thoughts = await Thought.findAll({
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+    const offset = (pageNum - 1) * limitNum;
+
+    const { count: total, rows: thoughts } = await Thought.findAndCountAll({
       where,
       order: [
         ['isPinned', 'DESC'],
         ['createdAt', 'DESC'],
       ],
+      limit: limitNum,
+      offset,
     });
 
     res.json({
       success: true,
       count: thoughts.length,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
       data: thoughts,
     });
   } catch (error) {

@@ -118,7 +118,7 @@ export default function CancelRemarksModal({ isOpen, onClose, onConfirm, request
                 marginBottom: '8px',
               }}
             >
-              Why are you cancelling this? <span className="required-star">*</span> <span style={{ color: '#EF4444', fontSize: '0.78rem' }}>(Mandatory)</span>
+              Why are you cancelling this?* <span style={{ color: '#EF4444', fontSize: '0.78rem' }}>(Mandatory)</span>
             </label>
             <textarea
               autoFocus
@@ -128,7 +128,7 @@ export default function CancelRemarksModal({ isOpen, onClose, onConfirm, request
                 setRemarks(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="Enter remarks why cancelling"
+              placeholder="Enter remarks for cancellation"
               style={{
                 width: '100%',
                 padding: '12px 14px',

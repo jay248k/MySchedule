@@ -24,7 +24,7 @@ import '../styles/pages/requests.css';
 export default function RequestsPage() {
   const { requests, completeWorkRequest, rescheduleWorkRequest, cancelWorkRequest, deleteWorkRequest } = useApp();
 
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'pending' | 'completed' | 'rescheduled' | 'cancelled'
+  const [activeTab, setActiveTab] = useState('rescheduled'); // 'all' | 'pending' | 'completed' | 'rescheduled' | 'cancelled'
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [cancellingRequest, setCancellingRequest] = useState(null);

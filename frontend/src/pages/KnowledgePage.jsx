@@ -274,26 +274,27 @@ export function KnowledgePage() {
   }, [items, currentFolder, searchQuery, sortBy]);
 
   // Lessons available for chaining: in current folder, or all lessons if at root
-  const lessonsInFolder = useMemo(() => {
+  const chainableItemsInFolder = useMemo(() => {
     if (currentFolder) {
-      return items.filter((it) => it.parentId === currentFolder.id && it.type === 'lesson');
+      // Include both lessons and folders in current folder
+      return items.filter((it) => it.parentId === currentFolder.id && (it.type === 'lesson' || it.type === 'folder'));
     }
-    const rootLessons = items.filter((it) => !it.parentId && it.type === 'lesson');
-    const allLessons = items.filter((it) => it.type === 'lesson');
-    return rootLessons.length > 0 ? rootLessons : allLessons;
+    const rootItems = items.filter((it) => !it.parentId && (it.type === 'lesson' || it.type === 'folder'));
+    const allItems = items.filter((it) => it.type === 'lesson' || it.type === 'folder');
+    return rootItems.length > 0 ? rootItems : allItems;
   }, [items, currentFolder]);
 
-  // Chain Sequence Builder
+  // Chain Sequence Builder - supports both lessons and folders
   const chainSequence = useMemo(() => {
-    const lessons = lessonsInFolder;
-    if (lessons.length === 0) return [];
+    const chainableItems = chainableItemsInFolder;
+    if (chainableItems.length === 0) return [];
 
-    const map = new Map(lessons.map((l) => [l.id, l]));
-    const targetedIds = new Set(lessons.map((l) => l.nextLessonId).filter(Boolean));
+    const map = new Map(chainableItems.map((l) => [l.id, l]));
+    const targetedIds = new Set(chainableItems.map((l) => l.nextLessonId).filter(Boolean));
 
-    // Find starter lessons (not targeted by any nextLessonId)
-    let starters = lessons.filter((l) => !targetedIds.has(l.id));
-    if (starters.length === 0) starters = [lessons[0]];
+    // Find starter items (not targeted by any nextLessonId)
+    let starters = chainableItems.filter((l) => !targetedIds.has(l.id));
+    if (starters.length === 0) starters = [chainableItems[0]];
 
     const chains = [];
     const visited = new Set();
@@ -309,15 +310,15 @@ export function KnowledgePage() {
       if (chain.length > 0) chains.push(chain);
     });
 
-    // Add any remaining unchained lessons
-    lessons.forEach((l) => {
+    // Add any remaining unchained items
+    chainableItems.forEach((l) => {
       if (!visited.has(l.id)) {
         chains.push([l]);
       }
     });
 
     return chains;
-  }, [lessonsInFolder]);
+  }, [chainableItemsInFolder]);
 
   // Current active lesson's sequential pathway details (position, prev, next)
   const currentChainInfo = useMemo(() => {
@@ -1029,7 +1030,7 @@ export function KnowledgePage() {
                 <Search size={13} className="text-secondary" />
                 <input
                   type="text"
-                  placeholder="Filter table rows..."
+                  placeholder="Filter table rows"
                   value={tableSearchQuery}
                   onChange={(e) => setTableSearchQuery(e.target.value)}
                   className="knowledge-table-search-input"
@@ -1272,7 +1273,7 @@ export function KnowledgePage() {
             <Search size={14} color="var(--text-muted)" className="knowledge-search-icon" />
             <input
               type="text"
-              placeholder="Search knowledge..."
+              placeholder="Search knowledge"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="knowledge-search-input"
@@ -1573,11 +1574,11 @@ export function KnowledgePage() {
                     className="pathway-footer-select"
                   >
                     <option value="">🏁 (End of Pathway Terminal)</option>
-                    {lessonsInFolder
+                    {chainableItemsInFolder
                       .filter((l) => l.id !== activeItem.id)
                       .map((l) => (
                         <option key={l.id} value={l.id}>
-                          ➔ Step: {l.title}
+                          ➔ Step: {l.title} {l.type === 'folder' ? '📁' : ''}
                         </option>
                       ))}
                   </select>
@@ -1938,11 +1939,11 @@ export function KnowledgePage() {
                                     title="Select next sequential milestone"
                                   >
                                     <option value="">🏁 (End of Pathway)</option>
-                                    {lessonsInFolder
+                                    {chainableItemsInFolder
                                       .filter((other) => other.id !== lesson.id)
                                       .map((other) => (
                                         <option key={other.id} value={other.id}>
-                                          ➔ {other.title}
+                                          ➔ {other.title} {other.type === 'folder' ? '📁' : ''}
                                         </option>
                                       ))}
                                   </select>
@@ -2196,7 +2197,7 @@ export function KnowledgePage() {
               <div className="knowledge-chain-picker">
                 <LinkIcon size={14} color="#10B981" />
                 <span className="text-xs font-bold text-secondary">
-                  Chain to next lesson:
+                  Chain to next lesson/folder:
                 </span>
                 <select
                   value={activeItem.nextLessonId || ''}
@@ -2204,11 +2205,11 @@ export function KnowledgePage() {
                   className="form-input text-xs py-1 px-2"
                 >
                   <option value="">(None - End of chain)</option>
-                  {lessonsInFolder
+                  {chainableItemsInFolder
                     .filter((l) => l.id !== activeItem.id)
                     .map((l) => (
                       <option key={l.id} value={l.id}>
-                        {l.title}
+                        {l.title} {l.type === 'folder' ? '📁' : ''}
                       </option>
                     ))}
                 </select>
@@ -2303,18 +2304,17 @@ export function KnowledgePage() {
               <div className="modal-body flex flex-col gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-secondary mb-1">
-                    {modalMode === 'folder' ? 'Folder Name' : modalMode === 'table' ? 'Table Name' : 'Lesson Title'}{' '}
-                    <span className="required-star">*</span>
-                  </label>
+                    {modalMode === 'folder' ? 'Folder Name*' : modalMode === 'table' ? 'Table Name*' : 'Lesson Title*'}
+                                      </label>
                   <input
                     type="text"
                     required={modalMode !== 'table'}
                     placeholder={
                       modalMode === 'folder'
-                        ? 'Enter folder name...'
+                        ? 'Enter folder name'
                         : modalMode === 'table'
-                        ? 'Enter table name...'
-                        : 'Enter lesson title...'
+                        ? 'Enter table name'
+                        : 'Enter lesson title'
                     }
                     value={createTitle}
                     onChange={(e) => setCreateTitle(e.target.value)}
@@ -2331,7 +2331,7 @@ export function KnowledgePage() {
                       <textarea
                         rows={7}
                         required
-                        placeholder="Enter comprehensive notes, key takeaways, or summary..."
+                        placeholder="Enter comprehensive notes, key takeaways, or summary"
                         value={createContent}
                         onChange={(e) => setCreateContent(e.target.value)}
                         className="form-textarea"
@@ -2339,10 +2339,10 @@ export function KnowledgePage() {
                     </div>
 
                     {/* Optional Lesson Chaining */}
-                    {lessonsInFolder.length > 0 && (
+                    {chainableItemsInFolder.length > 0 && (
                       <div>
                         <label className="block text-xs font-bold text-secondary mb-1">
-                          Chain to Next Lesson (Optional Sequence)
+                          Chain to Next Lesson/Folder (Optional Sequence)
                         </label>
                         <select
                           value={createNextLessonId}
@@ -2350,9 +2350,9 @@ export function KnowledgePage() {
                           className="form-input"
                         >
                           <option value="">(None - Standalone Lesson)</option>
-                          {lessonsInFolder.map((l) => (
+                          {chainableItemsInFolder.map((l) => (
                             <option key={l.id} value={l.id}>
-                              {l.title}
+                              {l.title} {l.type === 'folder' ? '📁' : ''}
                             </option>
                           ))}
                         </select>
@@ -2448,7 +2448,7 @@ export function KnowledgePage() {
                           rows={4}
                           value={pasteText}
                           onChange={(e) => setPasteText(e.target.value)}
-                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here..."
+                          placeholder="Paste rows from Excel, Google Sheets, or CSV"
                           className="form-input text-xs font-mono"
                           style={{ width: '100%', resize: 'vertical' }}
                         />
@@ -2519,7 +2519,7 @@ export function KnowledgePage() {
                                     value={cell}
                                     onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
                                     className="knowledge-table-cell-input"
-                                    placeholder="Enter data..."
+                                    placeholder="Enter data"
                                   />
                                 </td>
                               ))}
@@ -2570,7 +2570,7 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter tags (comma-separated)..."
+                    placeholder="Enter tags (comma-separated)"
                     value={createTags}
                     onChange={(e) => setCreateTags(e.target.value)}
                     className="form-input"
@@ -2676,19 +2676,18 @@ export function KnowledgePage() {
                 <div>
                   <label className="block text-xs font-bold text-secondary mb-1">
                     {editModalItem.type === 'folder'
-                      ? 'Folder Name'
+                      ? 'Folder Name*'
                       : editModalItem.type === 'table'
-                      ? 'Table Name'
-                      : 'Lesson Title'}{' '}
-                    <span className="required-star">*</span>
-                  </label>
+                      ? 'Table Name*'
+                      : 'Lesson Title*'}
+                                      </label>
                   <input
                     type="text"
                     required={editModalItem.type !== 'table'}
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
                     className="form-input"
-                    placeholder="Enter title..."
+                    placeholder="Enter title"
                   />
                 </div>
 
@@ -2696,21 +2695,20 @@ export function KnowledgePage() {
                   <>
                     <div>
                       <label className="block text-xs font-bold text-secondary mb-1">
-                        Lesson Notes & Content <span className="required-star">*</span>
-                      </label>
+                        Lesson Notes & Content*                       </label>
                       <textarea
                         rows={7}
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         className="form-textarea"
-                        placeholder="Write lesson notes, code samples, takeaways..."
+                        placeholder="Enter lesson notes, code samples, takeaways"
                       />
                     </div>
 
-                    {lessonsInFolder.filter((l) => l.id !== editModalItem.id).length > 0 && (
+                    {chainableItemsInFolder.filter((l) => l.id !== editModalItem.id).length > 0 && (
                       <div>
                         <label className="block text-xs font-bold text-secondary mb-1">
-                          Chain to Next Lesson
+                          Chain to Next Lesson/Folder
                         </label>
                         <select
                           value={editNextLessonId}
@@ -2718,11 +2716,11 @@ export function KnowledgePage() {
                           className="form-input"
                         >
                           <option value="">(None - Standalone Lesson)</option>
-                          {lessonsInFolder
+                          {chainableItemsInFolder
                             .filter((l) => l.id !== editModalItem.id)
                             .map((l) => (
                               <option key={l.id} value={l.id}>
-                                {l.title}
+                                {l.title} {l.type === 'folder' ? '📁' : ''}
                               </option>
                             ))}
                         </select>
@@ -2809,7 +2807,7 @@ export function KnowledgePage() {
                           rows={4}
                           value={editPasteText}
                           onChange={(e) => setEditPasteText(e.target.value)}
-                          placeholder="Paste rows copied from Excel, Google Sheets, or CSV here..."
+                          placeholder="Paste rows from Excel, Google Sheets, or CSV"
                           className="form-input text-xs font-mono"
                           style={{ width: '100%', resize: 'vertical' }}
                         />
@@ -2880,7 +2878,7 @@ export function KnowledgePage() {
                                     value={cell}
                                     onChange={(e) => handleEditCellChange(rIdx, cIdx, e.target.value)}
                                     className="knowledge-table-cell-input"
-                                    placeholder="Enter data..."
+                                    placeholder="Enter data"
                                   />
                                 </td>
                               ))}
@@ -2931,7 +2929,7 @@ export function KnowledgePage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter tags (comma-separated)..."
+                    placeholder="Enter tags (comma-separated)"
                     value={editTags}
                     onChange={(e) => setEditTags(e.target.value)}
                     className="form-input"

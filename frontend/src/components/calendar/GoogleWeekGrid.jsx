@@ -78,9 +78,9 @@ export function GoogleWeekGrid({
 
   const hourHeight = useMemo(() => {
     if (fitToScreen) {
-      return Math.max(26, Math.floor(canvasHeight / 24));
+      return Math.max(32, Math.floor(canvasHeight / 24));
     }
-    return 64;
+    return 80; // Increased from 64 to 80 for more space between time slots
   }, [fitToScreen, canvasHeight]);
 
   const totalGridHeight = useMemo(() => {

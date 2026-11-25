@@ -279,13 +279,41 @@ exports.bulkCreateTasks = async (req, res, next) => {
         status = 'pending';
       }
 
+      const date = item.date || today;
+      const startTime = item.startTime || null;
+      const endTime = item.endTime || null;
+
+      // Check time conflict within the bulk import batch itself
+      if (startTime && endTime) {
+        const s = timeToMinutes(startTime);
+        const e = timeToMinutes(endTime);
+        if (e > s) {
+          const conflict = validTasks.find((existing) => {
+            if (existing.date !== date) return false;
+            if (!existing.startTime || !existing.endTime) return false;
+            const exS = timeToMinutes(existing.startTime);
+            const exE = timeToMinutes(existing.endTime);
+            if (exE > exS) {
+              return s < exE && e > exS;
+            }
+            return false;
+          });
+
+          if (conflict) {
+            // Skip this task or add it with a warning - here we skip and continue
+            console.warn(`[BulkImport] Skipping task "${item.title}" due to time conflict with "${conflict.title}"`);
+            continue;
+          }
+        }
+      }
+
       validTasks.push({
         id: item.id || undefined,
         title: item.title.trim(),
         description: item.description ? item.description.trim() : null,
-        date: item.date || today,
-        startTime: item.startTime || null,
-        endTime: item.endTime || null,
+        date,
+        startTime,
+        endTime,
         categoryId: resolvedCategoryId,
         priority: normalizePriority(item.priority),
         goalId: resolvedGoalId,

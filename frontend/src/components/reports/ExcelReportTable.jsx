@@ -336,7 +336,7 @@ export function ExcelReportTable({
             <Search size={13} className="excel-search-icon" />
             <input
               type="text"
-              placeholder="Search records..."
+              placeholder="Search records"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="excel-search-input"
@@ -412,7 +412,7 @@ export function ExcelReportTable({
                 value={skipDate}
                 onChange={(e) => setSkipDate(e.target.value)}
                 title="Skip to specific date"
-                placeholder="Skip to date..."
+                placeholder="Enter date to skip to"
                 className="excel-date-input"
               />
               {skipDate && (
@@ -676,7 +676,7 @@ export function ExcelReportTable({
                   type="number"
                   min={1}
                   max={totalPages}
-                  placeholder={String(safePage)}
+                  placeholder="Enter page number"
                   value={jumpPageInput}
                   onChange={(e) => setJumpPageInput(e.target.value)}
                   className="excel-jump-input"
