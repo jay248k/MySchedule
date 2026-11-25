@@ -398,446 +398,307 @@ export function WorkTracker() {
       {/* ==========================================================================
           TOP STUDIO HEADER BAR (STATUS, DATE STEPPER, LOG PAST SESSION)
          ========================================================================== */}
-              <div className="wt-studio-topbar">
-                <div className="cockpit-top-left">
-                  {isRunning ? (
-                    <div className="cockpit-mode-pill is-running">
-                      <Activity size={14} className="animate-pulse" />
-                      <span>Live Work Session</span>
-                    </div>
-          </div>
-
-                {/* Integrated Micro-Stats Badges & Quick Action */}
-                <div className="cockpit-top-right">
-                  <div className="cockpit-micro-stats">
-                    <div className="micro-stat-badge" title="Total focus logged today">
-                      <Zap size={13} className="text-emerald-400" />
-                      <span>Total:</span>
-                      <strong>{totalHours}h {totalMinutes}m {totalSecs}s</strong>
-                    </div>
-
-                    <div className="micro-stat-badge" title="Completed work sessions today">
-                      <Layers size={13} className="text-blue-400" />
-                      <span>Blocks:</span>
-                      <strong>{sessionCount}</strong>
-                    </div>
-
-                    <div className="micro-stat-badge" title="Average duration per block">
-                      <TrendingUp size={13} className="text-purple-400" />
-                      <span>Avg:</span>
-                      <strong>{avgSessionMinutes}m</strong>
-                    </div>
-
-                    {Object.keys(reasonBreakdown).length > 0 && (
-                      <div className="micro-stat-badge" title="Distinct break / intermission reasons recorded">
-                        <Coffee size={13} className="text-amber-400" />
-                        <span>Breaks:</span>
-                        <strong>{Object.keys(reasonBreakdown).length}</strong>
-                      </div>
-                    )}
-                    ) : isPaused ? (
-                    <div className="cockpit-mode-pill is-paused">
-                      <Coffee size={14} />
-                      <span>Paused · {todayChain.lastPausedTimeStr}</span>
-                    </div>
-                    ) : isFinished ? (
-                    <div className="cockpit-mode-pill is-finished">
-                      <Flag size={14} />
-                      <span>Workday Completed</span>
-                    </div>
-                    ) : (
-                    <div className="cockpit-mode-pill is-idle">
-                      <Target size={14} />
-                      <span>Ready for Deep Focus</span>
-                    </div>
+      <div className="wt-studio-topbar">
+        <div className="cockpit-top-left">
+          {isRunning ? (
+            <div className="cockpit-mode-pill is-running">
+              <Activity size={14} className="animate-pulse" />
+              <span>Live Work Session</span>
+            </div>
+          ) : isPaused ? (
+            <div className="cockpit-mode-pill is-paused">
+              <Coffee size={14} />
+              <span>Paused · {todayChain.lastPausedTimeStr}</span>
+            </div>
+          ) : isFinished ? (
+            <div className="cockpit-mode-pill is-finished">
+              <Flag size={14} />
+              <span>Workday Completed</span>
+            </div>
+          ) : (
+            <div className="cockpit-mode-pill is-idle">
+              <Target size={14} />
+              <span>Ready for Deep Focus</span>
+            </div>
           )}
 
-                    {/* Integrated Day Navigator */}
-                    <div className="cockpit-day-stepper">
-                      <button
-                        type="button"
-                        className="btn-log-session-compact"
-                        onClick={handleOpenManualModal}
-                        title="Log past focus block or intermission"
-                        className="btn-stepper-nav"
-                        onClick={() => {
-                          const d = new Date(activeDate + 'T00:00:00');
-                          d.setDate(d.getDate() - 1);
-                          const y = d.getFullYear();
-                          const m = String(d.getMonth() + 1).padStart(2, '0');
-                          const day = String(d.getDate()).padStart(2, '0');
-                          setSelectedDate(`${y}-${m}-${day}`);
-                        }}
-                        title="Previous Day"
-                      >
-                        <Plus size={13} />
-                        <span>Log Past Session</span>
-                        <ChevronLeft size={14} />
-                      </button>
-                      <span className="cockpit-date-label">
-                        <Calendar size={13} className="text-secondary" />
-                        {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
-                      </span>
-                      <button
-                        type="button"
-                        className="btn-stepper-nav"
-                        onClick={() => {
-                          const d = new Date(activeDate + 'T00:00:00');
-                          d.setDate(d.getDate() + 1);
-                          const y = d.getFullYear();
-                          const m = String(d.getMonth() + 1).padStart(2, '0');
-                          const day = String(d.getDate()).padStart(2, '0');
-                          setSelectedDate(`${y}-${m}-${day}`);
-                        }}
-                        title="Next Day"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                      {!isToday && (
-                        <button
-                          type="button"
-                          className="btn-jump-today"
-                          onClick={() => setSelectedDate(todayStr)}
-                          title="Return to Today"
-                        >
-                          Today
-                        </button>
-                      )}
-                    </div>
-                  </div>
+          {/* Integrated Day Navigator */}
+          <div className="cockpit-day-stepper">
+            <button
+              type="button"
+              className="btn-stepper-nav"
+              onClick={() => {
+                const d = new Date(activeDate + 'T00:00:00');
+                d.setDate(d.getDate() - 1);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                setSelectedDate(`${y}-${m}-${day}`);
+              }}
+              title="Previous Day"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="cockpit-date-label">
+              <Calendar size={13} className="text-secondary" />
+              {isToday ? `Today (${formatDate(activeDate, { month: 'short', day: 'numeric' })})` : formattedDateTitle}
+            </span>
+            <button
+              type="button"
+              className="btn-stepper-nav"
+              onClick={() => {
+                const d = new Date(activeDate + 'T00:00:00');
+                d.setDate(d.getDate() + 1);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                setSelectedDate(`${y}-${m}-${day}`);
+              }}
+              title="Next Day"
+            >
+              <ChevronRight size={14} />
+            </button>
+            {!isToday && (
+              <button
+                type="button"
+                className="btn-jump-today"
+                onClick={() => setSelectedDate(todayStr)}
+                title="Return to Today"
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
 
-                  {/* Core Cockpit Command Row (Compact Digital Chronometer + Target Selector + Action Controls) */}
-                  <div className="cockpit-core-row">
-                    {/* Left Wing: Sculpted Compact Digital Chronometer */}
-                    <div className="cockpit-chronometer-stage">
-                      <div className="chronometer-pods-row">
-                        <div className="chronometer-pod">
-                          <span className="chronometer-pod-val">{String(activeHrs).padStart(2, '0')}</span>
-                          <span className="chronometer-pod-label">HRS</span>
-                          <button
-                            type="button"
-                            className="btn-log-session-compact"
-                            onClick={handleOpenManualModal}
-                            title="Log past focus block or intermission"
-                          >
-                            <Plus size={14} />
-                            <span>Log Past Session</span>
-                          </button>
-                        </div>
+        <button
+          type="button"
+          className="btn-log-session-compact"
+          onClick={handleOpenManualModal}
+          title="Log past focus block or intermission"
+        >
+          <Plus size={14} />
+          <span>Log Past Session</span>
+        </button>
+      </div>
 
-                        {/* ==========================================================================
+      {/* ==========================================================================
           2-COLUMN SPLIT STUDIO GRID
          ========================================================================== */}
-                        <div className="wt-studio-grid">
-                          {/* LEFT COLUMN: STICKY FOCUS TIMER & CONTROLS */}
-                          <div className="wt-studio-left">
-                            <div className={`wt-timer-panel ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
-                              <div className="wt-hero-clock-box">
-                                <div className={`wt-hero-digits ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
-                                  {String(activeHrs).padStart(2, '0')}:{String(activeMins).padStart(2, '0')}:{String(activeSecs).padStart(2, '0')}
-                                </div>
-                                <span className="chronometer-separator">:</span>
-                                <div className="chronometer-pod">
-                                  <span className="chronometer-pod-val">{String(activeMins).padStart(2, '0')}</span>
-                                  <span className="chronometer-pod-label">MIN</span>
-                                  <div className="chronometer-sub-status">
-                                    {isRunning ? (
-                                      <>
-                                        <Sparkles size={12} className="text-emerald-400" />
-                                        <span>Tracking · Started {activeWorkSession.startTime}</span>
-                                      </>
-                                    ) : isPaused ? (
-                                      <>
-                                        <Coffee size={12} className="text-amber-400" />
-                                        <span>Holds at {activeTimerDisplay}</span>
-                                      </>
-                                    ) : totalRecordedForDate > 0 ? (
-                                      <>
-                                        <Clock size={12} className="text-blue-400" />
-                                        <span>Logged Today: {activeTimerDisplay}</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Target size={12} className="text-blue-400" />
-                                        <span>Ready to start focus</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  <span className="chronometer-separator">:</span>
-                                  <div className="chronometer-pod">
-                                    <span className="chronometer-pod-val">{String(activeSecs).padStart(2, '0')}</span>
-                                    <span className="chronometer-pod-label">SEC</span>
-                                  </div>
-                                </div>
-
-                                <div className="chronometer-sub-status">
-                                  {isRunning ? (
-                                    <>
-                                      <Sparkles size={11} className="text-emerald-400" />
-                                      <span>Tracking · Started {activeWorkSession.startTime}</span>
-                                    </>
-                                  ) : isPaused ? (
-                                    <>
-                                      <Coffee size={11} className="text-amber-400" />
-                                      <span>Holds at {activeTimerDisplay}</span>
-                                    </>
-                                  ) : totalRecordedForDate > 0 ? (
-                                    <>
-                                      <Clock size={11} className="text-blue-400" />
-                                      <span>Today: {activeTimerDisplay}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Target size={11} className="text-blue-400" />
-                                      <span>Ready to start focus</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Center Wing: Target Selector & Quick Pick */}
-                              <div className="cockpit-center-wing">
-                                {/* Active / Paused / Target Selector */}
-                                {isPaused ? (
-                                  <div className="cockpit-paused-inline">
-                                    <div className="paused-coffee-badge">
-                                      <Coffee size={16} />
-                                    </div>
-                                    <div className="paused-info-wrap">
-                                      <div className="paused-title">Work Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}</div>
-                                      <div className="paused-title">Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}</div>
-                                      <div className="paused-sub">
-                                        Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
-                                        {todayChain.lastPauseRemarks && (
-                                          <span> · {todayChain.lastPauseRemarks.replace(/["'“”]/g, '').trim()}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : isRunning ? (
-                                  <div className="cockpit-running-inline">
-                                    <span className="worktracker-recording-dot" />
-                                    <div className="running-info-wrap">
-                                      <span className="running-label">CURRENT ACTIVE SESSION</span>
-                                      <span className="running-label">ACTIVE FOCUS SESSION</span>
-                                      <span className="running-task-title">{activeWorkSession.taskTitle || 'General Focus Session'}</span>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="cockpit-target-picker">
-                                    <div className="cockpit-target-input-row">
-                                      <label className="cockpit-target-inline-label">
-                                        <Target size={13} className="text-blue-400" />
-                                        <span>Target:</span>
-                                      </label>
-                                      <select
-                                        value={selectedTaskId}
-                                        onChange={(e) => setSelectedTaskId(e.target.value)}
-                                        className="cockpit-task-select"
-                                      >
-                                        <option value="">🎯 General Focus (No linked task)</option>
-                                        {dateTasks.map((t) => (
-                                          <option key={t.id} value={t.id}>
-                                            {t.title} [{t.startTime || 'Scheduled'}]
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-
-                                    {!isRunning && dateTasks.length > 0 && (
-                                      {
-                                        dateTasks.length > 0 && (
-                                          <div className="cockpit-quick-chips">
-                                            <span className="quick-chips-label">Quick:</span>
-                                            <div className="quick-chips-scroll">
-                                              {dateTasks.slice(0, 6).map((t) => {
-                                                const isSel = selectedTaskId === t.id;
-                                                return (
-                                                  <button
-                                                    key={t.id}
-                                                    type="button"
-                                                    onClick={() => setSelectedTaskId(isSel ? '' : t.id)}
-                                                    className={`quick-chip-btn ${isSel ? 'is-selected' : ''}`}
-                                                    title={t.title}
-                                                  >
-                                                    {isSel && <Check size={10} />}
-                                                    <span className="chip-text-truncate">{t.title}</span>
-                                                  </button>
-                                                );
-                                              })}
-                                            </div>
-                                          </div>
-                                        )
-                                      }
+      <div className="wt-studio-grid">
+        {/* LEFT COLUMN: STICKY FOCUS TIMER & CONTROLS */}
+        <div className="wt-studio-left">
+          <div className={`wt-timer-panel ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
+            <div className="wt-hero-clock-box">
+              <div className={`wt-hero-digits ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
+                {String(activeHrs).padStart(2, '0')}:{String(activeMins).padStart(2, '0')}:{String(activeSecs).padStart(2, '0')}
               </div>
-                                )}
-                              </div>
+              <div className="chronometer-sub-status">
+                {isRunning ? (
+                  <>
+                    <Sparkles size={12} className="text-emerald-400" />
+                    <span>Tracking · Started {activeWorkSession.startTime}</span>
+                  </>
+                ) : isPaused ? (
+                  <>
+                    <Coffee size={12} className="text-amber-400" />
+                    <span>Holds at {activeTimerDisplay}</span>
+                  </>
+                ) : totalRecordedForDate > 0 ? (
+                  <>
+                    <Clock size={12} className="text-blue-400" />
+                    <span>Logged Today: {activeTimerDisplay}</span>
+                  </>
+                ) : (
+                  <>
+                    <Target size={12} className="text-blue-400" />
+                    <span>Ready to start focus</span>
+                  </>
+                )}
+              </div>
+            </div>
 
-                              {/* Right Wing: Primary Action Controls */}
-                              <div className="cockpit-actions-bar">
-                                {isRunning ? (
-                                  <button
-                                    type="button"
-                                    onClick={requestStopWorkSession}
-                                    id="btn-tracker-stop-session"
-                                    className="btn-stop-focus"
-                                  >
-                                    <Square size={14} fill="currentColor" />
-                                    <span>Stop Work</span>
-                                  </button>
-                                ) : isPaused ? (
-                                  <div className="flex items-center gap-2">
-                                    {/* Primary Controls */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                      {isRunning ? (
+            {/* Active / Paused / Target Selector */}
+            {isPaused ? (
+              <div className="cockpit-paused-inline">
+                <div className="paused-coffee-badge">
+                  <Coffee size={16} />
+                </div>
+                <div className="paused-info-wrap">
+                  <div className="paused-title">Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}</div>
+                  <div className="paused-sub">
+                    Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
+                  </div>
+                </div>
+              </div>
+            ) : isRunning ? (
+              <div className="cockpit-running-inline">
+                <span className="worktracker-recording-dot" />
+                <div className="running-info-wrap">
+                  <span className="running-label">ACTIVE FOCUS SESSION</span>
+                  <span className="running-task-title">{activeWorkSession.taskTitle || 'General Focus Session'}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="cockpit-target-picker">
+                <div className="cockpit-target-input-row">
+                  <label className="cockpit-target-inline-label">
+                    <Target size={13} className="text-blue-400" />
+                    <span>Target:</span>
+                  </label>
+                  <select
+                    value={selectedTaskId}
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="cockpit-task-select"
+                  >
+                    <option value="">🎯 General Focus (No linked task)</option>
+                    {dateTasks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title} [{t.startTime || 'Scheduled'}]
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {dateTasks.length > 0 && (
+                  <div className="cockpit-quick-chips">
+                    <span className="quick-chips-label">Quick:</span>
+                    <div className="quick-chips-scroll">
+                      {dateTasks.slice(0, 6).map((t) => {
+                        const isSel = selectedTaskId === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setSelectedTaskId(isSel ? '' : t.id)}
+                            className={`quick-chip-btn ${isSel ? 'is-selected' : ''}`}
+                            title={t.title}
+                          >
+                            {isSel && <Check size={10} />}
+                            <span className="chip-text-truncate">{t.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Primary Controls */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {isRunning ? (
                 <button
                   type="button"
-                  onClick={handleStartSession}
-                  id="btn-tracker-resume-session"
-                  className="btn-resume-focus"
                   onClick={requestStopWorkSession}
                   id="btn-tracker-stop-session"
                   className="btn-stop-focus"
                   style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
                 >
-                  <Play size={14} fill="currentColor" />
-                  <span>Resume Work</span>
                   <Square size={14} fill="currentColor" />
                   <span>Stop Work</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => finishDayWorkSession(activeDate)}
-                  id="btn-tracker-finish-day"
-                  className="btn-finish-day"
-                >
-                  <Flag size={13} />
-                  <span>Finish Day</span>
-                </button>
-              </div>
-                                    ) : (
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={handleStartSession}
-                                        id="btn-tracker-start-session"
-                                        className="btn-launch-focus"
-                                      >
-                                        <Play size={15} fill="currentColor" />
-                                        <span>Launch Focus</span>
-                                      </button>
-                                      {totalRecordedForDate > 0 && !isFinished && (
               ) : isPaused ? (
-                                      <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button
-                                          type="button"
-                                          onClick={handleStartSession}
-                                          id="btn-tracker-resume-session"
-                                          className="btn-resume-focus"
-                                          style={{ flex: 1, justifyContent: 'center', padding: '11px 12px' }}
-                                        >
-                                          <Play size={14} fill="currentColor" />
-                                          <span>Resume Work</span>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => finishDayWorkSession(activeDate)}
-                                          id="btn-tracker-finish-day"
-                                          className="btn-finish-day"
-                                          title="Conclude workday tracking"
-                                          style={{ padding: '11px 14px' }}
-                                        >
-                                          <Flag size={13} />
-                                          <span>Finish</span>
-                                          <span>Finish Day</span>
-                                        </button>
-                )}
-                                      </div>
-            )}
-                                    </div>
-                                    ) : (
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                      <button
-                                        type="button"
-                                        onClick={handleStartSession}
-                                        id="btn-tracker-start-session"
-                                        className="btn-launch-focus"
-                                        style={{ flex: 1, justifyContent: 'center', padding: '11px 16px' }}
-                                      >
-                                        <Play size={15} fill="currentColor" />
-                                        <span>Launch Focus</span>
-                                      </button>
-                                      {totalRecordedForDate > 0 && !isFinished && (
-                                        <button
-                                          type="button"
-                                          onClick={() => finishDayWorkSession(activeDate)}
-                                          className="btn-finish-day"
-                                          title="Conclude workday tracking"
-                                          style={{ padding: '11px 14px' }}
-                                        >
-                                          <Flag size={13} />
-                                          <span>Finish</span>
-                                        </button>
-                                      )}
-                                    </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={handleStartSession}
+                    id="btn-tracker-resume-session"
+                    className="btn-resume-focus"
+                    style={{ flex: 1, justifyContent: 'center', padding: '11px 12px' }}
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span>Resume Work</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => finishDayWorkSession(activeDate)}
+                    id="btn-tracker-finish-day"
+                    className="btn-finish-day"
+                    style={{ padding: '11px 14px' }}
+                  >
+                    <Flag size={13} />
+                    <span>Finish Day</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={handleStartSession}
+                    id="btn-tracker-start-session"
+                    className="btn-launch-focus"
+                    style={{ flex: 1, justifyContent: 'center', padding: '11px 16px' }}
+                  >
+                    <Play size={15} fill="currentColor" />
+                    <span>Launch Focus</span>
+                  </button>
+                  {totalRecordedForDate > 0 && !isFinished && (
+                    <button
+                      type="button"
+                      onClick={() => finishDayWorkSession(activeDate)}
+                      className="btn-finish-day"
+                      title="Conclude workday tracking"
+                      style={{ padding: '11px 14px' }}
+                    >
+                      <Flag size={13} />
+                      <span>Finish</span>
+                    </button>
+                  )}
+                </div>
               )}
-                                  </div>
+            </div>
           </div>
-                            </div>
-                          </div>
+        </div>
 
-                          {/* ==========================================================================
-          CHRONOLOGICAL FOCUS STREAM (TIMELINE SPINE)
-         ========================================================================== */}
-                          <div className="focus-stream-section">
-                            {/* RIGHT COLUMN: KPI SUMMARY CARDS + TIMELINE */}
-                            <div className="wt-studio-right">
-                              {/* 4 KPI Summary Cards */}
-                              <div className="wt-kpi-grid">
-                                <div className="wt-kpi-card">
-                                  <div className="wt-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.14)', color: '#10B981' }}>
-                                    <Zap size={18} />
-                                  </div>
-                                  <div>
-                                    <div className="wt-kpi-label">Total Focused</div>
-                                    <div className="wt-kpi-val">{totalHours}h {totalMinutes}m {totalSecs}s</div>
-                                  </div>
-                                </div>
+        {/* RIGHT COLUMN: KPI SUMMARY CARDS + TIMELINE */}
+        <div className="wt-studio-right">
+          {/* 4 KPI Summary Cards */}
+          <div className="wt-kpi-grid">
+            <div className="wt-kpi-card">
+              <div className="wt-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.14)', color: '#10B981' }}>
+                <Zap size={18} />
+              </div>
+              <div>
+                <div className="wt-kpi-label">Total Focused</div>
+                <div className="wt-kpi-val">{totalHours}h {totalMinutes}m {totalSecs}s</div>
+              </div>
+            </div>
 
-                                <div className="wt-kpi-card">
-                                  <div className="wt-kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.14)', color: '#3B82F6' }}>
-                                    <Layers size={18} />
-                                  </div>
-                                  <div>
-                                    <div className="wt-kpi-label">Focus Blocks</div>
-                                    <div className="wt-kpi-val">{sessionCount}</div>
-                                  </div>
-                                </div>
+            <div className="wt-kpi-card">
+              <div className="wt-kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.14)', color: '#3B82F6' }}>
+                <Layers size={18} />
+              </div>
+              <div>
+                <div className="wt-kpi-label">Focus Blocks</div>
+                <div className="wt-kpi-val">{sessionCount}</div>
+              </div>
+            </div>
 
-                                <div className="wt-kpi-card">
-                                  <div className="wt-kpi-icon" style={{ background: 'rgba(139, 92, 246, 0.14)', color: '#8B5CF6' }}>
-                                    <TrendingUp size={18} />
-                                  </div>
-                                  <div>
-                                    <div className="wt-kpi-label">Avg Block</div>
-                                    <div className="wt-kpi-val">{avgSessionMinutes}m</div>
-                                  </div>
-                                </div>
+            <div className="wt-kpi-card">
+              <div className="wt-kpi-icon" style={{ background: 'rgba(139, 92, 246, 0.14)', color: '#8B5CF6' }}>
+                <TrendingUp size={18} />
+              </div>
+              <div>
+                <div className="wt-kpi-label">Avg Block</div>
+                <div className="wt-kpi-val">{avgSessionMinutes}m</div>
+              </div>
+            </div>
 
-                                <div className="wt-kpi-card">
-                                  <div className="wt-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B' }}>
-                                    <Coffee size={18} />
-                                  </div>
-                                  <div>
-                                    <div className="wt-kpi-label">Breaks</div>
-                                    <div className="wt-kpi-val">{Object.keys(reasonBreakdown).length}</div>
-                                  </div>
-                                </div>
-                              </div>
+            <div className="wt-kpi-card">
+              <div className="wt-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B' }}>
+                <Coffee size={18} />
+              </div>
+              <div>
+                <div className="wt-kpi-label">Breaks</div>
+                <div className="wt-kpi-val">{Object.keys(reasonBreakdown).length}</div>
+              </div>
+            </div>
+          </div>
 
-                              {/* Focus & Break Timeline Panel */}
-                              <div className="wt-timeline-panel">
-                                <div className="focus-stream-section">
+          {/* Focus & Break Timeline Panel */}
+          <div className="wt-timeline-panel">
+            <div className="focus-stream-section">
                                   <div className="focus-stream-header">
                                     <div className="flex items-center gap-2">
                                       <h2 className="focus-stream-title">

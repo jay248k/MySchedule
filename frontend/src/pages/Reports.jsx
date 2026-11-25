@@ -2031,10 +2031,117 @@ export function Reports() {
       {activeTab === 'today-report' && (
         <>
           {/* Day Selector & Action Ribbon */}
-          <div className="daily-report-header">
-            {/* Left: Date Navigator with From/To Range Filter */}
-            <div className="daily-date-nav">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+          <div
+            className="daily-report-header"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              gap: '14px',
+              padding: '16px 20px',
+            }}
+          >
+            {/* Row 1: Selected Day Title + Primary Action Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: '1.12rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {formattedSelectedDay}
+                </strong>
+                {isSelectedToday && (
+                  <span className="badge badge-success" style={{ fontSize: '0.72rem', padding: '3px 9px' }}>
+                    Today
+                  </span>
+                )}
+                {savedReportForSelectedDate ? (
+                  <span
+                    style={{
+                      fontSize: '0.74rem',
+                      color: 'var(--success)',
+                      fontWeight: 700,
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      padding: '2px 10px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    ✓ Submitted &amp; Saved
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: '0.74rem',
+                      color: 'var(--warning)',
+                      fontWeight: 700,
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      padding: '2px 10px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    Draft (Unsaved)
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-no-print"
+                  onClick={() => setShowDailyMetrics(!showDailyMetrics)}
+                  title={showDailyMetrics ? 'Hide summary metric cards' : 'Show summary metric cards'}
+                >
+                  <TrendingUp size={14} /> {showDailyMetrics ? 'Hide Metrics' : 'Metrics'}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-no-print"
+                  onClick={handleCopyStandup}
+                  title="Copy formatted standup markdown for Slack / Teams"
+                >
+                  <Copy size={14} /> Copy Standup
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-no-print"
+                  onClick={() => window.print()}
+                  title="Print daily report"
+                >
+                  <Printer size={14} /> Print
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm btn-no-print"
+                  onClick={handleSaveReport}
+                >
+                  <Save size={14} /> Save Daily Report
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: Day Stepper (Left) + Compact Date Range Filter (Right) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+                paddingTop: '12px',
+                borderTop: '1px solid var(--border-color)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
@@ -2062,33 +2169,39 @@ export function Reports() {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>From:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600 }}>From:</span>
                 <input
                   type="date"
                   className="date-input-picker"
                   value={reportFromDate}
-                  onChange={(e) => { if (e.target.value) { setReportFromDate(e.target.value); setSelectedReportDate(e.target.value); }}}
-                  style={{ minWidth: '140px' }}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setReportFromDate(e.target.value);
+                      setSelectedReportDate(e.target.value);
+                    }
+                  }}
+                  style={{ width: '148px', minWidth: '140px' }}
                 />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: '8px' }}>To:</span>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600 }}>To:</span>
                 <input
                   type="date"
                   className="date-input-picker"
                   value={reportToDate}
-                  onChange={(e) => { if (e.target.value) setReportToDate(e.target.value); }}
-                  style={{ minWidth: '140px' }}
+                  onChange={(e) => {
+                    if (e.target.value) setReportToDate(e.target.value);
+                  }}
+                  style={{ width: '148px', minWidth: '140px' }}
                 />
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-ghost"
                   onClick={() => {
                     setReportFromDate(todayStr);
                     setReportToDate(todayStr);
                     setSelectedReportDate(todayStr);
                   }}
                   title="Set both dates to today"
-                  style={{ marginLeft: '4px' }}
                 >
                   <CalendarCheck size={12} /> Today
                 </button>
@@ -2097,76 +2210,10 @@ export function Reports() {
                   className="btn btn-sm btn-ghost"
                   onClick={() => handleApplyPreset('month')}
                   title="Set to current month"
-                  style={{ marginLeft: '4px' }}
                 >
                   <CalendarDays size={12} /> Month
                 </button>
               </div>
-            </div>
-
-            {/* Middle: Day Header Display */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-                  <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                    {formattedSelectedDay}
-                  </strong>
-                  {isSelectedToday && (
-                    <span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
-                      Today
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {savedReportForSelectedDate ? (
-                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>
-                      ✓ Submitted & Saved in History
-                    </span>
-                  ) : (
-                    <span style={{ color: 'var(--warning)', fontWeight: 600 }}>
-                      📝 Draft (Unsaved)
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Primary Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm btn-no-print"
-                onClick={() => setShowDailyMetrics(!showDailyMetrics)}
-                title={showDailyMetrics ? 'Hide summary metric cards' : 'Show summary metric cards'}
-              >
-                <TrendingUp size={14} /> {showDailyMetrics ? 'Hide Metrics' : 'Metrics'}
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm btn-no-print"
-                onClick={handleCopyStandup}
-                title="Copy formatted standup markdown for Slack / Teams"
-              >
-                <Copy size={14} /> Copy Standup
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm btn-no-print"
-                onClick={() => window.print()}
-                title="Print daily report"
-              >
-                <Printer size={14} /> Print
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-primary btn-sm btn-no-print"
-                onClick={handleSaveReport}
-              >
-                <Save size={14} /> Save Daily Report
-              </button>
             </div>
           </div>
 

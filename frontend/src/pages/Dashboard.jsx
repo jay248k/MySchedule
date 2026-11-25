@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import '../styles/pages/dashboard.css';
+import api from '../services/api';
 import {
   AreaChart,
   Area,
@@ -28,6 +30,14 @@ import {
   Flame,
   Sparkles,
   Target,
+  Plus,
+  FileText,
+  CheckCircle2,
+  Layers,
+  RefreshCw,
+  BookOpen,
+  Quote,
+  ShieldAlert,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getTodayDateString, formatDate } from '../utils/dateUtils';
@@ -139,15 +149,113 @@ function CustomTrendTooltip({ active, payload, label }) {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { tasks = [], categories = [], goals = [], user, selectedDate } = useApp();
+  const {
+    tasks = [],
+    categories = [],
+    goals = [],
+    workSessions = [],
+    activeWorkSession,
+    currentLiveWorkSeconds = 0,
+    requests = [],
+    user,
+    selectedDate,
+  } = useApp();
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
   const isToday = activeDate === todayStr;
   const formattedActiveDate = formatDate(activeDate, { month: 'short', day: 'numeric' });
 
+  const [habits, setHabits] = useState([]);
+  const [dashSummary, setDashSummary] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+    api
+      .getHabits()
+      .then((res) => {
+        if (!mounted) return;
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        setHabits(list);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    api
+      .getDashboardSummary(activeDate)
+      .then((res) => {
+        if (!mounted) return;
+        if (res?.data) setDashSummary(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [activeDate]);
+
   const todayTasks = useMemo(() => tasks.filter((t) => t.date === activeDate), [tasks, activeDate]);
   const todayStats = useMemo(() => calculateTaskStats(todayTasks), [todayTasks]);
+
+  // Website-related Bento Summaries (Work Tracker, Habits, Goals, Categories, Requests)
+  const focusSummary = useMemo(() => {
+    const daySessions = (workSessions || []).filter((s) => s.date === activeDate);
+    const recordedSecs = daySessions.reduce((acc, s) => acc + (Number(s.durationSeconds) || 0), 0);
+    const isRunningToday = Boolean(activeWorkSession?.isRunning && (activeWorkSession.date || todayStr) === activeDate);
+    const totalSecs = isRunningToday ? Math.max(recordedSecs, currentLiveWorkSeconds || 0) : recordedSecs;
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    return {
+      totalSecs,
+      label: hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`,
+      blocks: daySessions.length,
+      isRunningToday,
+    };
+  }, [workSessions, activeWorkSession, currentLiveWorkSeconds, activeDate, todayStr]);
+
+  const habitsSummary = useMemo(() => {
+    const items = (habits || []).map((h) => {
+      const logs = Array.isArray(h.logs) ? h.logs : [];
+      const doneToday = logs.some((l) => l.date === activeDate && l.completed);
+      const streak = h.currentStreak ?? h.streak ?? logs.filter((l) => l.completed).length;
+      return { ...h, doneToday, streak };
+    });
+    const doneCount = items.filter((h) => h.doneToday).length;
+    const bestStreak = items.reduce((max, h) => Math.max(max, h.streak || 0), 0);
+    return { total: items.length, doneCount, bestStreak, top: items.slice(0, 4) };
+  }, [habits, activeDate]);
+
+  const goalsSummary = useMemo(() => {
+    const list = (goals || []).map((g) => {
+      const linked = tasks.filter((t) => t.goalId === g.id);
+      const done = linked.filter((t) => t.status === 'completed' || t.completed).length;
+      const pct = linked.length > 0 ? Math.round((done / linked.length) * 100) : Number(g.progress) || 0;
+      return { ...g, linkedCount: linked.length, doneCount: done, pct };
+    });
+    const completedCount = list.filter((g) => g.status === 'completed' || g.pct >= 100).length;
+    return { total: list.length, completedCount, top: list.slice(0, 4) };
+  }, [goals, tasks]);
+
+  const categoryDist = useMemo(() => {
+    const base = todayTasks.length > 0 ? todayTasks : tasks;
+    return getCategoryDistribution(base, categories).slice(0, 4);
+  }, [todayTasks, tasks, categories]);
+
+  const requestsSummary = useMemo(() => {
+    const rescheduled = (requests || []).filter((r) => r.status === 'rescheduled').length;
+    const pending = (requests || []).filter((r) => r.status === 'pending').length;
+    return { rescheduled, pending, total: (requests || []).length };
+  }, [requests]);
+
+  const greetingText = useMemo(() => {
+    const h = new Date().getHours();
+    const prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    const firstName = user?.name ? user.name.split(' ')[0] : '';
+    return firstName ? `${prefix}, ${firstName}` : prefix;
+  }, [user]);
 
   const now = new Date();
   const currentMonthStats = useMemo(
@@ -410,134 +518,117 @@ export function Dashboard() {
       animate="visible"
       style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
     >
-      {/* 1. Work Hours Live Clock Widget Card (Digital LED + Analog Clock) */}
+      {/* 0. Executive Command Hero Strip */}
+      <motion.section variants={cardVariants} className="dash-hero">
+        <div className="dash-hero-left">
+          <div className="dash-hero-title-row">
+            <h1 className="dash-hero-greeting">{greetingText}</h1>
+            <div className="dash-hero-badges">
+              <span className="dash-pill">
+                <Calendar size={12} />
+                {isToday ? `Today · ${formattedActiveDate}` : formattedActiveDate}
+              </span>
+              {heatmapStats.currentStreak > 0 && (
+                <span className="dash-pill is-streak">
+                  <Flame size={12} />
+                  {heatmapStats.currentStreak}d Streak
+                </span>
+              )}
+              <span className={`dash-pill ${focusSummary.isRunningToday ? 'is-live' : ''}`}>
+                <Timer size={12} />
+                {focusSummary.isRunningToday ? `Live Focus · ${focusSummary.label}` : `Focus Today · ${focusSummary.label}`}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="dash-hero-actions">
+          <button type="button" className="dash-quick-btn is-primary" onClick={() => navigate('/today')}>
+            <Plus size={14} />
+            <span>Today&apos;s Tasks</span>
+          </button>
+          <button type="button" className="dash-quick-btn" onClick={() => navigate('/work-tracker')}>
+            <Timer size={14} />
+            <span>Work Tracker</span>
+          </button>
+          <button type="button" className="dash-quick-btn" onClick={() => navigate('/habits')}>
+            <CheckCircle2 size={14} />
+            <span>Habits</span>
+          </button>
+          <button type="button" className="dash-quick-btn" onClick={() => navigate('/reports')}>
+            <FileText size={14} />
+            <span>Reports</span>
+          </button>
+        </div>
+      </motion.section>
+
+      {/* 1. Work Hours Live Clock Widget Card */}
       <motion.section variants={cardVariants}>
         <WorkHoursClock tasks={tasks} selectedDate={activeDate} />
       </motion.section>
 
-      {/* 3. Metric Summary Cards */}
-      <motion.section
-        variants={cardVariants}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '12px',
-        }}
-      >
-        {/* Total Tasks */}
-        <div className="dash-stat-card total" onClick={() => navigate('/today')}>
-          <div
-            className="dash-stat-icon-wrapper"
-            style={{
-              background: 'rgba(37, 99, 235, 0.12)',
-              color: '#3B82F6',
-              border: '1px solid rgba(59, 130, 246, 0.28)',
-              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.15)',
-            }}
-          >
-            <CalendarCheck2 size={18} strokeWidth={2.2} />
+      {/* 2. 5-Card Bento KPI Strip (Website-Wide Real Metrics) */}
+      <motion.section variants={cardVariants} className="dash-kpi-strip">
+        <div className="dash-bento-kpi" onClick={() => navigate('/today')}>
+          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.28)' }}>
+            <CalendarCheck2 size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              Total Tasks ({isToday ? 'Today' : formattedActiveDate})
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15 }}>
-              {todayStats.total}
-            </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-              Scheduled for {isToday ? 'today' : formattedActiveDate}
-            </div>
+            <div className="dash-bento-kpi-label">Today&apos;s Tasks</div>
+            <div className="dash-bento-kpi-val">{todayStats.completed}/{todayStats.total}</div>
+            <div className="dash-bento-kpi-sub">{todayStats.completionRate}% completed</div>
           </div>
         </div>
 
-        {/* Completed */}
-        <div className="dash-stat-card completed" onClick={() => navigate('/today')}>
-          <div
-            className="dash-stat-icon-wrapper"
-            style={{
-              background: 'rgba(16, 185, 129, 0.12)',
-              color: '#10B981',
-              border: '1px solid rgba(16, 185, 129, 0.28)',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)',
-            }}
-          >
-            <CircleCheckBig size={18} strokeWidth={2.3} />
+        <div className="dash-bento-kpi" onClick={() => navigate('/work-tracker')}>
+          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.28)' }}>
+            <Timer size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              Completed
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10B981', lineHeight: 1.15 }}>
-              {todayStats.completed}
-            </div>
-            <div style={{ fontSize: '0.68rem', color: '#10B981', fontWeight: 600, marginTop: '1px' }}>
-              {todayStats.percentage}% completion rate
-            </div>
+            <div className="dash-bento-kpi-label">Focus Time</div>
+            <div className="dash-bento-kpi-val">{focusSummary.label}</div>
+            <div className="dash-bento-kpi-sub">{focusSummary.blocks} focus {focusSummary.blocks === 1 ? 'block' : 'blocks'}</div>
           </div>
         </div>
 
-        {/* Pending */}
-        <div className="dash-stat-card pending" onClick={() => navigate('/today')}>
-          <div
-            className="dash-stat-icon-wrapper"
-            style={{
-              background: 'rgba(245, 158, 11, 0.12)',
-              color: '#F59E0B',
-              border: '1px solid rgba(245, 158, 11, 0.28)',
-              boxShadow: '0 2px 8px rgba(245, 158, 11, 0.12)',
-            }}
-          >
-            <Timer size={18} strokeWidth={2.2} />
+        <div className="dash-bento-kpi" onClick={() => navigate('/habits')}>
+          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6', border: '1px solid rgba(139, 92, 246, 0.28)' }}>
+            <Flame size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              Pending
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F59E0B', lineHeight: 1.15 }}>
-              {todayStats.pending}
-            </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-              Awaiting completion
-            </div>
+            <div className="dash-bento-kpi-label">Habits Today</div>
+            <div className="dash-bento-kpi-val">{habitsSummary.doneCount}/{habitsSummary.total}</div>
+            <div className="dash-bento-kpi-sub">Best streak: {habitsSummary.bestStreak}d</div>
           </div>
         </div>
 
-        {/* Overdue */}
-        <div className="dash-stat-card overdue" onClick={() => navigate('/today')}>
-          <div
-            className="dash-stat-icon-wrapper"
-            style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              color: '#EF4444',
-              border: '1px solid rgba(239, 68, 68, 0.28)',
-              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.12)',
-            }}
-          >
-            <CircleAlert size={18} strokeWidth={2.2} />
+        <div className="dash-bento-kpi" onClick={() => navigate('/goals')}>
+          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.28)' }}>
+            <Target size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              Overdue
+            <div className="dash-bento-kpi-label">Active Goals</div>
+            <div className="dash-bento-kpi-val">{goalsSummary.total}</div>
+            <div className="dash-bento-kpi-sub">{goalsSummary.completedCount} achieved</div>
+          </div>
+        </div>
+
+        <div className="dash-bento-kpi" onClick={() => navigate('/reports/pending')}>
+          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.28)' }}>
+            <CircleAlert size={18} />
+          </div>
+          <div>
+            <div className="dash-bento-kpi-label">Pending &amp; Overdue</div>
+            <div className="dash-bento-kpi-val" style={{ color: todayStats.overdue > 0 ? '#EF4444' : 'var(--text-primary)' }}>
+              {todayStats.pending + todayStats.overdue}
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#EF4444', lineHeight: 1.15 }}>
-              {todayStats.overdue}
-            </div>
-            <div
-              style={{
-                fontSize: '0.68rem',
-                color: todayStats.overdue > 0 ? '#EF4444' : 'var(--text-muted)',
-                fontWeight: todayStats.overdue > 0 ? 700 : 400,
-                marginTop: '1px',
-              }}
-            >
-              {todayStats.overdue > 0 ? 'Requires attention' : 'All clear! No overdue tasks'}
-            </div>
+            <div className="dash-bento-kpi-sub">{todayStats.overdue} overdue · {todayStats.pending} pending</div>
           </div>
         </div>
       </motion.section>
 
       {/* 4. Production Analytics Charts Row: Productivity Trend (8 cols) + Progress Overview (4 cols) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px', alignItems: 'stretch' }}>
+      <div className="dash-analytics-grid">
         {/* Productivity Trend Area Chart (8 Columns) - Production Level Design */}
         <motion.div
           variants={cardVariants}
@@ -587,13 +678,13 @@ export function Dashboard() {
             </div>
 
             {/* Filter Controls: CustomSelect Category Filter + Week/Month/Year Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ minWidth: '190px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              <div style={{ width: '170px' }}>
                 <CustomSelect
                   value={selectedTrendCategory}
                   onChange={(val) => setSelectedTrendCategory(val)}
                   options={[
-                    { value: 'all', label: 'All Tasks (Total & Pending)', color: '#38BDF8' },
+                    { value: 'all', label: 'All Tasks', color: '#38BDF8' },
                     ...allUniqueCategories.map((cat) => ({
                       value: cat.id,
                       label: cat.name,
@@ -603,7 +694,7 @@ export function Dashboard() {
                   placeholder="Select category"
                   searchPlaceholder="Filter category..."
                   showSearch={allUniqueCategories.length > 4}
-                  style={{ minWidth: '185px' }}
+                  style={{ minWidth: '160px' }}
                 />
               </div>
 
@@ -650,7 +741,7 @@ export function Dashboard() {
           </div>
 
           {/* Productivity Trend Chart: Total Tasks, Pending / Missed Tasks, and Completed Tasks */}
-          <div style={{ width: '100%', height: '190px', marginTop: '2px', position: 'relative' }}>
+          <div style={{ width: '100%', height: '180px', marginTop: '2px', position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData} margin={{ top: 12, right: 12, left: -20, bottom: 4 }}>
                 <defs>
@@ -820,102 +911,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Categories Breakdown (Total & Missed Count for Each Category) */}
-          {activeCategories.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-                gap: '6px 8px',
-                paddingTop: '8px',
-                borderTop: '1px dashed var(--border-color)',
-                fontSize: '0.72rem',
-              }}
-            >
-              <span style={{ fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px' }}>
-                Categories:
-              </span>
-              {activeCategories.map((cat) => {
-                const isSelected = String(selectedTrendCategory) === String(cat.id);
-                const stats = categoryTrendTotals[cat.id] || { total: 0, missed: 0, completed: 0 };
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedTrendCategory(isSelected ? 'all' : cat.id)}
-                    style={{
-                      background: isSelected ? 'rgba(56, 189, 248, 0.14)' : 'var(--card-hover, rgba(255, 255, 255, 0.04))',
-                      border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      cursor: 'pointer',
-                      padding: '3px 8px',
-                      borderRadius: '6px',
-                      transition: 'all 0.15s ease',
-                    }}
-                    title={`Click to focus on "${cat.name}". ${stats.total} Total, ${stats.missed} Missed`}
-                  >
-                    <span
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: cat.color || '#3B82F6',
-                        display: 'inline-block',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{cat.name}</span>
-                    <span
-                      style={{
-                        fontSize: '0.64rem',
-                        fontWeight: 800,
-                        padding: '1px 5px',
-                        borderRadius: '999px',
-                        background: 'var(--border-subtle, rgba(0, 0, 0, 0.05))',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      {stats.total} Total
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '0.64rem',
-                        fontWeight: 800,
-                        padding: '1px 5px',
-                        borderRadius: '999px',
-                        background: stats.missed > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                        color: stats.missed > 0 ? '#EF4444' : '#10B981',
-                      }}
-                    >
-                      {stats.missed} Missed
-                    </span>
-                  </button>
-                );
-              })}
-              {selectedTrendCategory !== 'all' && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedTrendCategory('all')}
-                  style={{
-                    background: 'transparent',
-                    border: '1px dashed var(--border-color)',
-                    color: 'var(--primary-color)',
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    padding: '3px 7px',
-                    borderRadius: '6px',
-                  }}
-                >
-                  ← Show All Tasks
-                </button>
-              )}
-            </div>
-          )}
         </motion.div>
 
         {/* Progress Overview (4 Columns) - Compact, High-End Aesthetic */}
@@ -986,11 +981,11 @@ export function Dashboard() {
             </span>
           </div>
 
-          {/* Dual Large Circular Rings with Glow & Gradients - Percentage in Center */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '4px 0', flex: 1 }}>
+          {/* Dual Circular Rings - Compact & Centered */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '2px 0' }}>
             <ProgressRing
-              radius={60}
-              stroke={9}
+              radius={52}
+              stroke={8}
               progress={todayStats.percentage}
               color="#38BDF8"
               gradientColors={todayStats.percentage === 100 ? ['#10B981', '#059669'] : ['#38BDF8', '#1D4ED8']}
@@ -1001,8 +996,8 @@ export function Dashboard() {
               showPercentageInCenter={true}
             />
             <ProgressRing
-              radius={60}
-              stroke={9}
+              radius={52}
+              stroke={8}
               progress={currentMonthStats.percentage}
               color="#10B981"
               gradientColors={['#34D399', '#059669']}
@@ -1038,6 +1033,253 @@ export function Dashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* 5. Website Modules Bento Row: Habits, Goals, Category Workload & Requests */}
+      <motion.section variants={cardVariants} className="dash-modules-grid">
+        {/* Card A: Today's Habits Pulse */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <Flame size={17} color="#8B5CF6" />
+              <h3 className="dash-module-title">Today&apos;s Habits</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/habits')}>
+              <span>Manage</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+          {habitsSummary.top.length === 0 ? (
+            <div className="dash-empty-mini">No habits tracked yet. Add your daily habits to build streaks.</div>
+          ) : (
+            <div className="dash-list-stack">
+              {habitsSummary.top.map((h) => (
+                <div key={h.id} className="dash-item-row">
+                  <div className="dash-item-left">
+                    <span
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: '50%',
+                        background: h.doneToday ? '#10B981' : 'var(--text-muted)',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span className="dash-item-name">{h.name || h.title}</span>
+                  </div>
+                  <span
+                    className="dash-item-badge"
+                    style={{
+                      background: h.doneToday ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
+                      color: h.doneToday ? '#10B981' : '#F59E0B',
+                    }}
+                  >
+                    {h.doneToday ? 'Done' : 'Pending'} · {h.streak}d
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Card B: Active Goals Progress */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <Target size={17} color="#F59E0B" />
+              <h3 className="dash-module-title">Active Goals</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/goals')}>
+              <span>All Goals</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+          {goalsSummary.top.length === 0 ? (
+            <div className="dash-empty-mini">No goals created yet. Link tasks to goals to track progress.</div>
+          ) : (
+            <div className="dash-list-stack">
+              {goalsSummary.top.map((g) => (
+                <div key={g.id} className="dash-item-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <span className="dash-item-name">{g.title}</span>
+                    <strong style={{ fontSize: '0.75rem', color: '#3B82F6', flexShrink: 0 }}>{g.pct}%</strong>
+                  </div>
+                  <ProgressBar progress={g.pct} height={5} color="#3B82F6" animateOnMount={true} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Card C: Category Workload & Requests */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <Layers size={17} color="#3B82F6" />
+              <h3 className="dash-module-title">Category Workload</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/requests')}>
+              <RefreshCw size={12} />
+              <span>{requestsSummary.rescheduled} Rescheduled</span>
+            </button>
+          </div>
+          {categoryDist.length === 0 ? (
+            <div className="dash-empty-mini">No categorized tasks found yet.</div>
+          ) : (
+            <div className="dash-list-stack">
+              {categoryDist.map((cat) => (
+                <div key={cat.name} className="dash-item-row">
+                  <div className="dash-item-left">
+                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color || '#3B82F6', flexShrink: 0 }} />
+                    <span className="dash-item-name">{cat.name}</span>
+                  </div>
+                  <span className="dash-item-badge" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
+                    {cat.count} {cat.count === 1 ? 'task' : 'tasks'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.section>
+
+      {/* 5B. Second Website Modules Bento Row: Events, Knowledge Base, Standup & Motivation */}
+      <motion.section variants={cardVariants} className="dash-modules-grid">
+        {/* Card D: Upcoming Events */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <CalendarDays size={17} color="#06B6D4" />
+              <h3 className="dash-module-title">Upcoming Events</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/calendar')}>
+              <span>Calendar</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+          {!dashSummary?.events?.upcoming?.length ? (
+            <div className="dash-empty-mini">No upcoming events scheduled.</div>
+          ) : (
+            <div className="dash-list-stack">
+              {dashSummary.events.upcoming.slice(0, 4).map((ev) => (
+                <div key={ev.id} className="dash-item-row">
+                  <div className="dash-item-left">
+                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#06B6D4', flexShrink: 0 }} />
+                    <span className="dash-item-name">{ev.title}</span>
+                  </div>
+                  <span className="dash-item-badge" style={{ background: 'rgba(6, 182, 212, 0.14)', color: '#06B6D4' }}>
+                    {ev.date === activeDate ? 'Today' : formatDate(ev.date, { month: 'short', day: 'numeric' })}
+                    {ev.startTime ? ` · ${ev.startTime}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Card E: Knowledge Base & Lessons */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <BookOpen size={17} color="#10B981" />
+              <h3 className="dash-module-title">Knowledge Base</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/knowledge')}>
+              <span>Open</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="dash-item-row" style={{ flex: 1, justifyContent: 'center', gap: '6px' }}>
+              <strong style={{ color: '#10B981', fontSize: '0.95rem' }}>{dashSummary?.knowledge?.lessons ?? 0}</strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Lessons</span>
+            </div>
+            <div className="dash-item-row" style={{ flex: 1, justifyContent: 'center', gap: '6px' }}>
+              <strong style={{ color: '#3B82F6', fontSize: '0.95rem' }}>{dashSummary?.knowledge?.folders ?? 0}</strong>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Folders</span>
+            </div>
+          </div>
+          {!dashSummary?.knowledge?.recentLessons?.length ? (
+            <div className="dash-empty-mini">No lessons saved yet.</div>
+          ) : (
+            <div className="dash-list-stack">
+              {dashSummary.knowledge.recentLessons.map((lesson) => (
+                <div key={lesson.id} className="dash-item-row" style={{ cursor: 'pointer' }} onClick={() => navigate('/knowledge')}>
+                  <div className="dash-item-left">
+                    <Sparkles size={13} color="#10B981" style={{ flexShrink: 0 }} />
+                    <span className="dash-item-name">{lesson.title}</span>
+                  </div>
+                  <span className="dash-item-badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
+                    Lesson
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Card F: Daily Standup, Deviations & Thought of the Day */}
+        <div className="dash-module-card">
+          <div className="dash-module-head">
+            <div className="dash-module-title-wrap">
+              <Quote size={17} color="#EC4899" />
+              <h3 className="dash-module-title">Standup &amp; Inspiration</h3>
+            </div>
+            <button type="button" className="dash-module-link" onClick={() => navigate('/thoughts')}>
+              <span>Thoughts</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div
+              className="dash-item-row"
+              style={{ flex: 1, cursor: 'pointer' }}
+              onClick={() => navigate('/reports')}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-secondary)' }}>Daily Report</span>
+              <span
+                className="dash-item-badge"
+                style={{
+                  background: dashSummary?.dailyReport?.submittedToday ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
+                  color: dashSummary?.dailyReport?.submittedToday ? '#10B981' : '#F59E0B',
+                }}
+              >
+                {dashSummary?.dailyReport?.submittedToday ? 'Submitted' : 'Pending'}
+              </span>
+            </div>
+            <div
+              className="dash-item-row"
+              style={{ flex: 1, cursor: 'pointer' }}
+              onClick={() => navigate('/deviations')}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-secondary)' }}>7d Lags</span>
+              <span className="dash-item-badge" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' }}>
+                <ShieldAlert size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+                {dashSummary?.deviations?.last7Days ?? 0}
+              </span>
+            </div>
+          </div>
+
+          {dashSummary?.thoughts?.featured ? (
+            <div
+              className="dash-item-row"
+              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px 12px', cursor: 'pointer' }}
+              onClick={() => navigate('/thoughts')}
+            >
+              <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                &ldquo;{dashSummary.thoughts.featured.text}&rdquo;
+              </span>
+              {dashSummary.thoughts.featured.author && (
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  — {dashSummary.thoughts.featured.author}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="dash-empty-mini">Add motivational quotes in Thoughts Hub to feature them here.</div>
+          )}
+        </div>
+      </motion.section>
 
       {/* 6. Today's Schedule Sequence (Full Screen Width) */}
       <motion.div

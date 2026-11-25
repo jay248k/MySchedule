@@ -208,6 +208,9 @@ export const api = {
   deleteHabit: (id) => apiClient.delete(`/habits/${id}`),
   toggleHabitDate: (id, payload) => apiClient.post(`/habits/${id}/toggle`, payload),
   getHabitsReport: () => apiClient.get('/habits/report'),
+
+  // Dashboard Aggregated Summary
+  getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
 };
 
 export default api;
