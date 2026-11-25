@@ -37,7 +37,7 @@ import {
   Flame,
   Zap,
   X,
-  Today,
+  CalendarCheck,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -2049,7 +2049,7 @@ export function Reports() {
                   className={`btn btn-sm ${isSelectedToday ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setSelectedReportDate(todayStr)}
                 >
-                  <Today size={14} /> Today
+                  <CalendarCheck size={14} /> Today
                 </button>
 
                 <button
@@ -2090,7 +2090,7 @@ export function Reports() {
                   title="Set both dates to today"
                   style={{ marginLeft: '4px' }}
                 >
-                  <Today size={12} /> Today
+                  <CalendarCheck size={12} /> Today
                 </button>
                 <button
                   type="button"
