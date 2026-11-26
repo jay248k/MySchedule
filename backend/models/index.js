@@ -42,7 +42,7 @@ const db = {
   KnowledgeItem: KnowledgeItemModel(sequelize),
   Habit: HabitModel(sequelize),
   HabitLog: HabitLogModel(sequelize),
-  NotificationLog: NotificationLogModel(sequelize),
+  NotificationLog: NotificationLogModel(sequelize, Sequelize.DataTypes),
 };
 
 // Establish associations

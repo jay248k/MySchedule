@@ -12,6 +12,8 @@ import {
   Clock,
   ArrowRight,
   AlertCircle,
+  AlertTriangle,
+  ShieldCheck,
   Sparkles,
   BookOpen,
   Table as TableIcon,
@@ -65,6 +67,10 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     events = [],
     goals = [],
     dailyReports = [],
+    workSessions = [],
+    deviations = [],
+    requests = [],
+    settings = {},
     openModal,
   } = useApp();
 
@@ -173,11 +179,39 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     });
   };
 
-  // Calculate search matches across entities
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dbResults, setDbResults] = useState(null);
+  const [isSearchingDb, setIsSearchingDb] = useState(false);
+
+  // Debounced API search across database
+  useEffect(() => {
+    const qTrim = query.trim();
+    if (!qTrim || qTrim.length < 2) {
+      setDbResults(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingDb(true);
+      try {
+        const res = await api.search(qTrim);
+        if (res && res.success && res.results) {
+          setDbResults(res.results);
+        }
+      } catch (err) {
+        console.warn('DB search failed:', err);
+      } finally {
+        setIsSearchingDb(false);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Calculate search matches across entities (combining DB results if available)
   const q = query.trim().toLowerCase();
 
   const matchingTasks = useMemo(() => {
     if (!q) return tasks.slice(0, 6);
+    if (dbResults?.tasks) return dbResults.tasks;
     return tasks.filter((t) => {
       const titleMatch = t.title?.toLowerCase().includes(q);
       const descMatch = t.description?.toLowerCase().includes(q);
@@ -185,11 +219,59 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       const catMatch = cat?.name?.toLowerCase().includes(q);
       return titleMatch || descMatch || catMatch;
     });
-  }, [tasks, categories, q]);
+  }, [tasks, categories, q, dbResults]);
+
+  const matchingWorkSessions = useMemo(() => {
+    if (!q) return workSessions.slice(0, 6);
+    if (dbResults?.workSessions) return dbResults.workSessions;
+    return workSessions.filter((s) => {
+      const titleMatch = s.taskTitle?.toLowerCase().includes(q);
+      const dateMatch = s.date?.toLowerCase().includes(q);
+      const startTimeMatch = s.startTime?.toLowerCase().includes(q);
+      const endTimeMatch = s.endTime?.toLowerCase().includes(q);
+      return titleMatch || dateMatch || startTimeMatch || endTimeMatch;
+    });
+  }, [workSessions, q, dbResults]);
+
+  const matchingDeviations = useMemo(() => {
+    if (!q) return deviations.slice(0, 6);
+    if (dbResults?.deviations) return dbResults.deviations;
+    return deviations.filter((d) => {
+      const titleMatch = d.plannedAction?.toLowerCase().includes(q);
+      const actualActionMatch = d.actualAction?.toLowerCase().includes(q);
+      const reasonMatch = d.reasonCategory?.toLowerCase().includes(q);
+      const dateMatch = d.date?.toLowerCase().includes(q);
+      return titleMatch || actualActionMatch || reasonMatch || dateMatch;
+    });
+  }, [deviations, q, dbResults]);
+
+  const matchingRequests = useMemo(() => {
+    if (!q) return requests.slice(0, 6);
+    if (dbResults?.requests) return dbResults.requests;
+    return requests.filter((r) => {
+      const titleMatch = r.title?.toLowerCase().includes(q);
+      const reasonMatch = r.reason?.toLowerCase().includes(q);
+      const dateMatch = r.date?.toLowerCase().includes(q);
+      const startTimeMatch = r.startTime?.toLowerCase().includes(q);
+      const endTimeMatch = r.endTime?.toLowerCase().includes(q);
+      return titleMatch || reasonMatch || dateMatch || startTimeMatch || endTimeMatch;
+    });
+  }, [requests, q, dbResults]);
+
+  const matchingSettings = useMemo(() => {
+    if (!q) return [];
+    return Object.keys(settings).filter((key) => {
+      const value = settings[key];
+      const keyMatch = key.toLowerCase().includes(q);
+      const valueMatch = typeof value === 'string' && value.toLowerCase().includes(q);
+      return keyMatch || valueMatch;
+    });
+  }, [settings, q]);
 
   const matchingKnowledge = useMemo(() => {
     if (!knowledgeItems || knowledgeItems.length === 0) return [];
     if (!q) return knowledgeItems.slice(0, 6);
+    if (dbResults?.knowledge) return dbResults.knowledge;
 
     const isFolderKeyword = q === 'folder' || q === 'folders' || q === 'directory' || q === 'dir';
     const isLessonKeyword = q === 'lesson' || q === 'lessons' || q === 'note' || q === 'notes' || q === 'guide';
@@ -208,11 +290,12 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
       return titleMatch || contentMatch || tagsMatch || typeMatch || keywordMatch;
     });
-  }, [knowledgeItems, q]);
+  }, [knowledgeItems, q, dbResults]);
 
   const matchingThoughts = useMemo(() => {
     if (!thoughtsList || thoughtsList.length === 0) return [];
     if (!q) return thoughtsList.slice(0, 6);
+    if (dbResults?.thoughts) return dbResults.thoughts;
 
     const isThoughtKeyword =
       q === 'thought' ||
@@ -231,38 +314,42 @@ export function GlobalSearchModal({ isOpen, onClose }) {
 
       return textMatch || authorMatch || catMatch || tagsMatch || isThoughtKeyword;
     });
-  }, [thoughtsList, q]);
+  }, [thoughtsList, q, dbResults]);
 
   const matchingGoals = useMemo(() => {
     if (!q) return goals.slice(0, 4);
+    if (dbResults?.goals) return dbResults.goals;
     return goals.filter((g) => {
       const titleMatch = g.title?.toLowerCase().includes(q);
       const descMatch = g.description?.toLowerCase().includes(q);
       const catMatch = g.category?.toLowerCase().includes(q);
       return titleMatch || descMatch || catMatch;
     });
-  }, [goals, q]);
+  }, [goals, q, dbResults]);
 
   const matchingCategories = useMemo(() => {
     if (!q) return categories.slice(0, 4);
+    if (dbResults?.categories) return dbResults.categories;
     return categories.filter((c) => {
       const nameMatch = c.name?.toLowerCase().includes(q);
       const descMatch = c.description?.toLowerCase().includes(q);
       return nameMatch || descMatch;
     });
-  }, [categories, q]);
+  }, [categories, q, dbResults]);
 
   const matchingEvents = useMemo(() => {
     if (!q) return events.slice(0, 4);
+    if (dbResults?.events) return dbResults.events;
     return events.filter((e) => {
       const titleMatch = e.title?.toLowerCase().includes(q);
       const descMatch = e.description?.toLowerCase().includes(q);
       return titleMatch || descMatch;
     });
-  }, [events, q]);
+  }, [events, q, dbResults]);
 
   const matchingReports = useMemo(() => {
     if (!q) return dailyReports.slice(0, 4);
+    if (dbResults?.reports) return dbResults.reports;
     return dailyReports.filter((r) => {
       const dateMatch = r.date?.toLowerCase().includes(q);
       const accMatch = r.accomplishments?.toLowerCase().includes(q);
@@ -270,7 +357,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       const blMatch = r.blockers?.toLowerCase().includes(q);
       return dateMatch || accMatch || hlMatch || blMatch;
     });
-  }, [dailyReports, q]);
+  }, [dailyReports, q, dbResults]);
 
   // Unified items list based on active tab
   const displayedItems = useMemo(() => {
@@ -419,8 +506,80 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       });
     }
 
+    if (activeTab === 'all' || activeTab === 'workSessions') {
+      matchingWorkSessions.forEach((s) => {
+        list.push({
+          id: s.id,
+          type: 'workSession',
+          raw: s,
+          title: s.taskTitle || 'Work Session',
+          subtitle: `${s.date} • ${s.startTime} - ${s.endTime}`,
+          badgeText: `${Math.round(s.durationSeconds / 60)} mins`,
+          badgeColor: '#6366F1',
+          badgeBg: 'rgba(99, 102, 241, 0.12)',
+          icon: Clock,
+          iconColor: '#6366F1',
+          iconBg: 'rgba(99, 102, 241, 0.14)',
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'deviations') {
+      matchingDeviations.forEach((d) => {
+        list.push({
+          id: d.id,
+          type: 'deviation',
+          raw: d,
+          title: d.plannedAction || 'Deviation',
+          subtitle: `${d.date} • ${d.startTime} - ${d.endTime}`,
+          badgeText: d.reasonCategory,
+          badgeColor: '#F59E0B',
+          badgeBg: 'rgba(245, 158, 11, 0.12)',
+          icon: AlertTriangle,
+          iconColor: '#F59E0B',
+          iconBg: 'rgba(245, 158, 11, 0.14)',
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'requests') {
+      matchingRequests.forEach((r) => {
+        list.push({
+          id: r.id,
+          type: 'request',
+          raw: r,
+          title: r.title || 'Request',
+          subtitle: `${r.date} • ${r.startTime} - ${r.endTime}`,
+          badgeText: r.status,
+          badgeColor: r.status === 'completed' ? '#10B981' : r.status === 'pending' ? '#F59E0B' : '#8B5CF6',
+          badgeBg: r.status === 'completed' ? 'rgba(16, 185, 129, 0.12)' : r.status === 'pending' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(139, 92, 246, 0.12)',
+          icon: FileText,
+          iconColor: r.status === 'completed' ? '#10B981' : r.status === 'pending' ? '#F59E0B' : '#8B5CF6',
+          iconBg: r.status === 'completed' ? 'rgba(16, 185, 129, 0.14)' : r.status === 'pending' ? 'rgba(245, 158, 11, 0.14)' : 'rgba(139, 92, 246, 0.14)',
+        });
+      });
+    }
+
+    if (activeTab === 'all' || activeTab === 'settings') {
+      matchingSettings.forEach((key) => {
+        list.push({
+          id: `setting-${key}`,
+          type: 'setting',
+          raw: { key, value: settings[key] },
+          title: key,
+          subtitle: typeof settings[key] === 'string' ? settings[key] : JSON.stringify(settings[key]),
+          badgeText: 'Setting',
+          badgeColor: '#6B7280',
+          badgeBg: 'rgba(107, 114, 128, 0.12)',
+          icon: ShieldCheck,
+          iconColor: '#6B7280',
+          iconBg: 'rgba(107, 114, 128, 0.14)',
+        });
+      });
+    }
+
     return list;
-  }, [activeTab, matchingTasks, matchingKnowledge, matchingThoughts, matchingGoals, matchingCategories, matchingEvents, matchingReports, categories]);
+  }, [activeTab, matchingTasks, matchingKnowledge, matchingThoughts, matchingGoals, matchingCategories, matchingEvents, matchingReports, matchingWorkSessions, matchingDeviations, matchingRequests, matchingSettings, categories]);
 
   // Handle Item Execution (Open/Navigate)
   const handleSelectItem = (item) => {
@@ -444,10 +603,10 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     if (item.type === 'task') {
       openModal('task', item.raw);
     } else if (item.type === 'goal') {
-      navigate('/goals');
+      navigate(`/goals?goal=${item.raw.id}&t=${Date.now()}`);
       openModal('goal', item.raw);
     } else if (item.type === 'category') {
-      navigate('/categories');
+      navigate(`/categories?category=${item.raw.id}&t=${Date.now()}`);
     } else if (item.type === 'event') {
       openModal('event', item.raw);
     } else if (item.type === 'report') {
@@ -458,11 +617,19 @@ export function GlobalSearchModal({ isOpen, onClose }) {
       navigate(`/knowledge?item=${item.raw.id}`);
     } else if (item.type === 'thought') {
       navigate(`/thoughts?thought=${item.raw.id}`);
+    } else if (item.type === 'workSession') {
+      navigate(`/work-tracker?session=${item.raw.id}`);
+    } else if (item.type === 'deviation') {
+      navigate(`/deviations?deviation=${item.raw.id}`);
+    } else if (item.type === 'request') {
+      navigate(`/requests?request=${item.raw.id}`);
+    } else if (item.type === 'setting') {
+      navigate(`/settings`);
     }
   };
 
   // Keyboard navigation
-  const tabsList = ['all', 'tasks', 'knowledge', 'thoughts', 'goals', 'categories', 'events', 'reports'];
+  const tabsList = ['all', 'tasks', 'knowledge', 'thoughts', 'goals', 'categories', 'events', 'reports', 'workSessions', 'deviations', 'requests', 'settings'];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -524,7 +691,11 @@ export function GlobalSearchModal({ isOpen, onClose }) {
     matchingGoals.length +
     matchingCategories.length +
     matchingEvents.length +
-    matchingReports.length;
+    matchingReports.length +
+    matchingWorkSessions.length +
+    matchingDeviations.length +
+    matchingRequests.length +
+    matchingSettings.length;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 9999, padding: '24px 16px' }}>
@@ -560,7 +731,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search tasks, lessons, folders, thoughts, goals, reports..."
+            placeholder="Search tasks, lessons, folders, thoughts, goals, reports, work sessions, deviations, requests, settings..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -612,7 +783,7 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Filter Category Tabs (All, Tasks, Lessons & Folders, Thoughts, Goals, Categories, Events, Reports) */}
+        {/* Filter Category Tabs */}
         <div
           style={{
             display: 'flex',
@@ -627,12 +798,16 @@ export function GlobalSearchModal({ isOpen, onClose }) {
           {[
             { id: 'all', label: `All (${totalResults})` },
             { id: 'tasks', label: `Tasks (${matchingTasks.length})` },
-            { id: 'knowledge', label: `Lessons & Folders (${matchingKnowledge.length})` },
+            { id: 'knowledge', label: `Lessons (${matchingKnowledge.length})` },
             { id: 'thoughts', label: `Thoughts (${matchingThoughts.length})` },
             { id: 'goals', label: `Goals (${matchingGoals.length})` },
             { id: 'categories', label: `Categories (${matchingCategories.length})` },
             { id: 'events', label: `Events (${matchingEvents.length})` },
             { id: 'reports', label: `Reports (${matchingReports.length})` },
+            { id: 'workSessions', label: `Work Sessions (${matchingWorkSessions.length})` },
+            { id: 'deviations', label: `Deviations (${matchingDeviations.length})` },
+            { id: 'requests', label: `Requests (${matchingRequests.length})` },
+            { id: 'settings', label: `Settings (${matchingSettings.length})` },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (

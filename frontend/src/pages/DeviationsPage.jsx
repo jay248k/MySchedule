@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   Clock,
@@ -54,6 +55,7 @@ const cleanRootCause = (rc) => {
 };
 
 export function DeviationsPage() {
+  const [searchParams] = useSearchParams();
   const {
     tasks = [],
     selectedDate,
@@ -67,6 +69,21 @@ export function DeviationsPage() {
     logRescheduledTask,
     showToast,
   } = useApp();
+
+  useEffect(() => {
+    const devId = searchParams.get('deviation');
+    if (devId && deviations.length > 0) {
+      const el = document.getElementById(`deviation-card-${devId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'all 0.3s ease';
+        el.style.boxShadow = '0 0 0 3px var(--primary-color)';
+        setTimeout(() => {
+          el.style.boxShadow = '';
+        }, 3000);
+      }
+    }
+  }, [searchParams, deviations]);
 
   const todayStr = getTodayDateString();
   const activeDate = selectedDate || todayStr;
@@ -484,7 +501,7 @@ export function DeviationsPage() {
               const isTaskSelected = Boolean(dev.taskId || targetTask || dev.plannedAction);
 
               return (
-                <div key={dev.id} className="deviation-card">
+                <div key={dev.id} id={`deviation-card-${dev.id}`} className="deviation-card">
                   {/* Top Bar: Incident #, Time, Duration & Actions */}
                   <div className="deviation-top-bar">
                     <div className="deviation-tags-wrap">

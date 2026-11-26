@@ -32,9 +32,15 @@ if (!global.__neonDnsFallbackApplied) {
   };
 }
 
-let connectionString =
-  process.env.DATABASE_URL ||
+const FALLBACK_DATABASE_URL =
   'postgresql://neondb_owner:npg_gjp3UbVuT0rQ@ep-little-heart-b5fmqxzj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require';
+
+let rawUrl = process.env.DATABASE_URL;
+if (!rawUrl || rawUrl.includes('your-neon-host') || rawUrl.includes('password@')) {
+  rawUrl = FALLBACK_DATABASE_URL;
+}
+
+let connectionString = rawUrl;
 
 if (connectionString.includes('sslmode=require')) {
   connectionString = connectionString.replace('sslmode=require', 'sslmode=verify-full');

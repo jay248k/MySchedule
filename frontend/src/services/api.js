@@ -209,6 +209,9 @@ export const api = {
   toggleHabitDate: (id, payload) => apiClient.post(`/habits/${id}/toggle`, payload),
   getHabitsReport: () => apiClient.get('/habits/report'),
 
+  // Search
+  search: (q) => apiClient.get('/search', { params: { q } }),
+
   // Dashboard Aggregated Summary
   getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
 };

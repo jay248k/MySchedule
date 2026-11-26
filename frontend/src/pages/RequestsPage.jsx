@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   FileText,
@@ -22,7 +23,23 @@ import RescheduleRequestModal from '../components/requests/RescheduleRequestModa
 import '../styles/pages/requests.css';
 
 export default function RequestsPage() {
+  const [searchParams] = useSearchParams();
   const { requests, completeWorkRequest, rescheduleWorkRequest, cancelWorkRequest, deleteWorkRequest } = useApp();
+
+  useEffect(() => {
+    const reqId = searchParams.get('request');
+    if (reqId && requests && requests.length > 0) {
+      const el = document.getElementById(`request-card-${reqId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'all 0.3s ease';
+        el.style.boxShadow = '0 0 0 3px var(--primary-color)';
+        setTimeout(() => {
+          el.style.boxShadow = '';
+        }, 3000);
+      }
+    }
+  }, [searchParams, requests]);
 
   const [activeTab, setActiveTab] = useState('rescheduled'); // 'all' | 'pending' | 'completed' | 'rescheduled' | 'cancelled'
   const [searchQuery, setSearchQuery] = useState('');
@@ -252,6 +269,7 @@ export default function RequestsPage() {
             return (
               <div
                 key={req.id}
+                id={`request-card-${req.id}`}
                 className={`requests-card-item card ${
                   isPending ? 'status-pending' : isCompleted ? 'status-completed' : isCancelled ? 'status-cancelled' : 'status-rescheduled'
                 }`}

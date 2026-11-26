@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Target,
   Plus,
@@ -55,6 +56,7 @@ const getDeadlineInfo = (targetDate, isCompleted) => {
 };
 
 export function Goals() {
+  const [searchParams] = useSearchParams();
   const {
     goals,
     tasks,
@@ -66,6 +68,21 @@ export function Goals() {
     unlinkTaskFromGoal,
   } = useApp();
   const [filter, setFilter] = useState('all'); // 'all', 'in-progress', 'completed'
+
+  // Deep link from Global Search (?goal=<id>)
+  useEffect(() => {
+    const goalId = searchParams.get('goal');
+    if (!goalId) return;
+    const el = document.getElementById(`goal-card-${goalId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      el.style.transition = 'all 0.4s ease';
+      el.style.boxShadow = '0 0 0 3px var(--primary-color)';
+      setTimeout(() => {
+        el.style.boxShadow = '';
+      }, 3000);
+    }
+  }, [searchParams]);
   const [expandedGoalIds, setExpandedGoalIds] = useState({});
 
   const toggleExpand = (goalId) => {
@@ -222,6 +239,7 @@ export function Goals() {
 
             return (
               <div
+                id={`goal-card-${goal.id}`}
                 key={goal.id}
                 className={`goal-modern-card card ${isCompleted ? 'is-completed' : ''} ${isExpanded ? 'is-expanded' : ''}`}
                 style={{

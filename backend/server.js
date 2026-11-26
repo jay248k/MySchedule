@@ -28,6 +28,7 @@ const thoughtRoutes = require('./routes/thoughtRoutes');
 const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const habitRoutes = require('./routes/habitRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -114,6 +115,7 @@ app.use('/api/thoughts', thoughtRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/search', searchRoutes);
 
 // Root Status Endpoint
 app.get('/', (req, res) => {

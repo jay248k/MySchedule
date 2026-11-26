@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Timer,
   Play,
@@ -756,7 +757,7 @@ export function WorkTracker() {
 
                                         if (isLive) {
                                           return (
-                                            <div key={item.id} className="stream-node-wrapper">
+                                            <div key={item.id} id={`work-session-card-${item.sessionId || item.id}`} className="stream-node-wrapper">
                                               <div className="stream-node-pin is-active">
                                                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF', flexShrink: 0 }} />
                                               </div>
@@ -819,7 +820,7 @@ export function WorkTracker() {
 
                                         if (isWork) {
                                           return (
-                                            <div key={item.id || index} className="stream-node-wrapper">
+                                            <div key={item.id || index} id={`work-session-card-${item.sessionId || item.id}`} className="stream-node-wrapper">
                                               <div className="stream-node-pin">
                                                 <div
                                                   style={{

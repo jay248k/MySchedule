@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Tag,
@@ -77,7 +78,24 @@ function CategoryBarTooltip({ active, payload, label }) {
 }
 
 export function Categories() {
+  const [searchParams] = useSearchParams();
   const { categories, tasks, openModal, deleteCategory } = useApp();
+
+  // Scroll to highlighted category card from deep link (?category=<id>)
+  useEffect(() => {
+    const catId = searchParams.get('category');
+    if (!catId) return;
+    const targetId = `cat-card-${catId}`;
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      el.style.transition = 'all 0.4s ease';
+      el.style.boxShadow = '0 0 0 3px var(--primary-color)';
+      setTimeout(() => {
+        el.style.boxShadow = '';
+      }, 3000);
+    }
+  }, [searchParams]);
   const [viewMode, setViewMode] = useState('both'); // 'both', 'charts', 'cards'
   const [selectedChartCat, setSelectedChartCat] = useState('all');
 
@@ -621,6 +639,7 @@ export function Categories() {
 
               return (
                 <div
+                  id={`cat-card-${cat.id}`}
                   key={cat.id}
                   className="card"
                   style={{
