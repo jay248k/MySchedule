@@ -54,6 +54,20 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      subtopicId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        references: {
+          model: 'subtopics',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
+      lessonOrder: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,
@@ -67,6 +81,8 @@ module.exports = (sequelize) => {
         { fields: ['userId'] },
         { fields: ['type'] },
         { fields: ['isPinned'] },
+        { fields: ['subtopicId'] },
+        { fields: ['lessonOrder'] },
       ],
     }
   );
@@ -74,6 +90,9 @@ module.exports = (sequelize) => {
   KnowledgeItem.associate = (models) => {
     if (models.User) {
       KnowledgeItem.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+    }
+    if (models.Subtopic) {
+      KnowledgeItem.belongsTo(models.Subtopic, { foreignKey: 'subtopicId', as: 'subtopic' });
     }
   };
 

@@ -11,5 +11,9 @@ router.post('/', knowledgeController.createKnowledgeItem);
 router.put('/:id', knowledgeController.updateKnowledgeItem);
 router.delete('/:id', knowledgeController.deleteKnowledgeItem);
 
+// Lesson chain endpoints
+router.get('/chain/:subtopicId', knowledgeController.getLessonChain);
+router.post('/chain/:subtopicId/rebuild', knowledgeController.rebuildLessonChain);
+
 module.exports = router;
 

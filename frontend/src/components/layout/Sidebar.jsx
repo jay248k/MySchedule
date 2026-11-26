@@ -30,6 +30,7 @@ import {
   AlertTriangle,
   Lightbulb,
   BookOpen,
+  GitBranch,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -150,6 +151,12 @@ export function Sidebar() {
       path: '/knowledge',
       icon: BookOpen,
       iconColor: '#F59E0B',
+    },
+    {
+      name: 'Curriculum Manager',
+      path: '/curriculum',
+      icon: GitBranch,
+      iconColor: '#10B981',
     },
     {
       name: 'Thoughts & Motivation',

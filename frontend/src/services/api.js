@@ -214,6 +214,67 @@ export const api = {
 
   // Dashboard Aggregated Summary
   getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
+
+  // Plans
+  getPlans: (params = {}) => apiClient.get('/plans', { params }),
+  getPlan: (id) => apiClient.get(`/plans/${id}`),
+  createPlan: (payload) => apiClient.post('/plans', payload),
+  bulkCreatePlans: (payload) =>
+    apiClient.post('/plans/bulk', Array.isArray(payload) ? { plans: payload } : payload),
+  updatePlan: (id, payload) => apiClient.put(`/plans/${id}`, payload),
+  deletePlan: (id) => apiClient.delete(`/plans/${id}`),
+  getPlanProgress: (id) => apiClient.get(`/plans/${id}/progress`),
+
+  // Sections
+  getSectionsByPlan: (planId) => apiClient.get(`/sections/plan/${planId}`),
+  getSection: (id) => apiClient.get(`/sections/${id}`),
+  createSection: (payload) => apiClient.post('/sections', payload),
+  updateSection: (id, payload) => apiClient.put(`/sections/${id}`, payload),
+  deleteSection: (id) => apiClient.delete(`/sections/${id}`),
+  reorderSections: (payload) => apiClient.post('/sections/reorder', payload),
+
+  // Topics hierarchy
+  getSubsectionsBySection: (sectionId) => apiClient.get(`/topics/subsection/section/${sectionId}`),
+  getSubsection: (id) => apiClient.get(`/topics/subsection/${id}`),
+  createSubsection: (payload) => apiClient.post('/topics/subsection', payload),
+  updateSubsection: (id, payload) => apiClient.put(`/topics/subsection/${id}`, payload),
+  deleteSubsection: (id) => apiClient.delete(`/topics/subsection/${id}`),
+
+  getTopicsBySubsection: (subsectionId) => apiClient.get(`/topics/topic/subsection/${subsectionId}`),
+  getTopic: (id) => apiClient.get(`/topics/topic/${id}`),
+  createTopic: (payload) => apiClient.post('/topics/topic', payload),
+  updateTopic: (id, payload) => apiClient.put(`/topics/topic/${id}`, payload),
+  deleteTopic: (id) => apiClient.delete(`/topics/topic/${id}`),
+
+  getSubtopicsByTopic: (topicId) => apiClient.get(`/topics/subtopic/topic/${topicId}`),
+  getSubtopic: (id) => apiClient.get(`/topics/subtopic/${id}`),
+  createSubtopic: (payload) => apiClient.post('/topics/subtopic', payload),
+  updateSubtopic: (id, payload) => apiClient.put(`/topics/subtopic/${id}`, payload),
+  deleteSubtopic: (id) => apiClient.delete(`/topics/subtopic/${id}`),
+
+  // Curriculum Import
+  importCurriculum: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/curriculum-import/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  previewCurriculumImport: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/curriculum-import/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  downloadImportTemplate: () => apiClient.get('/curriculum-import/template', { responseType: 'blob' }),
+  rebuildLessonChains: (payload) => apiClient.post('/curriculum-import/rebuild-chains', payload),
+  validateLessonChain: (subtopicId) => apiClient.get('/curriculum-import/validate-chain', { params: { subtopicId } }),
+  repairLessonChain: (payload) => apiClient.post('/curriculum-import/repair-chain', payload),
+
+  // Lesson Chain
+  getLessonChain: (subtopicId) => apiClient.get(`/knowledge/chain/${subtopicId}`),
+  rebuildLessonChain: (subtopicId) => apiClient.post(`/knowledge/chain/${subtopicId}/rebuild`),
 };
 
 export default api;

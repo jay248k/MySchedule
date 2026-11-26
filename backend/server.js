@@ -29,6 +29,10 @@ const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const habitRoutes = require('./routes/habitRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const searchRoutes = require('./routes/searchRoutes');
+const planRoutes = require('./routes/planRoutes');
+const sectionRoutes = require('./routes/sectionRoutes');
+const topicRoutes = require('./routes/topicRoutes');
+const curriculumImportRoutes = require('./routes/curriculumImportRoutes');
 
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -116,6 +120,10 @@ app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/plans', planRoutes);
+app.use('/api/sections', sectionRoutes);
+app.use('/api/topics', topicRoutes);
+app.use('/api/curriculum-import', curriculumImportRoutes);
 
 // Root Status Endpoint
 app.get('/', (req, res) => {

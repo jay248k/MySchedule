@@ -29,6 +29,10 @@ class CacheManager {
     this.cache.delete(key);
   }
 
+  delete(key) {
+    this.cache.delete(key);
+  }
+
   delPattern(prefix) {
     for (const key of this.cache.keys()) {
       if (key.startsWith(prefix)) {

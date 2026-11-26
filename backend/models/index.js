@@ -21,6 +21,11 @@ const KnowledgeItemModel = require('./KnowledgeItem');
 const HabitModel = require('./Habit');
 const HabitLogModel = require('./HabitLog');
 const NotificationLogModel = require('./notificationlog');
+const PlanModel = require('./Plan');
+const SectionModel = require('./Section');
+const SubsectionModel = require('./Subsection');
+const TopicModel = require('./Topic');
+const SubtopicModel = require('./Subtopic');
 
 // Initialize models
 const db = {
@@ -43,6 +48,11 @@ const db = {
   Habit: HabitModel(sequelize),
   HabitLog: HabitLogModel(sequelize),
   NotificationLog: NotificationLogModel(sequelize, Sequelize.DataTypes),
+  Plan: PlanModel(sequelize),
+  Section: SectionModel(sequelize),
+  Subsection: SubsectionModel(sequelize),
+  Topic: TopicModel(sequelize),
+  Subtopic: SubtopicModel(sequelize),
 };
 
 // Establish associations
