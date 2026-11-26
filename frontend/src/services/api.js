@@ -173,6 +173,7 @@ export const api = {
   // Knowledge Base & Lessons
   getKnowledgeItems: (params = {}) => apiClient.get('/knowledge', { params }),
   getKnowledgeItem: (id) => apiClient.get(`/knowledge/${id}`),
+  reorderKnowledgeChain: (items) => apiClient.put('/knowledge/chain/reorder', { items }),
   createKnowledgeItem: (payload) => apiClient.post('/knowledge', payload),
   updateKnowledgeItem: (id, payload) => apiClient.put(`/knowledge/${id}`, payload),
   deleteKnowledgeItem: (id) => apiClient.delete(`/knowledge/${id}`),
@@ -212,7 +213,8 @@ export const api = {
   // Search
   search: (q) => apiClient.get('/search', { params: { q } }),
 
-  // Dashboard Aggregated Summary
+  // Dashboard Aggregated Summary & Fast Bootstrap
+  getBootstrap: () => apiClient.get('/dashboard/bootstrap'),
   getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
 
   // Plans

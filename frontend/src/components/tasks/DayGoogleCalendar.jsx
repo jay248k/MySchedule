@@ -17,10 +17,10 @@ export function DayGoogleCalendar({
   const is12Hour = settings?.timeFormat !== '24h';
   const scrollRef = useRef(null);
 
-  // Screen fit mode: default to true for no scrolling
+  // Spacious mode by default for clear time-slot spacing; user can toggle 'No Scroll' anytime
   const [fitToScreen, setFitToScreen] = useState(() => {
     const saved = cookieUtils.get('gcal_fit_screen');
-    return saved !== null ? saved === 'true' : true;
+    return saved !== null ? saved === 'true' : false;
   });
 
   const toggleFitToScreen = () => {
@@ -52,13 +52,13 @@ export function DayGoogleCalendar({
 
   const hourHeight = useMemo(() => {
     if (fitToScreen) {
-      return Math.max(32, Math.floor(canvasHeight / 24));
+      return Math.max(48, Math.floor(canvasHeight / 24));
     }
-    return 80; // Increased from 64 to 80 for more space between time slots
+    return 96; // Spacious 96px per hour for clear separation between time slots
   }, [fitToScreen, canvasHeight]);
 
   const totalGridHeight = useMemo(() => {
-    return fitToScreen ? canvasHeight : 24 * hourHeight;
+    return fitToScreen ? Math.max(canvasHeight, 24 * hourHeight) : 24 * hourHeight;
   }, [fitToScreen, canvasHeight, hourHeight]);
 
   const [draggingTaskId, setDraggingTaskId] = useState(null);

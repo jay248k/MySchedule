@@ -53,7 +53,7 @@ exports.getKnowledgeItems = async (req, res, next) => {
 exports.getKnowledgeItemById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { models } = getModels();
+    const models = getModels();
     const item = await KnowledgeItem.findByPk(id, {
       include: [{ model: models.Subtopic, as: 'subtopic' }],
     });
@@ -68,10 +68,10 @@ exports.getKnowledgeItemById = async (req, res, next) => {
 
 exports.createKnowledgeItem = async (req, res, next) => {
   try {
-    const { models } = getModels();
+    const models = getModels();
     const chainService = new LessonChainService(models);
 
-    const { title, type, parentId, content, orderIndex, tags, icon, color, isPinned, nextLessonId, linkedLessonIds, subtopicId, lessonOrder } = req.body;
+    const { title, type, parentId, content, orderIndex, tags, icon, color, isPinned, nextLessonId, linkedLessonIds, subtopicId, lessonOrder, appendFromId } = req.body;
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
@@ -101,7 +101,7 @@ exports.createKnowledgeItem = async (req, res, next) => {
         icon: icon || (itemType === 'folder' ? 'Folder' : itemType === 'table' ? 'Table' : 'FileText'),
         color: color || (itemType === 'folder' ? '#F59E0B' : itemType === 'table' ? '#10B981' : '#3B82F6'),
         isPinned: Boolean(isPinned),
-        nextLessonId: null, // Will be set by chain builder for plan-managed lessons
+        nextLessonId: (itemType === 'lesson' && subtopicId) ? null : (nextLessonId || null),
         linkedLessonIds: typeof linkedLessonIds === 'object' ? JSON.stringify(linkedLessonIds) : (linkedLessonIds || null),
         subtopicId: subtopicId || null,
         lessonOrder: finalLessonOrder || 0,
@@ -111,6 +111,14 @@ exports.createKnowledgeItem = async (req, res, next) => {
       // If plan-managed lesson, rebuild chain
       if (itemType === 'lesson' && subtopicId) {
         await chainService.onLessonCreated(newItem, transaction);
+      }
+
+      // If created via "+ Attach Next Step", atomically link previous step -> newItem.id in DB
+      if (appendFromId) {
+        const parentStep = await KnowledgeItem.findByPk(appendFromId, { transaction });
+        if (parentStep) {
+          await parentStep.update({ nextLessonId: newItem.id }, { transaction });
+        }
       }
 
       await transaction.commit();
@@ -129,9 +137,39 @@ exports.createKnowledgeItem = async (req, res, next) => {
   }
 };
 
+exports.reorderKnowledgeChain = async (req, res, next) => {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'Items array is required' });
+    }
+
+    const transaction = await KnowledgeItem.sequelize.transaction();
+    try {
+      for (const entry of items) {
+        if (!entry.id) continue;
+        await KnowledgeItem.update(
+          {
+            orderIndex: Number(entry.orderIndex) || 0,
+            nextLessonId: entry.nextLessonId || null,
+          },
+          { where: { id: entry.id }, transaction }
+        );
+      }
+      await transaction.commit();
+      res.json({ success: true, message: 'Chain order updated in database' });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.updateKnowledgeItem = async (req, res, next) => {
   try {
-    const { models } = getModels();
+    const models = getModels();
     const chainService = new LessonChainService(models);
 
     const { id } = req.params;
@@ -213,7 +251,7 @@ const deleteItemAndChildren = async (itemId, transaction = null) => {
 
 exports.deleteKnowledgeItem = async (req, res, next) => {
   try {
-    const { models } = getModels();
+    const models = getModels();
     const chainService = new LessonChainService(models);
 
     const { id } = req.params;

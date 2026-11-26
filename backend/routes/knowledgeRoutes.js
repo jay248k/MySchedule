@@ -8,6 +8,7 @@ router.use(optionalAuth);
 router.get('/', knowledgeController.getKnowledgeItems);
 router.get('/:id', knowledgeController.getKnowledgeItemById);
 router.post('/', knowledgeController.createKnowledgeItem);
+router.put('/chain/reorder', knowledgeController.reorderKnowledgeChain);
 router.put('/:id', knowledgeController.updateKnowledgeItem);
 router.delete('/:id', knowledgeController.deleteKnowledgeItem);
 

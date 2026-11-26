@@ -619,7 +619,7 @@ export function useActiveWorkSession() {
   return useQuery({
     queryKey: queryKeys.activeWorkSession(),
     queryFn: api.getActiveWorkSession,
-    refetchInterval: 3000, // Poll every 3s for active session
+    refetchInterval: false,
   });
 }
 

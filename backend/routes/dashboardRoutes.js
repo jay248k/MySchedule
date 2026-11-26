@@ -5,6 +5,7 @@ const { optionalAuth } = require('../middleware/auth');
 
 router.use(optionalAuth);
 
+router.get('/bootstrap', dashboardController.getBootstrapData);
 router.get('/summary', dashboardController.getDashboardSummary);
 
 module.exports = router;

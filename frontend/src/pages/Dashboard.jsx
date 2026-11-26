@@ -518,113 +518,9 @@ export function Dashboard() {
       animate="visible"
       style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
     >
-      {/* 0. Executive Command Hero Strip */}
-      <motion.section variants={cardVariants} className="dash-hero">
-        <div className="dash-hero-left">
-          <div className="dash-hero-title-row">
-            <h1 className="dash-hero-greeting">{greetingText}</h1>
-            <div className="dash-hero-badges">
-              <span className="dash-pill">
-                <Calendar size={12} />
-                {isToday ? `Today · ${formattedActiveDate}` : formattedActiveDate}
-              </span>
-              {heatmapStats.currentStreak > 0 && (
-                <span className="dash-pill is-streak">
-                  <Flame size={12} />
-                  {heatmapStats.currentStreak}d Streak
-                </span>
-              )}
-              <span className={`dash-pill ${focusSummary.isRunningToday ? 'is-live' : ''}`}>
-                <Timer size={12} />
-                {focusSummary.isRunningToday ? `Live Focus · ${focusSummary.label}` : `Focus Today · ${focusSummary.label}`}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="dash-hero-actions">
-          <button type="button" className="dash-quick-btn is-primary" onClick={() => navigate('/today')}>
-            <Plus size={14} />
-            <span>Today&apos;s Tasks</span>
-          </button>
-          <button type="button" className="dash-quick-btn" onClick={() => navigate('/work-tracker')}>
-            <Timer size={14} />
-            <span>Work Tracker</span>
-          </button>
-          <button type="button" className="dash-quick-btn" onClick={() => navigate('/habits')}>
-            <CheckCircle2 size={14} />
-            <span>Habits</span>
-          </button>
-          <button type="button" className="dash-quick-btn" onClick={() => navigate('/reports')}>
-            <FileText size={14} />
-            <span>Reports</span>
-          </button>
-        </div>
-      </motion.section>
-
       {/* 1. Work Hours Live Clock Widget Card */}
       <motion.section variants={cardVariants}>
         <WorkHoursClock tasks={tasks} selectedDate={activeDate} />
-      </motion.section>
-
-      {/* 2. 5-Card Bento KPI Strip (Website-Wide Real Metrics) */}
-      <motion.section variants={cardVariants} className="dash-kpi-strip">
-        <div className="dash-bento-kpi" onClick={() => navigate('/today')}>
-          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.28)' }}>
-            <CalendarCheck2 size={18} />
-          </div>
-          <div>
-            <div className="dash-bento-kpi-label">Today&apos;s Tasks</div>
-            <div className="dash-bento-kpi-val">{todayStats.completed}/{todayStats.total}</div>
-            <div className="dash-bento-kpi-sub">{todayStats.completionRate}% completed</div>
-          </div>
-        </div>
-
-        <div className="dash-bento-kpi" onClick={() => navigate('/work-tracker')}>
-          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.28)' }}>
-            <Timer size={18} />
-          </div>
-          <div>
-            <div className="dash-bento-kpi-label">Focus Time</div>
-            <div className="dash-bento-kpi-val">{focusSummary.label}</div>
-            <div className="dash-bento-kpi-sub">{focusSummary.blocks} focus {focusSummary.blocks === 1 ? 'block' : 'blocks'}</div>
-          </div>
-        </div>
-
-        <div className="dash-bento-kpi" onClick={() => navigate('/habits')}>
-          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6', border: '1px solid rgba(139, 92, 246, 0.28)' }}>
-            <Flame size={18} />
-          </div>
-          <div>
-            <div className="dash-bento-kpi-label">Habits Today</div>
-            <div className="dash-bento-kpi-val">{habitsSummary.doneCount}/{habitsSummary.total}</div>
-            <div className="dash-bento-kpi-sub">Best streak: {habitsSummary.bestStreak}d</div>
-          </div>
-        </div>
-
-        <div className="dash-bento-kpi" onClick={() => navigate('/goals')}>
-          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.28)' }}>
-            <Target size={18} />
-          </div>
-          <div>
-            <div className="dash-bento-kpi-label">Active Goals</div>
-            <div className="dash-bento-kpi-val">{goalsSummary.total}</div>
-            <div className="dash-bento-kpi-sub">{goalsSummary.completedCount} achieved</div>
-          </div>
-        </div>
-
-        <div className="dash-bento-kpi" onClick={() => navigate('/reports/pending')}>
-          <div className="dash-bento-kpi-icon" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.28)' }}>
-            <CircleAlert size={18} />
-          </div>
-          <div>
-            <div className="dash-bento-kpi-label">Pending &amp; Overdue</div>
-            <div className="dash-bento-kpi-val" style={{ color: todayStats.overdue > 0 ? '#EF4444' : 'var(--text-primary)' }}>
-              {todayStats.pending + todayStats.overdue}
-            </div>
-            <div className="dash-bento-kpi-sub">{todayStats.overdue} overdue · {todayStats.pending} pending</div>
-          </div>
-        </div>
       </motion.section>
 
       {/* 4. Production Analytics Charts Row: Productivity Trend (8 cols) + Progress Overview (4 cols) */}
@@ -642,44 +538,35 @@ export function Dashboard() {
             borderRadius: '16px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'rgba(23, 105, 255, 0.14)',
-                    color: 'var(--primary-color)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid rgba(23, 105, 255, 0.28)',
-                  }}
-                >
-                  <TrendingUp size={17} strokeWidth={2.4} />
-                </div>
-                <div>
-                  <h2 className="card-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
-                    {trendRange === 'week' ? 'Weekly' : trendRange === 'month' ? 'Monthly' : 'Yearly'} Productivity Trend
-                  </h2>
-                  <span className="card-subtitle" style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                    {selectedTrendCategory === 'all'
-                      ? `Total scheduled vs pending/missed tasks over the last ${
-                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                        }`
-                      : `Total and missed tasks for "${currentCategory?.name || 'Category'}" over the last ${
-                          trendRange === 'week' ? '7 days' : trendRange === 'month' ? '30 days' : '12 months'
-                        }`}
-                  </span>
-                </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(23, 105, 255, 0.14)',
+                  color: 'var(--primary-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(23, 105, 255, 0.28)',
+                  flexShrink: 0,
+                }}
+              >
+                <TrendingUp size={17} strokeWidth={2.4} />
               </div>
+              <h2
+                className="card-title"
+                style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
+                {trendRange === 'week' ? 'Weekly' : trendRange === 'month' ? 'Monthly' : 'Yearly'} Productivity Trend
+              </h2>
             </div>
 
             {/* Filter Controls: CustomSelect Category Filter + Week/Month/Year Toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <div style={{ width: '170px' }}>
+              <div style={{ width: '145px' }}>
                 <CustomSelect
                   value={selectedTrendCategory}
                   onChange={(val) => setSelectedTrendCategory(val)}
@@ -694,7 +581,7 @@ export function Dashboard() {
                   placeholder="Select category"
                   searchPlaceholder="Filter category..."
                   showSearch={allUniqueCategories.length > 4}
-                  style={{ minWidth: '160px' }}
+                  style={{ minWidth: '140px' }}
                 />
               </div>
 
@@ -1033,253 +920,6 @@ export function Dashboard() {
           </div>
         </motion.div>
       </div>
-
-      {/* 5. Website Modules Bento Row: Habits, Goals, Category Workload & Requests */}
-      <motion.section variants={cardVariants} className="dash-modules-grid">
-        {/* Card A: Today's Habits Pulse */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <Flame size={17} color="#8B5CF6" />
-              <h3 className="dash-module-title">Today&apos;s Habits</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/habits')}>
-              <span>Manage</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-          {habitsSummary.top.length === 0 ? (
-            <div className="dash-empty-mini">No habits tracked yet. Add your daily habits to build streaks.</div>
-          ) : (
-            <div className="dash-list-stack">
-              {habitsSummary.top.map((h) => (
-                <div key={h.id} className="dash-item-row">
-                  <div className="dash-item-left">
-                    <span
-                      style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: '50%',
-                        background: h.doneToday ? '#10B981' : 'var(--text-muted)',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span className="dash-item-name">{h.name || h.title}</span>
-                  </div>
-                  <span
-                    className="dash-item-badge"
-                    style={{
-                      background: h.doneToday ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
-                      color: h.doneToday ? '#10B981' : '#F59E0B',
-                    }}
-                  >
-                    {h.doneToday ? 'Done' : 'Pending'} · {h.streak}d
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Card B: Active Goals Progress */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <Target size={17} color="#F59E0B" />
-              <h3 className="dash-module-title">Active Goals</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/goals')}>
-              <span>All Goals</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-          {goalsSummary.top.length === 0 ? (
-            <div className="dash-empty-mini">No goals created yet. Link tasks to goals to track progress.</div>
-          ) : (
-            <div className="dash-list-stack">
-              {goalsSummary.top.map((g) => (
-                <div key={g.id} className="dash-item-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <span className="dash-item-name">{g.title}</span>
-                    <strong style={{ fontSize: '0.75rem', color: '#3B82F6', flexShrink: 0 }}>{g.pct}%</strong>
-                  </div>
-                  <ProgressBar progress={g.pct} height={5} color="#3B82F6" animateOnMount={true} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Card C: Category Workload & Requests */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <Layers size={17} color="#3B82F6" />
-              <h3 className="dash-module-title">Category Workload</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/requests')}>
-              <RefreshCw size={12} />
-              <span>{requestsSummary.rescheduled} Rescheduled</span>
-            </button>
-          </div>
-          {categoryDist.length === 0 ? (
-            <div className="dash-empty-mini">No categorized tasks found yet.</div>
-          ) : (
-            <div className="dash-list-stack">
-              {categoryDist.map((cat) => (
-                <div key={cat.name} className="dash-item-row">
-                  <div className="dash-item-left">
-                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: cat.color || '#3B82F6', flexShrink: 0 }} />
-                    <span className="dash-item-name">{cat.name}</span>
-                  </div>
-                  <span className="dash-item-badge" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
-                    {cat.count} {cat.count === 1 ? 'task' : 'tasks'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.section>
-
-      {/* 5B. Second Website Modules Bento Row: Events, Knowledge Base, Standup & Motivation */}
-      <motion.section variants={cardVariants} className="dash-modules-grid">
-        {/* Card D: Upcoming Events */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <CalendarDays size={17} color="#06B6D4" />
-              <h3 className="dash-module-title">Upcoming Events</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/calendar')}>
-              <span>Calendar</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-          {!dashSummary?.events?.upcoming?.length ? (
-            <div className="dash-empty-mini">No upcoming events scheduled.</div>
-          ) : (
-            <div className="dash-list-stack">
-              {dashSummary.events.upcoming.slice(0, 4).map((ev) => (
-                <div key={ev.id} className="dash-item-row">
-                  <div className="dash-item-left">
-                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#06B6D4', flexShrink: 0 }} />
-                    <span className="dash-item-name">{ev.title}</span>
-                  </div>
-                  <span className="dash-item-badge" style={{ background: 'rgba(6, 182, 212, 0.14)', color: '#06B6D4' }}>
-                    {ev.date === activeDate ? 'Today' : formatDate(ev.date, { month: 'short', day: 'numeric' })}
-                    {ev.startTime ? ` · ${ev.startTime}` : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Card E: Knowledge Base & Lessons */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <BookOpen size={17} color="#10B981" />
-              <h3 className="dash-module-title">Knowledge Base</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/knowledge')}>
-              <span>Open</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <div className="dash-item-row" style={{ flex: 1, justifyContent: 'center', gap: '6px' }}>
-              <strong style={{ color: '#10B981', fontSize: '0.95rem' }}>{dashSummary?.knowledge?.lessons ?? 0}</strong>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Lessons</span>
-            </div>
-            <div className="dash-item-row" style={{ flex: 1, justifyContent: 'center', gap: '6px' }}>
-              <strong style={{ color: '#3B82F6', fontSize: '0.95rem' }}>{dashSummary?.knowledge?.folders ?? 0}</strong>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Folders</span>
-            </div>
-          </div>
-          {!dashSummary?.knowledge?.recentLessons?.length ? (
-            <div className="dash-empty-mini">No lessons saved yet.</div>
-          ) : (
-            <div className="dash-list-stack">
-              {dashSummary.knowledge.recentLessons.map((lesson) => (
-                <div key={lesson.id} className="dash-item-row" style={{ cursor: 'pointer' }} onClick={() => navigate('/knowledge')}>
-                  <div className="dash-item-left">
-                    <Sparkles size={13} color="#10B981" style={{ flexShrink: 0 }} />
-                    <span className="dash-item-name">{lesson.title}</span>
-                  </div>
-                  <span className="dash-item-badge" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
-                    Lesson
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Card F: Daily Standup, Deviations & Thought of the Day */}
-        <div className="dash-module-card">
-          <div className="dash-module-head">
-            <div className="dash-module-title-wrap">
-              <Quote size={17} color="#EC4899" />
-              <h3 className="dash-module-title">Standup &amp; Inspiration</h3>
-            </div>
-            <button type="button" className="dash-module-link" onClick={() => navigate('/thoughts')}>
-              <span>Thoughts</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <div
-              className="dash-item-row"
-              style={{ flex: 1, cursor: 'pointer' }}
-              onClick={() => navigate('/reports')}
-            >
-              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-secondary)' }}>Daily Report</span>
-              <span
-                className="dash-item-badge"
-                style={{
-                  background: dashSummary?.dailyReport?.submittedToday ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
-                  color: dashSummary?.dailyReport?.submittedToday ? '#10B981' : '#F59E0B',
-                }}
-              >
-                {dashSummary?.dailyReport?.submittedToday ? 'Submitted' : 'Pending'}
-              </span>
-            </div>
-            <div
-              className="dash-item-row"
-              style={{ flex: 1, cursor: 'pointer' }}
-              onClick={() => navigate('/deviations')}
-            >
-              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-secondary)' }}>7d Lags</span>
-              <span className="dash-item-badge" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' }}>
-                <ShieldAlert size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                {dashSummary?.deviations?.last7Days ?? 0}
-              </span>
-            </div>
-          </div>
-
-          {dashSummary?.thoughts?.featured ? (
-            <div
-              className="dash-item-row"
-              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px 12px', cursor: 'pointer' }}
-              onClick={() => navigate('/thoughts')}
-            >
-              <span style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                &ldquo;{dashSummary.thoughts.featured.text}&rdquo;
-              </span>
-              {dashSummary.thoughts.featured.author && (
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  — {dashSummary.thoughts.featured.author}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="dash-empty-mini">Add motivational quotes in Thoughts Hub to feature them here.</div>
-          )}
-        </div>
-      </motion.section>
 
       {/* 6. Today's Schedule Sequence (Full Screen Width) */}
       <motion.div

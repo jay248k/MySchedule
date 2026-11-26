@@ -394,36 +394,39 @@ export function WorkTracker() {
     year: 'numeric',
   });
 
+  const [logFilter, setLogFilter] = useState('all'); // 'all' | 'work' | 'gap'
+  const tabTotals = useMemo(() => {
+    const workItems = chronologicalStream.filter((x) => x.type === 'work' || x.isLive);
+    const breakItems = chronologicalStream.filter((x) => x.type !== 'work' && !x.isLive);
+    const workSecs = workItems.reduce((acc, x) => acc + (Number(x.durationSeconds) || 0), 0);
+    const breakSecs = breakItems.reduce((acc, x) => acc + (Number(x.durationSeconds) || 0), 0);
+    const fmtDur = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}h ${m}m`;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
+    };
+    return {
+      workCount: workItems.length,
+      breakCount: breakItems.length,
+      workLabel: fmtDur(workSecs),
+      breakLabel: fmtDur(breakSecs),
+    };
+  }, [chronologicalStream]);
+
+  const filteredStream = useMemo(() => {
+    if (logFilter === 'work') return chronologicalStream.filter((x) => x.type === 'work' || x.isLive);
+    if (logFilter === 'gap') return chronologicalStream.filter((x) => x.type !== 'work' && !x.isLive);
+    return chronologicalStream;
+  }, [chronologicalStream, logFilter]);
+
   return (
     <div className="worktracker-container">
-      {/* ==========================================================================
-          TOP STUDIO HEADER BAR (STATUS, DATE STEPPER, LOG PAST SESSION)
-         ========================================================================== */}
-      <div className="wt-studio-topbar">
+      {/* 1. TOP COMMAND BAR: Date Stepper + Inline KPI Pills + Log Past Session */}
+      <div className="wt-v3-topbar">
         <div className="cockpit-top-left">
-          {isRunning ? (
-            <div className="cockpit-mode-pill is-running">
-              <Activity size={14} className="animate-pulse" />
-              <span>Live Work Session</span>
-            </div>
-          ) : isPaused ? (
-            <div className="cockpit-mode-pill is-paused">
-              <Coffee size={14} />
-              <span>Paused · {todayChain.lastPausedTimeStr}</span>
-            </div>
-          ) : isFinished ? (
-            <div className="cockpit-mode-pill is-finished">
-              <Flag size={14} />
-              <span>Workday Completed</span>
-            </div>
-          ) : (
-            <div className="cockpit-mode-pill is-idle">
-              <Target size={14} />
-              <span>Ready for Deep Focus</span>
-            </div>
-          )}
-
-          {/* Integrated Day Navigator */}
           <div className="cockpit-day-stepper">
             <button
               type="button"
@@ -470,6 +473,25 @@ export function WorkTracker() {
               </button>
             )}
           </div>
+
+          <div className="wt-v3-stats-inline">
+            <span className="wt-v3-stat-pill">
+              <Zap size={13} color="#10B981" />
+              <strong>{totalHours}h {totalMinutes}m {totalSecs}s</strong> Focused
+            </span>
+            <span className="wt-v3-stat-pill">
+              <Layers size={13} color="#3B82F6" />
+              <strong>{sessionCount}</strong> Blocks
+            </span>
+            <span className="wt-v3-stat-pill">
+              <TrendingUp size={13} color="#8B5CF6" />
+              <strong>{avgSessionMinutes}m</strong> Avg
+            </span>
+            <span className="wt-v3-stat-pill">
+              <Coffee size={13} color="#F59E0B" />
+              <strong>{Object.keys(reasonBreakdown).length}</strong> Breaks
+            </span>
+          </div>
         </div>
 
         <button
@@ -483,526 +505,257 @@ export function WorkTracker() {
         </button>
       </div>
 
-      {/* ==========================================================================
-          2-COLUMN SPLIT STUDIO GRID
-         ========================================================================== */}
-      <div className="wt-studio-grid">
-        {/* LEFT COLUMN: STICKY FOCUS TIMER & CONTROLS */}
-        <div className="wt-studio-left">
-          <div className={`wt-timer-panel ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
-            <div className="wt-hero-clock-box">
-              <div className={`wt-hero-digits ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
-                {String(activeHrs).padStart(2, '0')}:{String(activeMins).padStart(2, '0')}:{String(activeSecs).padStart(2, '0')}
-              </div>
-              <div className="chronometer-sub-status">
-                {isRunning ? (
-                  <>
-                    <Sparkles size={12} className="text-emerald-400" />
-                    <span>Tracking · Started {activeWorkSession.startTime}</span>
-                  </>
-                ) : isPaused ? (
-                  <>
-                    <Coffee size={12} className="text-amber-400" />
-                    <span>Holds at {activeTimerDisplay}</span>
-                  </>
-                ) : totalRecordedForDate > 0 ? (
-                  <>
-                    <Clock size={12} className="text-blue-400" />
-                    <span>Logged Today: {activeTimerDisplay}</span>
-                  </>
-                ) : (
-                  <>
-                    <Target size={12} className="text-blue-400" />
-                    <span>Ready to start focus</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Active / Paused / Target Selector */}
-            {isPaused ? (
-              <div className="cockpit-paused-inline">
-                <div className="paused-coffee-badge">
-                  <Coffee size={16} />
-                </div>
-                <div className="paused-info-wrap">
-                  <div className="paused-title">Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}</div>
-                  <div className="paused-sub">
-                    Stopped at <strong>{todayChain.lastPausedTimeStr}</strong>
-                  </div>
-                </div>
-              </div>
-            ) : isRunning ? (
-              <div className="cockpit-running-inline">
-                <span className="worktracker-recording-dot" />
-                <div className="running-info-wrap">
-                  <span className="running-label">ACTIVE FOCUS SESSION</span>
-                  <span className="running-task-title">{activeWorkSession.taskTitle || 'General Focus Session'}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="cockpit-target-picker">
-                <div className="cockpit-target-input-row">
-                  <label className="cockpit-target-inline-label">
-                    <Target size={13} className="text-blue-400" />
-                    <span>Target:</span>
-                  </label>
-                  <select
-                    value={selectedTaskId}
-                    onChange={(e) => setSelectedTaskId(e.target.value)}
-                    className="cockpit-task-select"
-                  >
-                    <option value="">🎯 General Focus (No linked task)</option>
-                    {dateTasks.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.title} [{t.startTime || 'Scheduled'}]
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {dateTasks.length > 0 && (
-                  <div className="cockpit-quick-chips">
-                    <span className="quick-chips-label">Quick:</span>
-                    <div className="quick-chips-scroll">
-                      {dateTasks.slice(0, 6).map((t) => {
-                        const isSel = selectedTaskId === t.id;
-                        return (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => setSelectedTaskId(isSel ? '' : t.id)}
-                            className={`quick-chip-btn ${isSel ? 'is-selected' : ''}`}
-                            title={t.title}
-                          >
-                            {isSel && <Check size={10} />}
-                            <span className="chip-text-truncate">{t.title}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Primary Controls */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {isRunning ? (
-                <button
-                  type="button"
-                  onClick={requestStopWorkSession}
-                  id="btn-tracker-stop-session"
-                  className="btn-stop-focus"
-                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
-                >
-                  <Square size={14} fill="currentColor" />
-                  <span>Stop Work</span>
-                </button>
-              ) : isPaused ? (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={handleStartSession}
-                    id="btn-tracker-resume-session"
-                    className="btn-resume-focus"
-                    style={{ flex: 1, justifyContent: 'center', padding: '11px 12px' }}
-                  >
-                    <Play size={14} fill="currentColor" />
-                    <span>Resume Work</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => finishDayWorkSession(activeDate)}
-                    id="btn-tracker-finish-day"
-                    className="btn-finish-day"
-                    style={{ padding: '11px 14px' }}
-                  >
-                    <Flag size={13} />
-                    <span>Finish Day</span>
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={handleStartSession}
-                    id="btn-tracker-start-session"
-                    className="btn-launch-focus"
-                    style={{ flex: 1, justifyContent: 'center', padding: '11px 16px' }}
-                  >
-                    <Play size={15} fill="currentColor" />
-                    <span>Launch Focus</span>
-                  </button>
-                  {totalRecordedForDate > 0 && !isFinished && (
-                    <button
-                      type="button"
-                      onClick={() => finishDayWorkSession(activeDate)}
-                      className="btn-finish-day"
-                      title="Conclude workday tracking"
-                      style={{ padding: '11px 14px' }}
-                    >
-                      <Flag size={13} />
-                      <span>Finish</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+      {/* 2. SLEEK TOGGL-STYLE LIVE TIMER & TASK BAR */}
+      <div className={`wt-v3-timer-bar ${isRunning ? 'is-running' : isPaused ? 'is-paused' : ''}`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: isRunning ? '#10B981' : isPaused ? '#F59E0B' : '#3B82F6',
+              boxShadow: isRunning ? '0 0 10px #10B981' : 'none',
+            }}
+          />
+          <div
+            className="wt-v3-clock"
+            style={{ color: isRunning ? '#10B981' : isPaused ? '#F59E0B' : 'var(--text-primary)' }}
+          >
+            {String(activeHrs).padStart(2, '0')}:{String(activeMins).padStart(2, '0')}:{String(activeSecs).padStart(2, '0')}
           </div>
         </div>
 
-        {/* RIGHT COLUMN: KPI SUMMARY CARDS + TIMELINE */}
-        <div className="wt-studio-right">
-          {/* 4 KPI Summary Cards */}
-          <div className="wt-kpi-grid">
-            <div className="wt-kpi-card">
-              <div className="wt-kpi-icon" style={{ background: 'rgba(16, 185, 129, 0.14)', color: '#10B981' }}>
-                <Zap size={18} />
-              </div>
-              <div>
-                <div className="wt-kpi-label">Total Focused</div>
-                <div className="wt-kpi-val">{totalHours}h {totalMinutes}m {totalSecs}s</div>
-              </div>
+        <div style={{ flex: 1, minWidth: '240px' }}>
+          {isPaused ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Coffee size={16} color="#F59E0B" />
+              <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                Paused: {(todayChain.lastPauseReason || 'Break').replace(/["'“”]/g, '')}
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                at {todayChain.lastPausedTimeStr}
+              </span>
             </div>
+          ) : isRunning ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10B981', letterSpacing: '0.05em' }}>
+                TRACKING LIVE · STARTED {activeWorkSession.startTime}
+              </span>
+              <span style={{ fontSize: '0.94rem', fontWeight: 750, color: 'var(--text-primary)' }}>
+                {activeWorkSession.taskTitle || 'General Focus Session'}
+              </span>
+            </div>
+          ) : (
+            <select
+              value={selectedTaskId}
+              onChange={(e) => setSelectedTaskId(e.target.value)}
+              className="cockpit-task-select"
+              style={{ width: '100%' }}
+            >
+              <option value="">🎯 General Focus (No linked task)</option>
+              {dateTasks.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title} [{t.startTime || 'Scheduled'}]
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
 
-            <div className="wt-kpi-card">
-              <div className="wt-kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.14)', color: '#3B82F6' }}>
-                <Layers size={18} />
-              </div>
-              <div>
-                <div className="wt-kpi-label">Focus Blocks</div>
-                <div className="wt-kpi-val">{sessionCount}</div>
-              </div>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {isRunning ? (
+            <button
+              type="button"
+              onClick={requestStopWorkSession}
+              id="btn-tracker-stop-session"
+              className="btn-stop-focus"
+            >
+              <Square size={14} fill="currentColor" />
+              <span>Stop Work</span>
+            </button>
+          ) : isPaused ? (
+            <>
+              <button
+                type="button"
+                onClick={handleStartSession}
+                id="btn-tracker-resume-session"
+                className="btn-resume-focus"
+              >
+                <Play size={14} fill="currentColor" />
+                <span>Resume Work</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => finishDayWorkSession(activeDate)}
+                id="btn-tracker-finish-day"
+                className="btn-finish-day"
+              >
+                <Flag size={13} />
+                <span>Finish Day</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleStartSession}
+                id="btn-tracker-start-session"
+                className="btn-launch-focus"
+              >
+                <Play size={15} fill="currentColor" />
+                <span>Start Focus</span>
+              </button>
+              {totalRecordedForDate > 0 && !isFinished && (
+                <button
+                  type="button"
+                  onClick={() => finishDayWorkSession(activeDate)}
+                  className="btn-finish-day"
+                  title="Conclude workday tracking"
+                >
+                  <Flag size={13} />
+                  <span>Finish</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
-            <div className="wt-kpi-card">
-              <div className="wt-kpi-icon" style={{ background: 'rgba(139, 92, 246, 0.14)', color: '#8B5CF6' }}>
-                <TrendingUp size={18} />
-              </div>
-              <div>
-                <div className="wt-kpi-label">Avg Block</div>
-                <div className="wt-kpi-val">{avgSessionMinutes}m</div>
-              </div>
-            </div>
-
-            <div className="wt-kpi-card">
-              <div className="wt-kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B' }}>
-                <Coffee size={18} />
-              </div>
-              <div>
-                <div className="wt-kpi-label">Breaks</div>
-                <div className="wt-kpi-val">{Object.keys(reasonBreakdown).length}</div>
-              </div>
-            </div>
+      {/* 3. CLEAN SESSION LEDGER TABLE (ONLY TABLE BODY SCROLLS) */}
+      <div className="wt-v3-table-card">
+        <div className="wt-v3-table-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Session Log
+            </h2>
+            <span className="focus-stream-counter">{filteredStream.length} entries</span>
+            <span className="stream-badge-work" style={{ fontSize: '0.72rem', padding: '2px 9px' }}>
+              <Zap size={10} /> Focus: {tabTotals.workLabel}
+            </span>
+            <span className="stream-badge-break" style={{ fontSize: '0.72rem', padding: '2px 9px' }}>
+              <Coffee size={10} /> Breaks: {tabTotals.breakLabel}
+            </span>
           </div>
 
-          {/* Focus & Break Timeline Panel */}
-          <div className="wt-timeline-panel">
-            <div className="focus-stream-section">
-                                  <div className="focus-stream-header">
-                                    <div className="flex items-center gap-2">
-                                      <h2 className="focus-stream-title">
-                                        <Link2 size={19} className="text-blue-400" />
-                                        Focus & Break Timeline
-                                      </h2>
-                                      {chronologicalStream.length > 0 && (
-                                        <span className="focus-stream-counter">
-                                          {chronologicalStream.length} blocks logged
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="focus-stream-subhint">
-                                      <Sparkles size={13} className="text-emerald-400" />
-                                      Chronological work & break intermission stream
-                                    </span>
-                                  </div>
+          <div className="wt-v3-filter-tabs">
+            {[
+              { key: 'all', label: `All (${chronologicalStream.length})` },
+              { key: 'work', label: `Focus (${tabTotals.workCount} · ${tabTotals.workLabel})` },
+              { key: 'gap', label: `Breaks (${tabTotals.breakCount} · ${tabTotals.breakLabel})` },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setLogFilter(tab.key)}
+                className={`wt-v3-filter-tab ${logFilter === tab.key ? 'is-active' : ''}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                                  {chronologicalStream.length === 0 ? (
-                                    <div className="focus-stream-empty-deck">
-                                      <div className="empty-sparkle-box">
-                                        <Sparkles size={28} />
-                                      </div>
-                                      <div className="empty-stream-title">
-                                        No focus sessions recorded yet for {isToday ? 'today' : formattedDateTitle}
-                                      </div>
-                                      <p className="empty-stream-desc">
-                                        Launch your first focus session above. When you stop for breaks, calls, or lunch, your remarks create an auto-calculated, continuous chronological chain.
-                                      </p>
-                                      <button
-                                        type="button"
-                                        className="btn-launch-focus"
-                                        onClick={handleStartSession}
-                                        style={{ padding: '10px 22px', fontSize: '0.85rem' }}
-                                      >
-                                        <Play size={15} fill="currentColor" /> Launch First Session
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="focus-timeline-container">
-                                      {chronologicalStream.map((item, index) => {
-                                        const isWork = item.type === 'work';
-                                        const isLive = item.isLive;
-                                        const isOngoing = item.isOngoing;
-                                        const reasonMeta = getReasonMeta(item.reason, isWork);
-                                        const linkedTask = item.taskId ? tasks.find((t) => t.id === item.taskId) : null;
+        {filteredStream.length === 0 ? (
+          <div style={{ padding: '44px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <Timer size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+              No sessions recorded yet
+            </div>
+            <div style={{ fontSize: '0.8rem' }}>
+              Click <strong>Start Focus</strong> above to begin tracking your work.
+            </div>
+          </div>
+        ) : (
+          <div className="wt-v3-table-scroll">
+            <table className="wt-v3-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '120px' }}>Type</th>
+                  <th>Session / Break Reason</th>
+                  <th style={{ width: '230px' }}>Time Range</th>
+                  <th style={{ width: '120px' }}>Duration</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStream.map((item, idx) => {
+                  const isWork = item.type === 'work';
+                  const isLive = item.isLive;
+                  const isOngoing = item.isOngoing;
+                  const linkedTask = item.taskId ? tasks.find((t) => t.id === item.taskId) : null;
+                  const catName = typeof linkedTask?.category === 'object' ? linkedTask.category?.name : linkedTask?.category;
 
-                                        const linkedCategoryName = typeof linkedTask?.category === 'object'
-                                          ? linkedTask.category?.name
-                                          : linkedTask?.category;
-                                        const linkedCategoryColor = (typeof linkedTask?.category === 'object' ? linkedTask.category?.color : null)
-                                          || linkedTask?.categoryColor
-                                          || linkedTask?.color
-                                          || '#3B82F6';
-
-                                        if (isLive) {
-                                          return (
-                                            <div key={item.id} id={`work-session-card-${item.sessionId || item.id}`} className="stream-node-wrapper">
-                                              <div className="stream-node-pin is-active">
-                                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFFFFF', flexShrink: 0 }} />
-                                              </div>
-
-                                              <div className="stream-node-card is-active animate-pulse">
-                                                <div className="stream-node-left">
-                                                  <div
-                                                    className="stream-node-icon-box"
-                                                    style={{ background: '#10B981', color: '#FFFFFF', boxShadow: '0 0 14px rgba(16, 185, 129, 0.4)' }}
-                                                  >
-                                                    <Timer size={18} />
-                                                  </div>
-
-                                                  <div className="stream-node-details">
-                                                    <div className="stream-node-title-row">
-                                                      <span className="stream-node-title">
-                                                        {item.taskTitle}
-                                                      </span>
-                                                      <span className="stream-badge-work is-live">
-                                                        <Activity size={10} className="animate-pulse" /> Live
-                                                      </span>
-                                                      {linkedCategoryName && (
-                                                        <span className="stream-task-category-pill">
-                                                          <span
-                                                            className="category-color-dot"
-                                                            style={{ background: linkedCategoryColor }}
-                                                          />
-                                                          <span>{linkedCategoryName}</span>
-                                                        </span>
-                                                      )}
-                                                    </div>
-
-                                                    <div className="stream-node-meta">
-                                                      <span className="stream-time-badge">
-                                                        <Clock size={11} className="text-emerald-400" />
-                                                        Started at {item.startTime}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-
-                                                <div className="stream-node-right">
-                                                  <div className="stream-node-duration is-live" style={{ color: '#34D399' }}>
-                                                    <Timer size={12} />
-                                                    <span>{item.durationStr}</span>
-                                                  </div>
-                                                  <button
-                                                    type="button"
-                                                    className="btn-stop-focus"
-                                                    onClick={requestStopWorkSession}
-                                                    style={{ padding: '5px 12px', fontSize: '0.76rem' }}
-                                                  >
-                                                    <Square size={11} fill="currentColor" /> Stop
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          );
-                                        }
-
-                                        if (isWork) {
-                                          return (
-                                            <div key={item.id || index} id={`work-session-card-${item.sessionId || item.id}`} className="stream-node-wrapper">
-                                              <div className="stream-node-pin">
-                                                <div
-                                                  style={{
-                                                    width: 6,
-                                                    height: 6,
-                                                    borderRadius: '50%',
-                                                    background: '#10B981',
-                                                    boxShadow: '0 0 6px #10B981',
-                                                  }}
-                                                />
-                                              </div>
-
-                                              <div className="stream-node-card is-work">
-                                                <div className="stream-node-left">
-                                                  <div
-                                                    className="stream-node-icon-box"
-                                                    style={{
-                                                      background: 'rgba(16, 185, 129, 0.16)',
-                                                      border: '1px solid rgba(16, 185, 129, 0.35)',
-                                                    }}
-                                                  >
-                                                    <Zap size={15} color="#10B981" />
-                                                  </div>
-
-                                                  <div className="stream-node-details">
-                                                    <div className="stream-node-title-row">
-                                                      <span className="stream-node-title">{item.taskTitle}</span>
-
-                                                      <span className="stream-badge-work">
-                                                        <span className="stream-pulse-dot" /> Focus
-                                                      </span>
-
-                                                      {linkedCategoryName && (
-                                                        <span className="stream-task-category-pill">
-                                                          <span
-                                                            className="category-color-dot"
-                                                            style={{ background: linkedCategoryColor }}
-                                                          />
-                                                          <span>{linkedCategoryName}</span>
-                                                        </span>
-                                                      )}
-                                                    </div>
-
-                                                    <div className="stream-node-meta">
-                                                      <span className="stream-time-badge">
-                                                        <Clock size={11} className="text-emerald-400" />
-                                                        {item.startTime} → {item.endTime}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-
-                                                <div className="stream-node-right">
-                                                  <div className="stream-node-duration">
-                                                    <Timer size={12} />
-                                                    <span>{item.durationStr}</span>
-                                                  </div>
-
-                                                  <div className="stream-node-actions">
-                                                    <button
-                                                      type="button"
-                                                      className="stream-action-btn"
-                                                      onClick={() => setEditingSession(item.rawSession)}
-                                                      title="Edit session details"
-                                                    >
-                                                      <Edit2 size={12} />
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          );
-                                        }
-
-                                        // Intermission / Break Node (from Stop to Restart with reason & remarks)
-                                        return (
-                                          <div key={item.id || index} className="stream-node-wrapper">
-                                            <div className="stream-node-pin is-gap">
-                                              <div
-                                                style={{
-                                                  width: 6,
-                                                  height: 6,
-                                                  borderRadius: '50%',
-                                                  background: '#F59E0B',
-                                                  boxShadow: '0 0 6px #F59E0B',
-                                                }}
-                                              />
-                                            </div>
-
-                                            <div className={`stream-node-card is-gap ${isOngoing ? 'is-ongoing-gap' : ''}`}>
-                                              <div className="stream-node-left">
-                                                <div
-                                                  className="stream-node-icon-box"
-                                                  style={{
-                                                    background: reasonMeta.bg,
-                                                    border: `1px solid ${reasonMeta.borderColor}`,
-                                                  }}
-                                                >
-                                                  {reasonMeta.icon}
-                                                </div>
-
-                                                <div className="stream-node-details">
-                                                  {(() => {
-                                                    const cleanReason = (item.reason || '').replace(/["'“”]/g, '').trim();
-                                                    const cleanNotes = (item.notes || '').replace(/["'“”]/g, '').trim();
-                                                    const isGeneric = !cleanReason || cleanReason.toLowerCase() === 'break' || cleanReason.toLowerCase() === 'intermission';
-                                                    const displayTitle = isGeneric ? (isOngoing ? 'Paused Intermission' : 'Break Intermission') : cleanReason;
-                                                    const hasSeparateNotes = cleanNotes && cleanNotes.toLowerCase() !== cleanReason.toLowerCase();
-
-                                                    return (
-                                                      <>
-                                                        <div className="stream-node-title-row">
-                                                          <span className="stream-node-title">
-                                                            {displayTitle}
-                                                          </span>
-
-                                                          <span className="stream-badge-break">
-                                                            <Coffee size={10} />
-                                                            <span>{isOngoing ? 'Paused' : 'Intermission'}</span>
-                                                          </span>
-                                                        </div>
-
-                                                        <div className="stream-node-meta">
-                                                          <span className="stream-time-badge is-gap">
-                                                            <Clock size={11} className="text-amber-400" />
-                                                            {item.startTime} → {item.endTime}
-                                                          </span>
-
-                                                          {hasSeparateNotes && (
-                                                            <span className="stream-compact-remarks" title={cleanNotes}>
-                                                              <FileText size={11} className="text-amber-400" />
-                                                              <span className="remarks-text-clean">{cleanNotes}</span>
-                                                            </span>
-                                                          )}
-                                                        </div>
-                                                      </>
-                                                    );
-                                                  })()}
-                                                </div>
-                                              </div>
-
-                                              <div className="stream-node-right">
-                                                {isOngoing ? (
-                                                  <button
-                                                    type="button"
-                                                    onClick={handleStartSession}
-                                                    className="btn-resume-focus"
-                                                    style={{ padding: '5px 12px', fontSize: '0.76rem' }}
-                                                  >
-                                                    <Play size={12} fill="currentColor" /> Resume Work
-                                                  </button>
-                                                ) : (
-                                                  <>
-                                                    <div className="stream-node-duration is-gap">
-                                                      <Timer size={12} />
-                                                      <span>⚡ {item.durationStr}</span>
-                                                    </div>
-                                                    {item.rawSession && (
-                                                      <div className="stream-node-actions">
-                                                        <button
-                                                          type="button"
-                                                          className="stream-action-btn"
-                                                          onClick={() => setEditingSession(item.rawSession)}
-                                                          title="Edit break reason & remarks"
-                                                        >
-                                                          <Edit2 size={12} />
-                                                        </button>
-                                                      </div>
-                                                    )}
-                                                  </>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                  return (
+                    <tr key={item.id || idx}>
+                      <td>
+                        {isLive ? (
+                          <span className="stream-badge-work is-live">
+                            <Activity size={10} className="animate-pulse" /> Live
+                          </span>
+                        ) : isWork ? (
+                          <span className="stream-badge-work">
+                            <Zap size={10} /> Focus
+                          </span>
+                        ) : (
+                          <span className="stream-badge-break">
+                            <Coffee size={10} /> {isOngoing ? 'Paused' : 'Break'}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 700 }}>
+                            {isWork ? (item.taskTitle || 'Focus Session') : (item.reason || 'Break').replace(/["'“”]/g, '')}
+                          </span>
+                          {catName && (
+                            <span className="stream-task-category-pill">{catName}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {isLive ? `Started ${item.startTime}` : `${item.startTime} → ${item.endTime}`}
+                      </td>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 800, color: isWork || isLive ? '#10B981' : '#F59E0B' }}>
+                        {item.durationStr}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {isLive ? (
+                          <button
+                            type="button"
+                            className="btn-stop-focus"
+                            onClick={requestStopWorkSession}
+                            style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                          >
+                            Stop
+                          </button>
+                        ) : isOngoing ? (
+                          <button
+                            type="button"
+                            className="btn-resume-focus"
+                            onClick={handleStartSession}
+                            style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                          >
+                            Resume
+                          </button>
+                        ) : item.rawSession ? (
+                          <button
+                            type="button"
+                            className="stream-action-btn"
+                            onClick={() => setEditingSession(item.rawSession)}
+                            title="Edit details"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
                           {/* Manual Past Session Modal */}
                           {isManualModalOpen && (

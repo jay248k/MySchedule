@@ -32,21 +32,16 @@ if (!global.__neonDnsFallbackApplied) {
   };
 }
 
-const FALLBACK_DATABASE_URL =
-  'postgresql://neondb_owner:npg_gjp3UbVuT0rQ@ep-little-heart-b5fmqxzj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require';
-
-let rawUrl = process.env.DATABASE_URL;
-if (!rawUrl || rawUrl.includes('your-neon-host') || rawUrl.includes('password@')) {
-  rawUrl = FALLBACK_DATABASE_URL;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is required in .env');
 }
 
-let connectionString = rawUrl;
+const finalConnectionString = connectionString.includes('sslmode=require')
+  ? connectionString.replace('sslmode=require', 'sslmode=verify-full')
+  : connectionString;
 
-if (connectionString.includes('sslmode=require')) {
-  connectionString = connectionString.replace('sslmode=require', 'sslmode=verify-full');
-}
-
-const sequelize = new Sequelize(connectionString, {
+const sequelize = new Sequelize(finalConnectionString, {
   dialect: 'postgres',
   dialectOptions: {
     ssl: {
@@ -81,21 +76,12 @@ const sequelize = new Sequelize(connectionString, {
     backoffExponent: 1.5,
   },
   pool: {
-    // Production-optimized pool settings
-    max: process.env.NODE_ENV === 'production' ? 20 : 10,
-    min: process.env.NODE_ENV === 'production' ? 5 : 0,
+    // Production-optimized pool settings: keep warm connections, no per-query SELECT 1 overhead
+    max: process.env.NODE_ENV === 'production' ? 20 : 15,
+    min: process.env.NODE_ENV === 'production' ? 5 : 3,
     acquire: 30000,
-    idle: process.env.NODE_ENV === 'production' ? 30000 : 10000,
-    evict: process.env.NODE_ENV === 'production' ? 60000 : 10000,
-    // Validate connections before use
-    validate: async (connection) => {
-      try {
-        await connection.query('SELECT 1');
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    idle: 30000,
+    evict: 60000,
   },
 });
 

@@ -220,18 +220,36 @@ export function AppProvider({ children }) {
     if (!currentUser) return;
     setIsSyncing(true);
     try {
-      const [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes, settingsRes] = await Promise.all([
-        api.getTasks().catch(() => null),
-        api.getCategories().catch(() => null),
-        api.getGoals().catch(() => null),
-        api.getEvents().catch(() => null),
-        api.getWorkSessions().catch(() => null),
-        api.getDeviations().catch(() => null),
-        api.getRequests().catch(() => null),
-        api.getReports().catch(() => null),
-        api.getActiveWorkSession().catch(() => null),
-        api.getSettings().catch(() => null),
-      ]);
+      let tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes, settingsRes;
+
+      // Fast path: 1 single HTTP roundtrip via /dashboard/bootstrap
+      const bootRes = await api.getBootstrap().catch(() => null);
+      if (bootRes?.data && typeof bootRes.data === 'object') {
+        const b = bootRes.data;
+        tasksRes = { data: b.tasks };
+        categoriesRes = { data: b.categories };
+        goalsRes = { data: b.goals };
+        eventsRes = { data: b.events };
+        workSessionsRes = { data: b.workSessions };
+        deviationsRes = { data: b.deviations };
+        requestsRes = { data: b.requests };
+        reportsRes = { data: b.reports };
+        activeSessionRes = { data: b.activeWorkSession };
+        settingsRes = { data: b.settings };
+      } else {
+        [tasksRes, categoriesRes, goalsRes, eventsRes, workSessionsRes, deviationsRes, requestsRes, reportsRes, activeSessionRes, settingsRes] = await Promise.all([
+          api.getTasks().catch(() => null),
+          api.getCategories().catch(() => null),
+          api.getGoals().catch(() => null),
+          api.getEvents().catch(() => null),
+          api.getWorkSessions().catch(() => null),
+          api.getDeviations().catch(() => null),
+          api.getRequests().catch(() => null),
+          api.getReports().catch(() => null),
+          api.getActiveWorkSession().catch(() => null),
+          api.getSettings().catch(() => null),
+        ]);
+      }
 
       if (tasksRes?.data && Array.isArray(tasksRes.data)) {
         const serverIds = new Set(tasksRes.data.map((t) => t.id));
@@ -377,71 +395,6 @@ export function AppProvider({ children }) {
     const currentUser = authUser || storageService.getUser();
     if (!currentUser) return;
     fetchAllData();
-
-    // Auto-poll every 12 seconds so operations made in Mobile App auto-rotate and reflect on Web!
-    const syncTimer = setInterval(() => {
-      fetchAllData();
-    }, 12000);
-
-    // Fast 3-second poller dedicated to active work session so Web and Mobile timers are in lock-step
-    const activePollTimer = setInterval(async () => {
-      try {
-        const res = await api.getActiveWorkSession();
-        if (res && res.success !== false) {
-          const s = res.data;
-          const recentlyStopped = Date.now() - lastStoppedWorkSessionAtRef.current < 6000;
-          const recentlyStarted = Date.now() - lastStartedWorkSessionAtRef.current < 6000;
-          if (s && s.isRunning && !recentlyStopped) {
-            setActiveWorkSession((prev) => {
-              if (!prev || !prev.isRunning || Math.abs(Number(prev.startTimestamp) - Number(s.startTimestamp)) > 1000) {
-                const updated = {
-                  isRunning: true,
-                  startTimestamp: Number(s.startTimestamp),
-                  startTime: s.startTime,
-                  date: s.date,
-                  taskId: s.taskId || null,
-                  taskTitle: s.taskTitle || '',
-                  baseAccumulatedSeconds: Number(s.baseAccumulatedSeconds) || 0,
-                  status: s.status || 'running',
-                };
-                storageService.saveActiveWorkSession(updated);
-                return updated;
-              }
-              return prev;
-            });
-          } else if (!recentlyStopped && !recentlyStarted) {
-            setActiveWorkSession((prev) => {
-              if (prev && prev.isRunning) {
-                storageService.saveActiveWorkSession(null);
-                // When session stopped on mobile/cloud, immediately refresh work sessions list
-                api.getWorkSessions().then((sessRes) => {
-                  if (sessRes?.data && Array.isArray(sessRes.data)) {
-                    setWorkSessions(sessRes.data);
-                    storageService.saveWorkSessions(sessRes.data);
-                  }
-                }).catch(() => { });
-                return null;
-              }
-              return prev;
-            });
-          }
-        }
-      } catch (e) {
-        // quiet fallback
-      }
-    }, 3000);
-
-    // Automatically re-sync whenever user focuses the browser tab or returns to web
-    const handleWindowFocus = () => {
-      fetchAllData();
-    };
-
-    window.addEventListener('focus', handleWindowFocus);
-    return () => {
-      clearInterval(syncTimer);
-      clearInterval(activePollTimer);
-      window.removeEventListener('focus', handleWindowFocus);
-    };
   }, [fetchAllData, authUser]);
 
 

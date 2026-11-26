@@ -391,6 +391,52 @@ export function KnowledgePage() {
     }
   };
 
+  const [draggedChainNode, setDraggedChainNode] = useState(null);
+  const [dragOverChainNode, setDragOverChainNode] = useState(null);
+  const dragInsertRef = React.useRef(null);
+
+  const handleReorderChain = async (chain, fromIdx, toIdx) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= chain.length || toIdx >= chain.length) return;
+    const reordered = [...chain];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    const updates = reordered.map((node, i) => ({
+      id: node.id,
+      nextLessonId: reordered[i + 1]?.id || null,
+      orderIndex: i,
+    }));
+
+    const updateMap = new Map(updates.map((u) => [u.id, u]));
+
+    // Optimistic state update (both nextLessonId & orderIndex)
+    setItems((prev) =>
+      prev.map((it) =>
+        updateMap.has(it.id)
+          ? { ...it, nextLessonId: updateMap.get(it.id).nextLessonId, orderIndex: updateMap.get(it.id).orderIndex }
+          : it
+      )
+    );
+    if (activeItem && updateMap.has(activeItem.id)) {
+      setActiveItem((prev) => ({
+        ...prev,
+        nextLessonId: updateMap.get(prev.id).nextLessonId,
+        orderIndex: updateMap.get(prev.id).orderIndex,
+      }));
+    }
+
+    try {
+      await api.reorderKnowledgeChain(updates);
+      showToast({
+        type: 'success',
+        title: 'Sequence Updated',
+        message: 'Pathway step order saved successfully.',
+      });
+    } catch (err) {
+      showToast({ type: 'danger', title: 'Error', message: 'Failed to save new sequence.' });
+    }
+  };
+
   const handleSetNextLesson = async (currentLessonId, nextLessonId) => {
     try {
       await api.updateKnowledgeItem(currentLessonId, {
@@ -441,6 +487,7 @@ export function KnowledgePage() {
       formattedContent = JSON.stringify({ headers: cleanHeaders, rows: cleanRows });
     }
 
+    const appendFromId = chainParentId;
     const payload = {
       title: itemTitle,
       type: itemType,
@@ -448,10 +495,12 @@ export function KnowledgePage() {
       content: formattedContent,
       tags: createTags.trim() || null,
       isPinned: Boolean(createIsPinned),
+      orderIndex: appendFromId ? chainableItemsInFolder.length : 0,
+      appendFromId: appendFromId || null,
       nextLessonId: itemType === 'lesson' && createNextLessonId ? createNextLessonId : null,
     };
 
-    // ⚡ Optimistic UI: Immediately display item in view without waiting for network roundtrip
+    // ⚡ Optimistic UI: Immediately display item in view & link in chain
     const optimisticItem = {
       id: tempId,
       ...payload,
@@ -459,9 +508,11 @@ export function KnowledgePage() {
       updatedAt: new Date().toISOString(),
     };
 
-    setItems((prev) => [optimisticItem, ...prev]);
-    if (chainParentId) {
-      handleSetNextLesson(chainParentId, tempId);
+    setItems((prev) => [
+      optimisticItem,
+      ...prev.map((it) => (appendFromId && it.id === appendFromId ? { ...it, nextLessonId: tempId } : it)),
+    ]);
+    if (appendFromId) {
       setChainParentId(null);
     }
     setModalMode(null);
@@ -491,16 +542,16 @@ export function KnowledgePage() {
             return it;
           })
         );
-        if (pendingAppendFromId && itemType === 'lesson') {
-          api.updateKnowledgeItem(pendingAppendFromId, { nextLessonId: serverItem.id }).catch(() => {});
+        if (appendFromId) {
+          await api.updateKnowledgeItem(appendFromId, { nextLessonId: serverItem.id });
         }
       }
     } catch (err) {
       // Rollback on failure
       setItems((prev) => prev.filter((it) => it.id !== tempId));
-      if (pendingAppendFromId && itemType === 'lesson') {
+      if (appendFromId) {
         setItems((prev) =>
-          prev.map((it) => (it.id === pendingAppendFromId ? { ...it, nextLessonId: null } : it))
+          prev.map((it) => (it.id === appendFromId ? { ...it, nextLessonId: null } : it))
         );
       }
       showToast({
@@ -1414,176 +1465,203 @@ export function KnowledgePage() {
 
           {/* Unified Reading Article Container for Lessons */}
           {activeItem.type === 'lesson' ? (
-            <div className="lesson-reader-document">
-              {/* Top Pathway Progress Bar (if in a sequence) */}
+            <div className={`lesson-reader-shell ${currentChainInfo ? 'has-pathway' : 'standalone'}`}>
+              {/* Left Pathway Outline Rail (when part of a lesson sequence) */}
               {currentChainInfo && (
-                <div className="lesson-pathway-stepper-bar">
-                  <div className="pathway-info-left">
-                    <span className="pathway-badge-chip">
-                      <Layers size={12} /> Pathway #{currentChainInfo.chainIndex + 1}
-                    </span>
-                    <span className="pathway-step-count">
-                      Step {currentChainInfo.stepIndex + 1} of {currentChainInfo.totalSteps}
-                    </span>
+                <aside className="lesson-pathway-rail">
+                  <div className="pathway-rail-header">
+                    <div className="pathway-rail-title-row">
+                      <span className="pathway-badge-chip">
+                        <Layers size={11} /> Pathway #{currentChainInfo.chainIndex + 1}
+                      </span>
+                      <span className="pathway-step-count">
+                        {currentChainInfo.stepIndex + 1} / {currentChainInfo.totalSteps}
+                      </span>
+                    </div>
+                    <div className="pathway-progress-track" aria-hidden="true">
+                      <div
+                        className="pathway-progress-fill"
+                        style={{
+                          width: `${Math.round(((currentChainInfo.stepIndex + 1) / currentChainInfo.totalSteps) * 100)}%`
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  {/* Micro Stepper Pills */}
-                  <div className="pathway-micro-stepper">
+                  <nav className="pathway-rail-steps" aria-label="Pathway steps">
                     {currentChainInfo.chain.map((l, sIdx) => {
                       const isCurrent = l.id === activeItem.id;
                       const isPassed = sIdx < currentChainInfo.stepIndex;
                       return (
-                        <div
+                        <button
                           key={l.id}
-                          className={`micro-step-node ${isCurrent ? 'current' : isPassed ? 'completed' : 'upcoming'}`}
+                          type="button"
+                          className={`pathway-rail-step ${isCurrent ? 'current' : isPassed ? 'completed' : 'upcoming'}`}
                           onClick={() => setActiveItem(l)}
                           title={`Step ${sIdx + 1}: ${l.title}`}
                         >
-                          <span className="micro-step-num">{sIdx + 1}</span>
-                          <span className="micro-step-label">{l.title}</span>
-                        </div>
+                          <span className="rail-step-num">{String(sIdx + 1).padStart(2, '0')}</span>
+                          <span className="rail-step-title">{l.title}</span>
+                        </button>
                       );
                     })}
-                  </div>
+                  </nav>
 
-                  {/* Quick Previous / Next buttons */}
-                  <div className="pathway-nav-controls">
-                    <button
-                      type="button"
-                      disabled={!currentChainInfo.prevLesson}
-                      onClick={() => currentChainInfo.prevLesson && setActiveItem(currentChainInfo.prevLesson)}
-                      className="btn-pathway-nav prev"
-                      title={currentChainInfo.prevLesson ? `Previous: ${currentChainInfo.prevLesson.title}` : 'No previous step'}
+                  {/* Compact Sequence Linker */}
+                  <div className="pathway-rail-linker">
+                    <label className="rail-linker-label">
+                      <Link2 size={11} />
+                      <span>Next in sequence</span>
+                    </label>
+                    <select
+                      value={activeItem.nextLessonId || ''}
+                      onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
+                      className="pathway-rail-select"
                     >
-                      <ChevronLeft size={14} />
-                      <span>Prev</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!currentChainInfo.nextLesson}
-                      onClick={() => currentChainInfo.nextLesson && setActiveItem(currentChainInfo.nextLesson)}
-                      className="btn-pathway-nav next"
-                      title={currentChainInfo.nextLesson ? `Next: ${currentChainInfo.nextLesson.title}` : 'End of pathway'}
-                    >
-                      <span>Next</span>
-                      <ChevronRight size={14} />
-                    </button>
+                      <option value="">End of pathway</option>
+                      {chainableItemsInFolder
+                        .filter((l) => l.id !== activeItem.id)
+                        .map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.title}
+                          </option>
+                        ))}
+                    </select>
                   </div>
-                </div>
+                </aside>
               )}
 
-              {/* Document Header */}
-              <div className="lesson-article-header">
-                <div className="lesson-article-meta-row">
-                  <span className="lesson-type-badge">
-                    <BookOpen size={12} /> Knowledge Module
-                  </span>
-                  {currentFolder && (
-                    <span className="lesson-meta-chip">
-                      <Folder size={11} /> {currentFolder.title}
-                    </span>
-                  )}
-                  {activeItem.tags && (
-                    <span className="lesson-meta-chip">
-                      <Tag size={11} /> {activeItem.tags}
-                    </span>
-                  )}
-                  <span className="lesson-meta-chip word-count">
-                    <FileText size={11} /> {activeItem.content ? activeItem.content.trim().split(/\s+/).filter(Boolean).length : 0} words
-                  </span>
-                </div>
+              {/* Centered Editorial Reading Canvas */}
+              <article className="lesson-article-canvas">
+                <div className="lesson-article-inner">
+                  {/* Document Header */}
+                  <header className="lesson-article-header">
+                    <div className="lesson-article-meta-row">
+                      <span className="lesson-type-badge">
+                        <BookOpen size={11} /> Lesson
+                      </span>
+                      {currentChainInfo && (
+                        <span className="lesson-meta-chip">
+                          Step {currentChainInfo.stepIndex + 1} of {currentChainInfo.totalSteps}
+                        </span>
+                      )}
+                      {currentFolder && (
+                        <span className="lesson-meta-chip">
+                          <Folder size={11} /> {currentFolder.title}
+                        </span>
+                      )}
+                      {(() => {
+                        const words = activeItem.content
+                          ? activeItem.content.trim().split(/\s+/).filter(Boolean).length
+                          : 0;
+                        const readMins = Math.max(1, Math.ceil(words / 200));
+                        return (
+                          <span className="lesson-meta-chip word-count">
+                            <FileText size={11} /> {words} words · {readMins} min read
+                          </span>
+                        );
+                      })()}
+                    </div>
 
-                <h1 className="lesson-article-title">{activeItem.title}</h1>
-              </div>
+                    <h1 className="lesson-article-title">{activeItem.title}</h1>
 
-              {/* Document Body Content */}
-              <div className="lesson-article-body">
-                {activeItem.content ? (
-                  <div className="lesson-prose-content">
-                    {activeItem.content}
-                  </div>
-                ) : (
-                  <div className="lesson-empty-content-state">
-                    <BookOpen size={32} className="empty-state-icon" />
-                    <h4>No lesson content recorded yet</h4>
-                    <p>Click "Edit Lesson" above to document concepts, guides, protocols, or study materials.</p>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditModal(activeItem)}
-                      className="btn btn-primary btn-sm"
-                    >
-                      <Edit2 size={13} /> Write Lesson Content
-                    </button>
-                  </div>
-                )}
-              </div>
+                    {activeItem.tags && (
+                      <div className="lesson-tags-row">
+                        {activeItem.tags
+                          .split(',')
+                          .map((t) => t.trim())
+                          .filter(Boolean)
+                          .map((tag, idx) => (
+                            <span key={idx} className="lesson-tag-pill">
+                              #{tag}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                  </header>
 
-              {/* Document Footer: Next Step / Milestone Completion Navigator */}
-              <div className="lesson-pathway-footer-card">
-                <div className="pathway-footer-main">
-                  <div className="pathway-footer-left">
-                    {currentChainInfo?.prevLesson ? (
-                      <button
-                        type="button"
-                        className="btn-pathway-footer-prev"
-                        onClick={() => setActiveItem(currentChainInfo.prevLesson)}
-                      >
-                        <ChevronLeft size={16} />
-                        <div className="text-left">
-                          <span className="footer-nav-sub">Previous Step</span>
-                          <span className="footer-nav-title">{currentChainInfo.prevLesson.title}</span>
-                        </div>
-                      </button>
+                  {/* Document Body Content */}
+                  <div className="lesson-article-body">
+                    {activeItem.content ? (
+                      <div className="lesson-prose-content">
+                        {activeItem.content}
+                      </div>
                     ) : (
-                      <div className="footer-first-step-tag">
-                        <span>🏁 First Step in Pathway</span>
+                      <div className="lesson-empty-content-state">
+                        <BookOpen size={28} className="empty-state-icon" />
+                        <h4>No lesson content recorded yet</h4>
+                        <p>Document concepts, guides, protocols, or study notes for this lesson.</p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(activeItem)}
+                          className="btn btn-primary btn-sm"
+                        >
+                          <Edit2 size={13} /> Write Lesson Content
+                        </button>
                       </div>
                     )}
                   </div>
 
-                  <div className="pathway-footer-right">
-                    {currentChainInfo?.nextLesson ? (
-                      <button
-                        type="button"
-                        className="btn-pathway-footer-next"
-                        onClick={() => setActiveItem(currentChainInfo.nextLesson)}
-                      >
-                        <div className="text-right">
-                          <span className="footer-nav-sub">Next Milestone</span>
-                          <span className="footer-nav-title">{currentChainInfo.nextLesson.title}</span>
-                        </div>
-                        <ArrowRight size={16} />
-                      </button>
-                    ) : (
-                      <div className="footer-terminal-badge">
-                        <span>🏁 Final Milestone of Pathway</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  {/* Minimalist Prev / Next Step Cards */}
+                  {currentChainInfo ? (
+                    <footer className="lesson-nav-cards">
+                      {currentChainInfo.prevLesson ? (
+                        <button
+                          type="button"
+                          className="lesson-nav-card prev"
+                          onClick={() => setActiveItem(currentChainInfo.prevLesson)}
+                        >
+                          <span className="nav-card-eyebrow">
+                            <ChevronLeft size={13} /> Previous
+                          </span>
+                          <span className="nav-card-title">{currentChainInfo.prevLesson.title}</span>
+                        </button>
+                      ) : (
+                        <div className="lesson-nav-card placeholder" aria-hidden="true" />
+                      )}
 
-                {/* Quick Link Selector in Footer for authoring */}
-                <div className="pathway-footer-link-bar">
-                  <div className="footer-link-label">
-                    <Link2 size={13} color="#10B981" />
-                    <span>Proceeds sequentially to:</span>
-                  </div>
-                  <select
-                    value={activeItem.nextLessonId || ''}
-                    onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
-                    className="pathway-footer-select"
-                  >
-                    <option value="">🏁 (End of Pathway Terminal)</option>
-                    {chainableItemsInFolder
-                      .filter((l) => l.id !== activeItem.id)
-                      .map((l) => (
-                        <option key={l.id} value={l.id}>
-                          ➔ Step: {l.title} {l.type === 'folder' ? '📁' : ''}
-                        </option>
-                      ))}
-                  </select>
+                      {currentChainInfo.nextLesson ? (
+                        <button
+                          type="button"
+                          className="lesson-nav-card next"
+                          onClick={() => setActiveItem(currentChainInfo.nextLesson)}
+                        >
+                          <span className="nav-card-eyebrow">
+                            Next Milestone <ArrowRight size={13} />
+                          </span>
+                          <span className="nav-card-title">{currentChainInfo.nextLesson.title}</span>
+                        </button>
+                      ) : (
+                        <div className="lesson-nav-card completed-end">
+                          <span className="nav-card-eyebrow">Pathway Complete</span>
+                          <span className="nav-card-title">Final Step Reached</span>
+                        </div>
+                      )}
+                    </footer>
+                  ) : (
+                    <footer className="lesson-standalone-footer">
+                      <div className="footer-link-label">
+                        <Link2 size={13} />
+                        <span>Chain into a pathway:</span>
+                      </div>
+                      <select
+                        value={activeItem.nextLessonId || ''}
+                        onChange={(e) => handleSetNextLesson(activeItem.id, e.target.value)}
+                        className="pathway-rail-select inline"
+                      >
+                        <option value="">Standalone lesson (no next step)</option>
+                        {chainableItemsInFolder
+                          .filter((l) => l.id !== activeItem.id)
+                          .map((l) => (
+                            <option key={l.id} value={l.id}>
+                              Next: {l.title}
+                            </option>
+                          ))}
+                      </select>
+                    </footer>
+                  )}
                 </div>
-              </div>
+              </article>
             </div>
           ) : (
             /* Structured Data Table View */
@@ -1801,44 +1879,33 @@ export function KnowledgePage() {
                 </div>
               ) : (
                 chainSequence.map((chain, chainIdx) => (
-                  <div key={chainIdx} className="curriculum-flow-card">
-                    {/* Chain Master Heading */}
-                    <div className="curriculum-flow-header">
-                      <div className="curriculum-flow-header-left">
-                        <div className="curriculum-tag-group">
-                          <span className="curriculum-flow-badge">
-                            <Layers size={13} /> Pathway #{chainIdx + 1}
-                          </span>
-                          <span className="curriculum-steps-badge">
-                            {chain.length} {chain.length === 1 ? 'Milestone' : 'Milestones'}
-                          </span>
-                        </div>
-
-                        <div className="curriculum-stepper-trail">
-                          {chain.map((l, sIdx) => {
-                            const isItemActive = activeItem?.id === l.id;
-                            return (
-                              <React.Fragment key={l.id}>
-                                <div
-                                  className={`curriculum-step-chip ${isItemActive ? 'is-active' : ''}`}
-                                  onClick={() => setActiveItem(l)}
-                                  title={`Open Step ${sIdx + 1}: ${l.title}`}
-                                >
-                                  <span className="step-chip-index">{sIdx + 1}</span>
-                                  <span className="step-chip-title">{l.title}</span>
-                                </div>
-                                {sIdx < chain.length - 1 && (
-                                  <div className="step-chip-separator">
-                                    <ChevronRight size={13} />
-                                  </div>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
+                  <div key={chainIdx} className="kb-v2-pathway-card">
+                    {/* Clean Single-Line Pathway Header */}
+                    <div className="kb-v2-pathway-head">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                        <span className="curriculum-flow-badge">
+                          <Layers size={13} /> Pathway #{chainIdx + 1}
+                        </span>
+                        <span className="curriculum-steps-badge">
+                          {chain.length} {chain.length === 1 ? 'Step' : 'Steps'}
+                        </span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {chain[0]?.title} {chain.length > 1 ? `→ ${chain[chain.length - 1]?.title}` : ''}
+                        </span>
                       </div>
 
-                      <div className="curriculum-flow-header-right">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => {
+                            const lastLesson = chain[chain.length - 1];
+                            handleOpenCreateModal('lesson', lastLesson ? lastLesson.id : null);
+                          }}
+                          style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                        >
+                          <Plus size={13} /> Add Step
+                        </button>
                         <button
                           type="button"
                           className="btn-start-curriculum"
@@ -1846,149 +1913,157 @@ export function KnowledgePage() {
                           title="Start / Read from Step 1"
                         >
                           <Play size={12} fill="currentColor" />
-                          <span>Start Pathway</span>
+                          <span>Start</span>
                         </button>
                       </div>
                     </div>
 
-                    {/* Nodes and Stream */}
-                    <div className="curriculum-track-stream">
+                    {/* Clean Vertical Roadmap Stepper Rows (Drag & Drop to Reorder) */}
+                    <div className="kb-v2-pathway-list">
                       {chain.map((lesson, idx) => {
                         const isSelected = activeItem?.id === lesson.id;
-                        const hasNext = Boolean(lesson.nextLessonId);
+                        const parsedTags = lesson.tags
+                          ? lesson.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 4)
+                          : [];
+                        const showLineBefore =
+                          dragOverChainNode?.chainIdx === chainIdx && dragOverChainNode?.insertIdx === idx;
+                        const showLineAfter =
+                          idx === chain.length - 1 &&
+                          dragOverChainNode?.chainIdx === chainIdx &&
+                          dragOverChainNode?.insertIdx === chain.length;
 
                         return (
-                          <React.Fragment key={lesson.id}>
-                            {/* Single Chain Module Node */}
-                            <div
-                              className={`curriculum-node-card ${isSelected ? 'is-selected' : ''}`}
-                              onClick={() => setActiveItem(lesson)}
-                            >
-                              {/* Module Top Bar */}
-                              <div className="curriculum-node-header">
-                                <div className="curriculum-step-pill">
-                                  <span className="step-tag">STEP</span>
-                                  <span className="step-num">{String(idx + 1).padStart(2, '0')}</span>
-                                </div>
-
-                                <div className="curriculum-node-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenEditModal(lesson);
-                                    }}
-                                    className="node-action-btn edit"
-                                    title="Edit Lesson"
-                                  >
-                                    <Edit2 size={12} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => handleDeleteItem(lesson.id, e)}
-                                    className="node-action-btn delete"
-                                    title="Delete Lesson"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Module Body */}
-                              <div className="curriculum-node-body">
-                                <div className="curriculum-node-icon">
-                                  <BookOpen size={18} />
-                                </div>
-                                <div className="curriculum-node-content">
-                                  <h4 className="curriculum-node-title" title={lesson.title}>
+                          <div
+                            key={lesson.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = 'move';
+                              dragInsertRef.current = null;
+                              setDraggedChainNode({ chainIdx, fromIdx: idx });
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              if (!draggedChainNode || draggedChainNode.chainIdx !== chainIdx) return;
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const isUpperHalf = e.clientY < rect.top + rect.height / 2;
+                              const insertIdx = isUpperHalf ? idx : idx + 1;
+                              if (insertIdx === draggedChainNode.fromIdx || insertIdx === draggedChainNode.fromIdx + 1) {
+                                dragInsertRef.current = null;
+                                if (dragOverChainNode) setDragOverChainNode(null);
+                              } else {
+                                dragInsertRef.current = { chainIdx, insertIdx };
+                                if (
+                                  dragOverChainNode?.chainIdx !== chainIdx ||
+                                  dragOverChainNode?.insertIdx !== insertIdx
+                                ) {
+                                  setDragOverChainNode({ chainIdx, insertIdx });
+                                }
+                              }
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const target = dragInsertRef.current || dragOverChainNode;
+                              if (draggedChainNode && draggedChainNode.chainIdx === chainIdx && target) {
+                                const { fromIdx } = draggedChainNode;
+                                const { insertIdx } = target;
+                                const toIdx = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
+                                handleReorderChain(chain, fromIdx, toIdx);
+                              }
+                              dragInsertRef.current = null;
+                              setDraggedChainNode(null);
+                              setDragOverChainNode(null);
+                            }}
+                            onDragEnd={() => {
+                              dragInsertRef.current = null;
+                              setDraggedChainNode(null);
+                              setDragOverChainNode(null);
+                            }}
+                            className={`kb-v2-step-row ${isSelected ? 'is-selected' : ''}`}
+                            style={{
+                              position: 'relative',
+                              opacity:
+                                draggedChainNode?.chainIdx === chainIdx && draggedChainNode?.fromIdx === idx
+                                  ? 0.45
+                                  : 1,
+                            }}
+                            onClick={() => setActiveItem(lesson)}
+                          >
+                            {showLineBefore && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  left: 0,
+                                  right: 0,
+                                  top: '-6px',
+                                  height: '3px',
+                                  borderRadius: '999px',
+                                  background: '#3B82F6',
+                                  boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)',
+                                  pointerEvents: 'none',
+                                  zIndex: 10,
+                                }}
+                              />
+                            )}
+                            {showLineAfter && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  left: 0,
+                                  right: 0,
+                                  bottom: '-6px',
+                                  height: '3px',
+                                  borderRadius: '999px',
+                                  background: '#3B82F6',
+                                  boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)',
+                                  pointerEvents: 'none',
+                                  zIndex: 10,
+                                }}
+                              />
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', userSelect: 'none' }}>⋮⋮</span>
+                              <div className="kb-v2-step-num">{idx + 1}</div>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 750, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                                     {lesson.title}
-                                  </h4>
-                                  <div className="curriculum-node-tags">
-                                    <span className="curriculum-meta-pill">
-                                      {lesson.tags ? lesson.tags : 'Curriculum Module'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Module Footer: Next Step Link Controller */}
-                              <div className="curriculum-node-footer" onClick={(e) => e.stopPropagation()}>
-                                <div className="curriculum-link-row">
-                                  <div className="link-status-badge">
-                                    <span className={`status-indicator-dot ${hasNext ? 'connected' : 'terminal'}`} />
-                                    <span className="link-label-text">
-                                      {hasNext ? 'Proceeds to:' : 'Pathway Terminal'}
-                                    </span>
-                                  </div>
-                                  {hasNext && (
-                                    <button
-                                      type="button"
-                                      className="btn-unlink-step"
-                                      onClick={() => handleSetNextLesson(lesson.id, null)}
-                                      title="Disconnect next milestone"
-                                    >
-                                      <X size={11} />
-                                    </button>
+                                  </span>
+                                  {lesson.type === 'folder' && (
+                                    <span className="curriculum-meta-pill">Folder</span>
                                   )}
-                                </div>
-                                <div className="curriculum-select-wrapper">
-                                  <select
-                                    value={lesson.nextLessonId || ''}
-                                    onChange={(e) => handleSetNextLesson(lesson.id, e.target.value)}
-                                    className={`curriculum-link-select ${hasNext ? 'has-next' : 'is-terminal'}`}
-                                    title="Select next sequential milestone"
-                                  >
-                                    <option value="">🏁 (End of Pathway)</option>
-                                    {chainableItemsInFolder
-                                      .filter((other) => other.id !== lesson.id)
-                                      .map((other) => (
-                                        <option key={other.id} value={other.id}>
-                                          ➔ {other.title} {other.type === 'folder' ? '📁' : ''}
-                                        </option>
-                                      ))}
-                                  </select>
+                                  {parsedTags.map((tag, tIdx) => (
+                                    <span key={tIdx} className="curriculum-meta-pill">
+                                      #{tag}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             </div>
 
-                            {/* Clean Elegant Connector Between Nodes */}
-                            {idx < chain.length - 1 && (
-                              <div className="curriculum-connector">
-                                <div className="connector-line-wrapper">
-                                  <div className="connector-line" />
-                                  <div className="connector-badge" title="Sequential Milestone Link">
-                                    <ArrowRight size={12} className="connector-arrow-icon" />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </React.Fragment>
+                            <div className="curriculum-node-actions" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEditModal(lesson);
+                                }}
+                                className="node-action-btn edit"
+                                title="Edit Lesson"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteItem(lesson.id, e)}
+                                className="node-action-btn delete"
+                                title="Delete Lesson"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
-
-                      {/* Add Next Step Docking Station */}
-                      <div className="curriculum-connector append-connector">
-                        <div className="connector-line-wrapper dashed">
-                          <div className="connector-line dashed" />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const lastLesson = chain[chain.length - 1];
-                          handleOpenCreateModal('lesson', lastLesson ? lastLesson.id : null);
-                        }}
-                        className="curriculum-add-node-slot"
-                        title="Attach next lesson to this pathway"
-                      >
-                        <div className="add-node-circle">
-                          <Plus size={16} />
-                        </div>
-                        <div className="add-node-text-wrap">
-                          <span className="add-node-primary">Attach Next Step</span>
-                          <span className="add-node-secondary">Extend learning pathway</span>
-                        </div>
-                      </button>
                     </div>
                   </div>
                 ))
@@ -2323,42 +2398,19 @@ export function KnowledgePage() {
                 </div>
 
                 {modalMode === 'lesson' && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-secondary mb-1">
-                        Lesson Content / Notes *
-                      </label>
-                      <textarea
-                        rows={7}
-                        required
-                        placeholder="Enter comprehensive notes, key takeaways, or summary"
-                        value={createContent}
-                        onChange={(e) => setCreateContent(e.target.value)}
-                        className="form-textarea"
-                      />
-                    </div>
-
-                    {/* Optional Lesson Chaining */}
-                    {chainableItemsInFolder.length > 0 && (
-                      <div>
-                        <label className="block text-xs font-bold text-secondary mb-1">
-                          Chain to Next Lesson/Folder (Optional Sequence)
-                        </label>
-                        <select
-                          value={createNextLessonId}
-                          onChange={(e) => setCreateNextLessonId(e.target.value)}
-                          className="form-input"
-                        >
-                          <option value="">(None - Standalone Lesson)</option>
-                          {chainableItemsInFolder.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.title} {l.type === 'folder' ? '📁' : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </>
+                  <div>
+                    <label className="block text-xs font-bold text-secondary mb-1">
+                      Lesson Content / Notes *
+                    </label>
+                    <textarea
+                      rows={7}
+                      required
+                      placeholder="Enter comprehensive notes, key takeaways, or summary"
+                      value={createContent}
+                      onChange={(e) => setCreateContent(e.target.value)}
+                      className="form-textarea"
+                    />
+                  </div>
                 )}
 
                 {modalMode === 'table' && (

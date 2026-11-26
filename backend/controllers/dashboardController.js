@@ -1,6 +1,12 @@
 const { Op } = require('sequelize');
 const {
+  Task,
+  Category,
+  Goal,
   Event,
+  WorkSession,
+  ActiveWorkSession,
+  Setting,
   KnowledgeItem,
   Thought,
   DailyReport,
@@ -20,6 +26,60 @@ function buildUserWhere(req, base = {}) {
   }
   return base;
 }
+
+/**
+ * GET /api/dashboard/bootstrap
+ * Single fast aggregated endpoint returning all core app data in 1 HTTP roundtrip.
+ */
+exports.getBootstrapData = async (req, res, next) => {
+  try {
+    const userWhere = req.userId
+      ? { [Op.or]: [{ userId: req.userId }, { userId: null }] }
+      : {};
+
+    const [
+      tasks,
+      categories,
+      goals,
+      events,
+      workSessions,
+      deviations,
+      requests,
+      reports,
+      activeWorkSession,
+      settingRow,
+    ] = await Promise.all([
+      Task.findAll({ where: userWhere, order: [['date', 'DESC']], raw: true }).catch(() => []),
+      Category.findAll({ where: userWhere, raw: true }).catch(() => []),
+      Goal.findAll({ where: userWhere, raw: true }).catch(() => []),
+      Event.findAll({ where: userWhere, order: [['date', 'ASC']], raw: true }).catch(() => []),
+      WorkSession.findAll({ where: userWhere, order: [['createdAt', 'DESC']], raw: true }).catch(() => []),
+      ScheduleDeviation.findAll({ where: userWhere, order: [['date', 'DESC']], raw: true }).catch(() => []),
+      WorkRequest.findAll({ where: userWhere, order: [['createdAt', 'DESC']], raw: true }).catch(() => []),
+      DailyReport.findAll({ where: userWhere, order: [['date', 'DESC']], raw: true }).catch(() => []),
+      ActiveWorkSession.findOne({ where: userWhere, order: [['updatedAt', 'DESC']], raw: true }).catch(() => null),
+      Setting.findOne({ where: userWhere, raw: true }).catch(() => null),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        tasks,
+        categories,
+        goals,
+        events,
+        workSessions,
+        deviations,
+        requests,
+        reports,
+        activeWorkSession,
+        settings: settingRow,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 /**
  * GET /api/dashboard/summary?date=YYYY-MM-DD

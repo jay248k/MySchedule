@@ -1282,12 +1282,12 @@ html.dark-mode .knowledge-table-cell {
    CURRICULUM FLOW TRACK STREAM
    ========================================================================== */
 .curriculum-track-stream {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  overflow-x: auto;
-  padding: 10px 4px 16px;
-  scrollbar-width: thin;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+  gap: 14px;
+  overflow: visible;
+  padding: 12px 0 4px;
+  width: 100%;
 }
 
 /* Single Step Module Node */
@@ -1296,23 +1296,29 @@ html.dark-mode .knowledge-table-cell {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   background: var(--card-bg, #0B1120);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-top: 2px solid rgba(59, 130, 246, 0.35);
   border-radius: 14px;
   padding: 14px 16px;
-  width: 270px;
-  min-width: 270px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  min-width: 0;
+  cursor: grab;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 2;
 }
 
+.curriculum-node-card:active {
+  cursor: grabbing;
+}
+
 .curriculum-node-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 8px 24px -4px rgba(56, 189, 248, 0.15), 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  border-top-color: #38BDF8;
+  box-shadow: 0 10px 24px -4px rgba(56, 189, 248, 0.16);
 }
 
 .curriculum-node-card.is-selected {
@@ -1548,14 +1554,7 @@ html.dark-mode .knowledge-table-cell {
    DIRECTIONAL CONNECTOR PIPELINE
    ========================================================================== */
 .curriculum-connector {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  min-width: 48px;
-  flex-shrink: 0;
-  z-index: 1;
+  display: none;
 }
 
 .curriculum-connector.append-connector {
@@ -1616,20 +1615,21 @@ html.dark-mode .knowledge-table-cell {
    ATTACH NEXT STEP ACTION CARD
    ========================================================================== */
 .curriculum-add-node-slot {
-  width: 220px;
-  min-width: 220px;
+  width: 100%;
+  min-width: 0;
+  min-height: 112px;
   border-radius: 14px;
-  border: 1.5px dashed var(--border-color, rgba(255, 255, 255, 0.12));
-  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px dashed var(--border-color, rgba(255, 255, 255, 0.14));
+  background: rgba(16, 185, 129, 0.02);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 20px 16px;
+  gap: 12px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-align: center;
+  text-align: left;
 }
 
 .curriculum-add-node-slot:hover {
@@ -1675,6 +1675,78 @@ html.dark-mode .knowledge-table-cell {
   color: #10B981;
 }
 
+/* ==========================================================================
+   V2: CLEAN VERTICAL ROADMAP STEPPER FOR CHAIN VIEW
+   ========================================================================== */
+.kb-v2-pathway-card {
+  border-radius: 16px;
+  background: var(--card-bg, #0B1120);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.kb-v2-pathway-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.kb-v2-pathway-list {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  gap: 8px;
+}
+
+.kb-v2-step-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.07));
+  cursor: grab;
+  transition: all 0.16s ease;
+}
+
+.kb-v2-step-row:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.kb-v2-step-row.is-selected {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.kb-v2-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #38BDF8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kb-v2-step-row.is-selected .kb-v2-step-num {
+  background: #10B981;
+  border-color: #10B981;
+  color: #FFFFFF;
+}
+
 .add-node-secondary {
   font-size: 0.7rem;
   color: var(--text-muted, #94A3B8);
@@ -1683,181 +1755,223 @@ html.dark-mode .knowledge-table-cell {
 
 
 /* ========================================================================= */
-/* UNIFIED ENTERPRISE LESSON READER & PATHWAY PROGRESSION                    */
+/* PRODUCTION-LEVEL LESSON READER & PATHWAY OUTLINE                          */
 /* ========================================================================= */
 
-.lesson-reader-document {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-card, #0f172a);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-xl, 16px);
+.lesson-reader-shell {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  background: rgba(10, 15, 28, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
-  margin-top: 4px;
-  position: relative;
+  min-height: 540px;
 }
 
-/* TOP PATHWAY STEPPER BAR */
-.lesson-pathway-stepper-bar {
+.lesson-reader-shell.standalone {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* LEFT PATHWAY OUTLINE RAIL */
+.lesson-pathway-rail {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.55);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 18px 14px;
+  gap: 16px;
+}
+
+.pathway-rail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pathway-rail-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding: 12px 24px;
-  background: rgba(15, 23, 42, 0.65);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.pathway-info-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pathway-badge-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.72rem;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   background: rgba(16, 185, 129, 0.12);
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .pathway-step-count {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-secondary, #94A3B8);
+  color: #94A3B8;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Micro Stepper Nodes */
-.pathway-micro-stepper {
+.pathway-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.pathway-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #10B981, #3B82F6);
+  transition: width 0.25s ease;
+}
+
+.pathway-rail-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.pathway-rail-step {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #94A3B8;
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 
-.micro-step-node {
+.pathway-rail-step:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #E2E8F0;
+}
+
+.pathway-rail-step.completed {
+  color: #94A3B8;
+}
+
+.pathway-rail-step.completed .rail-step-num {
+  background: rgba(16, 185, 129, 0.14);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.pathway-rail-step.current {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: #F8FAFC;
+  font-weight: 600;
+}
+
+.pathway-rail-step.current .rail-step-num {
+  background: #3B82F6;
+  color: #FFFFFF;
+  border-color: #3B82F6;
+}
+
+.rail-step-num {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-}
-
-.micro-step-node.completed {
-  background: rgba(16, 185, 129, 0.14);
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.micro-step-node.completed:hover {
-  background: rgba(16, 185, 129, 0.22);
-  border-color: #10B981;
-  transform: translateY(-1px);
-}
-
-.micro-step-node.current {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: #FFFFFF;
-  border: 1px solid #10B981;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 0.68rem;
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-}
-
-.micro-step-node.upcoming {
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted, #64748B);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748B;
+  font-variant-numeric: tabular-nums;
 }
 
-.micro-step-node.upcoming:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
-}
-
-.micro-step-num {
-  font-size: 0.7rem;
-  font-weight: 800;
-  opacity: 0.9;
-}
-
-.micro-step-label {
-  max-width: 110px;
+.rail-step-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Stepper Bar Quick Buttons */
-.pathway-nav-controls {
+.pathway-rail-linker {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.btn-pathway-nav {
+.rail-linker-label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary, #94A3B8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748B;
+}
+
+.pathway-rail-select {
+  width: 100%;
+  background: rgba(2, 6, 23, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #E2E8F0;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
 }
 
-.btn-pathway-nav:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.09);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
+.pathway-rail-select:focus {
+  border-color: #3B82F6;
 }
 
-.btn-pathway-nav:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+.pathway-rail-select.inline {
+  width: auto;
+  min-width: 240px;
 }
 
-.btn-pathway-nav.next:not(:disabled) {
-  background: rgba(59, 130, 246, 0.14);
-  color: #60A5FA;
-  border-color: rgba(59, 130, 246, 0.32);
+/* CENTERED EDITORIAL READING CANVAS */
+.lesson-article-canvas {
+  display: flex;
+  justify-content: center;
+  padding: 36px 40px 44px;
+  overflow-y: auto;
 }
 
-.btn-pathway-nav.next:not(:disabled):hover {
-  background: #2563EB;
-  color: #FFFFFF;
-  border-color: #2563EB;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+.lesson-article-inner {
+  width: 100%;
+  max-width: 740px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* DOCUMENT HEADER */
 .lesson-article-header {
-  padding: 28px 32px 16px 32px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 100%);
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .lesson-article-meta-row {
@@ -1871,52 +1985,68 @@ html.dark-mode .knowledge-table-cell {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 3px 8px;
+  border-radius: 5px;
   background: rgba(59, 130, 246, 0.12);
   color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.28);
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .lesson-meta-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary, #94A3B8);
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #94A3B8;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .lesson-article-title {
-  font-size: 1.85rem;
+  font-size: 2.1rem;
   font-weight: 800;
-  letter-spacing: -0.025em;
-  color: var(--text-primary, #F8FAFC);
-  line-height: 1.28;
-  margin: 0;
+  letter-spacing: -0.03em;
+  color: #F8FAFC;
+  line-height: 1.2;
+  margin: 4px 0 0;
+}
+
+.lesson-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lesson-tag-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 2px 8px;
+  border-radius: 9999px;
 }
 
 /* DOCUMENT BODY */
 .lesson-article-body {
-  padding: 24px 32px 40px 32px;
-  min-height: 220px;
+  padding: 28px 0 40px;
+  min-height: 240px;
 }
 
 .lesson-prose-content {
-  font-size: 1rem;
-  line-height: 1.8;
-  color: var(--text-secondary, #CBD5E1);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #CBD5E1;
   white-space: pre-wrap;
   word-break: break-word;
-  max-width: 860px;
 }
 
 .lesson-empty-content-state {
@@ -1926,186 +2056,179 @@ html.dark-mode .knowledge-table-cell {
   justify-content: center;
   text-align: center;
   padding: 48px 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1.5px dashed rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  margin: 12px 0;
 }
 
 .lesson-empty-content-state .empty-state-icon {
-  color: var(--text-muted, #64748B);
-  margin-bottom: 12px;
-  opacity: 0.7;
+  color: #64748B;
+  margin-bottom: 10px;
+  opacity: 0.75;
 }
 
 .lesson-empty-content-state h4 {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 6px 0;
+  color: #F8FAFC;
+  margin: 0 0 6px;
 }
 
 .lesson-empty-content-state p {
   font-size: 0.85rem;
-  color: var(--text-muted, #94A3B8);
-  max-width: 440px;
-  margin: 0 0 16px 0;
+  color: #94A3B8;
+  max-width: 400px;
+  margin: 0 0 16px;
 }
 
-/* DOCUMENT FOOTER: MILESTONE ADVANCEMENT & QUICK LINKING */
-.lesson-pathway-footer-card {
-  margin: 0 32px 28px 32px;
-  background: rgba(15, 23, 42, 0.7);
+/* MINIMALIST PREV / NEXT NAVIGATION CARDS */
+.lesson-nav-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lesson-nav-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 16px 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.pathway-footer-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.pathway-footer-left,
-.pathway-footer-right {
-  display: flex;
-  align-items: center;
-}
-
-.btn-pathway-footer-prev {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   text-align: left;
+  min-width: 0;
 }
 
-.btn-pathway-footer-prev:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateX(-2px);
+.lesson-nav-card.next {
+  text-align: right;
+  align-items: flex-end;
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.06);
 }
 
-.btn-pathway-footer-next {
+.lesson-nav-card.prev:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.lesson-nav-card.next:hover {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.lesson-nav-card.placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.lesson-nav-card.completed-end {
+  text-align: right;
+  align-items: flex-end;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.nav-card-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 20px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  border: 1px solid rgba(16, 185, 129, 0.5);
-  color: #FFFFFF;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-  text-align: right;
-}
-
-.btn-pathway-footer-next:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
-  filter: brightness(1.05);
-}
-
-.footer-nav-sub {
-  display: block;
-  font-size: 0.68rem;
+  gap: 4px;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.8;
+  letter-spacing: 0.05em;
+  color: #94A3B8;
 }
 
-.footer-nav-title {
-  display: block;
-  font-size: 0.88rem;
+.lesson-nav-card.next .nav-card-eyebrow {
+  color: #34D399;
+}
+
+.nav-card-title {
+  font-size: 0.92rem;
   font-weight: 700;
-  max-width: 220px;
+  color: #F8FAFC;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.footer-first-step-tag,
-.footer-terminal-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-muted, #94A3B8);
-}
-
-.pathway-footer-link-bar {
+.lesson-standalone-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .footer-link-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary, #94A3B8);
-}
-
-.pathway-footer-select {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 6px 12px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-primary);
-  outline: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 220px;
+  color: #94A3B8;
 }
 
-.pathway-footer-select:focus {
-  border-color: #10B981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+@media (max-width: 960px) {
+  .lesson-reader-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-pathway-rail {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .lesson-article-canvas {
+    padding: 24px 20px 32px;
+  }
+
+  .lesson-nav-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Light mode overrides for high contrast readability */
-html.light-mode .lesson-reader-document {
+/* Light mode overrides */
+html.light-mode .lesson-reader-shell {
   background: #FFFFFF;
   border-color: #E2E8F0;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px -6px rgba(15, 23, 42, 0.06);
 }
 
-html.light-mode .lesson-pathway-stepper-bar {
+html.light-mode .lesson-pathway-rail {
   background: #F8FAFC;
-  border-bottom-color: #E2E8F0;
+  border-right-color: #E2E8F0;
 }
 
-html.light-mode .lesson-article-header {
-  border-bottom-color: #F1F5F9;
-  background: transparent;
+html.light-mode .pathway-rail-step:hover {
+  background: #F1F5F9;
+  color: #0F172A;
 }
 
-html.light-mode .lesson-article-title {
+html.light-mode .pathway-rail-step.current {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1E40AF;
+}
+
+html.light-mode .lesson-article-header,
+html.light-mode .lesson-nav-cards,
+html.light-mode .lesson-standalone-footer {
+  border-color: #E2E8F0;
+}
+
+html.light-mode .lesson-article-title,
+html.light-mode .nav-card-title {
   color: #0F172A;
 }
 
@@ -2113,19 +2236,18 @@ html.light-mode .lesson-prose-content {
   color: #334155;
 }
 
-html.light-mode .lesson-pathway-footer-card {
+html.light-mode .lesson-nav-card {
   background: #F8FAFC;
   border-color: #E2E8F0;
 }
 
-html.light-mode .pathway-footer-select {
-  background: #FFFFFF;
-  border-color: #CBD5E1;
-  color: #0F172A;
+html.light-mode .lesson-nav-card.next {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
 }
 
-html.light-mode .btn-pathway-footer-prev {
+html.light-mode .pathway-rail-select {
   background: #FFFFFF;
-  border-color: #E2E8F0;
+  border-color: #CBD5E1;
   color: #0F172A;
 }
