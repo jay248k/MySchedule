@@ -15,10 +15,16 @@ exports.getAllGoals = async (req, res, next) => {
       where[Op.or] = [{ userId: req.userId }, { userId: null }];
     }
 
+    // Pagination support
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = parseInt(req.query.offset) || 0;
+
     const goals = await Goal.findAll({
       where,
-      include: [{ model: Task, as: 'tasks', attributes: ['id', 'title', 'status', 'priority', 'date'] }],
+      // Don't include tasks in list view for performance
       order: [['targetDate', 'ASC']],
+      limit,
+      offset,
     });
 
     cacheManager.set(cacheKey, goals, 120);

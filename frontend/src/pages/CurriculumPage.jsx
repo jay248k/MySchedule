@@ -546,21 +546,34 @@ export function CurriculumPage() {
 
   return (
     <div className="curriculum-page">
-      {/* Header */}
-      <div className="curriculum-header">
-        <div className="header-left">
-          <h1><BookOpen size={28} color="#10B981" /> Curriculum Manager</h1>
-          <p>Manage learning plans, import curriculum from Excel, and build lesson chains</p>
+      {/* Header Banner Card */}
+      <div className="curriculum-banner-card">
+        <div className="curriculum-banner-left">
+          <div className="curriculum-badge-row">
+            <span className="curriculum-badge-emerald">CURRICULUM &amp; LEARNING PLANS</span>
+          </div>
+          <h1 className="curriculum-banner-title">
+            <span className="curriculum-banner-icon">
+              <BookOpen size={20} color="#10B981" />
+            </span>
+            <span>Curriculum Manager</span>
+          </h1>
+          <p className="curriculum-banner-subtitle">
+            Manage learning plans, import curriculum from Excel, and build lesson chains
+          </p>
         </div>
-        <div className="header-right">
-          <button onClick={handleDownloadTemplate} className="btn btn-secondary">
-            <Download size={16} /> Template
+        <div className="curriculum-banner-actions">
+          <button type="button" onClick={handleDownloadTemplate} className="curriculum-btn-outline">
+            <Download size={15} />
+            <span>Template</span>
           </button>
-          <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
-            <Upload size={16} /> Import Curriculum
+          <button type="button" onClick={() => setShowImportModal(true)} className="curriculum-btn-primary">
+            <Upload size={15} />
+            <span>Import Curriculum</span>
           </button>
-          <button onClick={() => openPlanModal()} className="btn btn-success">
-            <Plus size={16} /> New Plan
+          <button type="button" onClick={() => openPlanModal()} className="curriculum-btn-emerald">
+            <Plus size={15} />
+            <span>New Plan</span>
           </button>
         </div>
       </div>
