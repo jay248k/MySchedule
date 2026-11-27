@@ -1,12 +1,16 @@
 const express = require('express');
-const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
-const { optionalAuth } = require('../middleware/auth');
+const analyticsController = require('../controllers/analyticsController');
 
-router.use(optionalAuth);
+const router = express.Router();
 
+// Existing routes
 router.get('/bootstrap', dashboardController.getBootstrapData);
 router.get('/summary', dashboardController.getDashboardSummary);
 
-module.exports = router;
+// NEW: Analytics Charts Endpoint (under 1s target)
+router.get('/analytics/charts', analyticsController.getCharts);
+// NEW: Screen Time Report for a date/range
+router.get('/analytics/screen-time/:date', analyticsController.getScreenTimeReport);
 
+module.exports = router;

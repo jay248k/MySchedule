@@ -147,6 +147,12 @@ export function Sidebar() {
       badgeColor: isTrackingLive ? '#10B981' : undefined,
     },
     {
+      name: 'Charts & Analytics',
+      path: '/analytics',
+      icon: BarChart3,
+      iconColor: '#EC4899',
+    },
+    {
       name: 'Knowledge Base',
       path: '/knowledge',
       icon: BookOpen,

@@ -29,6 +29,7 @@ const ThoughtsPage = lazy(() => import('./pages/ThoughtsPage').then(m => ({ defa
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then(m => ({ default: m.KnowledgePage || m.default })));
 const HabitsPage = lazy(() => import('./pages/HabitsPage').then(m => ({ default: m.HabitsPage || m.default })));
 const CurriculumPage = lazy(() => import('./pages/CurriculumPage').then(m => ({ default: m.CurriculumPage || m.default })));
+const AnalyticsChartsPage = lazy(() => import('./pages/AnalyticsChartsPage').then(m => ({ default: m.AnalyticsChartsPage || m.default })));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -99,6 +100,7 @@ function AppRoutes() {
           <Route path="thoughts" element={<ThoughtsPage />} />
           <Route path="knowledge" element={<KnowledgePage />} />
           <Route path="curriculum" element={<CurriculumPage />} />
+          <Route path="analytics" element={<AnalyticsChartsPage />} />
           <Route path="red-flags" element={<RedFlagPage />} />
           <Route path="reports" element={<Reports />} />
           <Route path="reports/:reportType" element={<Reports />} />

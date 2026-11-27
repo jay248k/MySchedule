@@ -216,6 +216,8 @@ export const api = {
   // Dashboard Aggregated Summary & Fast Bootstrap
   getBootstrap: () => apiClient.get('/dashboard/bootstrap'),
   getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
+  getAnalyticsCharts: (params = {}) => apiClient.get('/dashboard/analytics/charts', { params }),
+  getScreenTimeReport: (date, params = {}) => apiClient.get(`/dashboard/analytics/screen-time/${date}`, { params }),
 
   // Plans
   getPlans: (params = {}) => apiClient.get('/plans', { params }),
