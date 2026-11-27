@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COLOR_COMBINATIONS } from '../utils/themeUtils';
+import { SIDEBAR_NAV_ITEMS, DEFAULT_NAVIGATION_ORDER } from '../constants/navigationConfig';
 
 const ACCENT_COLORS = [
   { name: 'Electric Sapphire', hex: '#1769FF' },
@@ -1007,24 +1008,7 @@ export function Settings() {
                   type="button"
                   className="btn btn-sm btn-secondary"
                   onClick={() => {
-                    handleUpdate('navigationOrder', [
-                      '/',
-                      '/today',
-                      '/work-tracker',
-                      '/knowledge',
-                      '/thoughts',
-                      '/red-flags',
-                      '/deviations',
-                      '/requests',
-                      '/monthly',
-                      '/calendar',
-                      '/categories',
-                      '/goals',
-                      '/habits',
-                      '/reports',
-                      '/archive',
-                      '/settings',
-                    ]);
+                    handleUpdate('navigationOrder', DEFAULT_NAVIGATION_ORDER);
                     handleUpdate('hiddenNavigationItems', []);
                     showToast({
                       type: 'info',
@@ -1040,41 +1024,14 @@ export function Settings() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '720px' }}>
                 {(() => {
-                  const ALL_ITEMS = [
-                    { path: '/', label: 'Dashboard', color: '#3B82F6' },
-                    { path: '/today', label: "Today's Tasks", color: '#10B981' },
-                    { path: '/work-tracker', label: 'Work Tracker', color: '#06B6D4' },
-                    { path: '/knowledge', label: 'Knowledge Base & Lessons', color: '#F59E0B' },
-                    { path: '/thoughts', label: 'Thoughts & Motivation', color: '#EC4899' },
-                    { path: '/red-flags', label: 'Red Flags', color: '#EF4444' },
-                    { path: '/deviations', label: 'Mistakes & Deviations', color: '#F97316' },
-                    { path: '/requests', label: 'Work Requests', color: '#8B5CF6' },
-                    { path: '/monthly', label: 'Monthly Schedule', color: '#6366F1' },
-                    { path: '/calendar', label: 'Calendar', color: '#3B82F6' },
-                    { path: '/categories', label: 'Categories', color: '#10B981' },
-                    { path: '/goals', label: 'Goals', color: '#EC4899' },
-                    { path: '/habits', label: 'Habits', color: '#10B981' },
-                    {
-                      path: '/reports',
-                      label: 'Reports',
-                      color: '#06B6D4',
-                      hasSubmenu: true,
-                      subItemsKey: 'reportsOrder',
-                      subItems: [
-                        { path: '/reports', key: 'today-report', label: 'Daily Standup & Work Report', color: '#38BDF8', icon: FileText },
-                        { path: '/reports/pending', key: 'pending', label: 'Pending Tasks Report', color: '#F59E0B', icon: Clock },
-                        { path: '/reports/completed', key: 'completed', label: 'Completed Tasks Report', color: '#10B981', icon: CheckCircle2 },
-                        { path: '/reports/missed', key: 'missed', label: 'Missed & Overdue Report', color: '#EF4444', icon: AlertTriangle },
-                        { path: '/reports/rescheduled', key: 'rescheduled', label: 'Rescheduled Tasks Report', color: '#3B82F6', icon: RefreshCw },
-                        { path: '/reports/habits', key: 'habits', label: 'Habits Mastery Report', color: '#10B981', icon: Flame },
-                        { path: '/reports/goals', key: 'goals', label: 'Goal Progression & Milestones', color: '#A855F7', icon: Target },
-                        { path: '/reports/red-flags', key: 'red-flags', label: 'Red Flag Diagnostic Report', color: '#DC2626', icon: Flag },
-                        { path: '/reports/tracker-logs', key: 'tracker-logs', label: 'Tracker & Gap Logs', color: '#06B6D4', icon: Timer },
-                      ],
-                    },
-                    { path: '/archive', label: 'Reports Archive', color: '#64748B' },
-                    { path: '/settings', label: 'Settings', color: '#94A3B8' },
-                  ];
+                  const ALL_ITEMS = SIDEBAR_NAV_ITEMS.map((item) => ({
+                    path: item.path,
+                    label: item.settingsLabel || item.name,
+                    color: item.iconColor,
+                    hasSubmenu: item.hasSubmenu,
+                    subItemsKey: item.subItemsKey,
+                    subItems: item.subItems,
+                  }));
 
                   let currentOrder = settings?.navigationOrder;
                   if (typeof currentOrder === 'string') {

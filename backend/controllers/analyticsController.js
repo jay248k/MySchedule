@@ -67,7 +67,10 @@ exports.getCharts = async (req, res, next) => {
   try {
     const userId = req.userId || null;
     const range = resolveRange(req);
-    const cacheKey = `charts_${userId || 'guest'}_${range.startStr}_${range.endStr}`;
+    const workRange = ['week', 'month', 'year'].includes(req.query.workRange)
+      ? req.query.workRange
+      : 'month';
+    const cacheKey = `charts_v3_${userId || 'guest'}_${range.startStr}_${range.endStr}_${workRange}`;
 
     const cached = cacheManager.get(cacheKey);
     if (cached) {
@@ -78,8 +81,29 @@ exports.getCharts = async (req, res, next) => {
     const userWhereDate = buildUserWhere(req, {
       date: { [Op.between]: [range.startStr, range.endStr] },
     });
+
+    // Resolve Work Tracker date range (week = 7 days, month = 30 days, year = last 7 years)
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const fmtDate = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+    const endDateObj = new Date(range.endDate);
+    let workStartStr = range.startStr;
+    let workEndStr = range.endStr;
+    if (workRange === 'week') {
+      const ws = new Date(endDateObj);
+      ws.setDate(endDateObj.getDate() - 6);
+      workStartStr = fmtDate(ws);
+    } else if (workRange === 'month') {
+      const ws = new Date(endDateObj);
+      ws.setDate(endDateObj.getDate() - 29);
+      workStartStr = fmtDate(ws);
+    } else if (workRange === 'year') {
+      const currentYear = endDateObj.getFullYear();
+      workStartStr = `${currentYear - 6}-01-01`;
+      workEndStr = `${currentYear}-12-31`;
+    }
+
     const userWhereWorkDate = buildUserWhere(req, {
-      date: { [Op.between]: [range.startStr, range.endStr] },
+      date: { [Op.between]: [workStartStr, workEndStr] },
     });
 
     const [tasksRows, goalsRows, sessionsRows, deviationsRows, screenTimeRows] =
@@ -98,9 +122,12 @@ exports.getCharts = async (req, res, next) => {
 
         WorkSession.findAll({
           where: userWhereWorkDate,
-          attributes: ['id', 'date', 'durationSeconds', 'status'],
+          attributes: ['id', 'date', 'durationSeconds'],
           raw: true,
-        }).catch(() => []),
+        }).catch((err) => {
+          console.error('Analytics WorkSession query failed:', err.message);
+          return [];
+        }),
 
         ScheduleDeviation.findAll({
           where: userWhereDate,
@@ -187,24 +214,58 @@ exports.getCharts = async (req, res, next) => {
     const completedGoals = goalsProgress.filter((g) => g.progress >= 100 || g.status === 'completed').length;
     const pendingGoals = goalsProgress.length - completedGoals;
 
-    // Work sessions per day + total time
+    // Work sessions per day/year + total time (capped at realistic 24h max per day)
+    const MAX_DAY_SECONDS = 24 * 3600;
     const sessionsPerDay = new Map();
-    let totalWorkSeconds = 0;
     (sessionsRows || []).forEach((s) => {
-      const secs = Number(s.durationSeconds) || 0;
-      totalWorkSeconds += secs;
+      const secs = Math.max(0, Number(s.durationSeconds) || 0);
       if (isDateStr(s.date)) {
-        sessionsPerDay.set(s.date, (sessionsPerDay.get(s.date) || 0) + secs);
+        const prev = sessionsPerDay.get(s.date) || 0;
+        sessionsPerDay.set(s.date, Math.min(MAX_DAY_SECONDS, prev + secs));
       }
     });
 
+    let totalWorkSeconds = 0;
+    for (const daySecs of sessionsPerDay.values()) {
+      totalWorkSeconds += daySecs;
+    }
+
     const workTimeSeries = [];
-    d = new Date(range.startDate);
-    while (d <= endDateInclusive) {
-      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const secs = sessionsPerDay.get(ds) || 0;
-      workTimeSeries.push({ date: ds, label: d.toLocaleDateString('en-US', { weekday: 'short' }), seconds: secs, hours: Number((secs / 3600).toFixed(2)) });
-      d.setDate(d.getDate() + 1);
+    if (workRange === 'year') {
+      const endYear = endDateObj.getFullYear();
+      const startYear = endYear - 6;
+      const sessionsPerYear = new Map();
+      for (const [dateKey, daySecs] of sessionsPerDay.entries()) {
+        const yr = parseInt(dateKey.slice(0, 4), 10);
+        if (!Number.isNaN(yr)) {
+          sessionsPerYear.set(yr, (sessionsPerYear.get(yr) || 0) + daySecs);
+        }
+      }
+      for (let yr = startYear; yr <= endYear; yr++) {
+        const secs = sessionsPerYear.get(yr) || 0;
+        workTimeSeries.push({
+          date: String(yr),
+          label: String(yr),
+          isYear: true,
+          seconds: secs,
+          hours: Number((secs / 3600).toFixed(2)),
+        });
+      }
+    } else {
+      const wsStart = new Date(`${workStartStr}T00:00:00Z`);
+      const wsEnd = new Date(`${workEndStr}T00:00:00Z`);
+      d = new Date(wsStart);
+      while (d <= wsEnd) {
+        const ds = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        const secs = sessionsPerDay.get(ds) || 0;
+        workTimeSeries.push({
+          date: ds,
+          label: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
+          seconds: secs,
+          hours: Number((secs / 3600).toFixed(2)),
+        });
+        d.setUTCDate(d.getUTCDate() + 1);
+      }
     }
 
     // Deviations per day

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getTodayDateString } from '../../utils/dateUtils';
+import { CustomSelect } from '../common/CustomSelect';
 
 export function GoalModal() {
   const { activeModal, closeModal, addGoal, updateGoal, tasks } = useApp();
@@ -144,19 +145,12 @@ export function GoalModal() {
 
               <div className="form-group">
                 <label className="form-label">Category</label>
-                <select
-                  className="form-select"
+                <CustomSelect
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option value="Study">Study</option>
-                  <option value="Work">Work</option>
-                  <option value="Health">Health</option>
-                  <option value="Learning">Learning</option>
-                  <option value="Development">Development</option>
-                  <option value="Personal">Personal</option>
-                  <option value="General">General</option>
-                </select>
+                  onChange={(val) => setCategory(val)}
+                  options={['Study', 'Work', 'Health', 'Learning', 'Development', 'Personal', 'General']}
+                  showSearch={false}
+                />
               </div>
             </div>
 

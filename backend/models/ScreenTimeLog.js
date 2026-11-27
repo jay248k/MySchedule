@@ -48,6 +48,16 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      dailyScreenTimeId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        references: {
+          model: 'daily_screen_times',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
       userId: {
         type: DataTypes.UUID,
         allowNull: true,
@@ -81,6 +91,12 @@ module.exports = (sequelize) => {
       ScreenTimeLog.belongsTo(models.ScreenTimeLimit, {
         foreignKey: 'screenTimeLimitId',
         as: 'limit',
+      });
+    }
+    if (models.DailyScreenTime) {
+      ScreenTimeLog.belongsTo(models.DailyScreenTime, {
+        foreignKey: 'dailyScreenTimeId',
+        as: 'dailyTotal',
       });
     }
   };

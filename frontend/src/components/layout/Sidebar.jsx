@@ -37,6 +37,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getTodayDateString } from '../../utils/dateUtils';
 import { getEffectiveStatus } from '../../utils/taskUtils';
 import { analyzeRedFlags } from '../../utils/redFlagEngine';
+import { SIDEBAR_NAV_ITEMS, REPORTS_SUB_ITEMS } from '../../constants/navigationConfig';
 
 export function Sidebar() {
   const location = useLocation();
@@ -93,17 +94,7 @@ export function Sidebar() {
 
   // Dynamic ordering support for Reports sub-tabs from settings.reportsOrder
   const sortedReportsSubItems = useMemo(() => {
-    const defaultSubItems = [
-      { name: 'Pending Tasks', path: '/reports/pending', icon: Clock, key: 'pending' },
-      { name: 'Completed Tasks', path: '/reports/completed', icon: CheckCircle2, key: 'completed' },
-      { name: 'Missed & Overdue', path: '/reports/missed', icon: AlertTriangle, key: 'missed' },
-      { name: 'Rescheduled Tasks', path: '/reports/rescheduled', icon: RefreshCw, key: 'rescheduled' },
-      { name: 'Habits', path: '/reports/habits', icon: Flame, key: 'habits' },
-      { name: 'Goal Progression', path: '/reports/goals', icon: Target, key: 'goals' },
-      { name: 'Red Flag Report', path: '/reports/red-flags', icon: Flag, key: 'red-flags' },
-      { name: 'Tracker & Gap Logs', path: '/reports/tracker-logs', icon: Timer, key: 'tracker-logs' },
-      { name: 'Daily Standup', path: '/reports', icon: FileText, key: 'today-report' },
-    ];
+    const defaultSubItems = REPORTS_SUB_ITEMS;
     let order = settings?.reportsOrder;
     if (typeof order === 'string') {
       try { order = JSON.parse(order); } catch { order = null; }
@@ -129,85 +120,30 @@ export function Sidebar() {
     });
   }, [settings?.reportsOrder]);
 
-  const allNavItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard, iconColor: '#3B82F6' },
-    {
-      name: isSelectedToday ? "Today's Tasks" : "Day's Tasks",
-      path: '/today',
-      icon: CheckSquare,
-      iconColor: '#10B981',
-      badge: pendingActiveCount > 0 ? pendingActiveCount : null,
-    },
-    {
-      name: 'Work Tracker',
-      path: '/work-tracker',
-      icon: Timer,
-      iconColor: '#06B6D4',
-      badge: isTrackingLive ? 'LIVE' : null,
-      badgeColor: isTrackingLive ? '#10B981' : undefined,
-    },
-    {
-      name: 'Charts & Analytics',
-      path: '/analytics',
-      icon: BarChart3,
-      iconColor: '#EC4899',
-    },
-    {
-      name: 'Knowledge Base',
-      path: '/knowledge',
-      icon: BookOpen,
-      iconColor: '#F59E0B',
-    },
-    {
-      name: 'Curriculum Manager',
-      path: '/curriculum',
-      icon: GitBranch,
-      iconColor: '#10B981',
-    },
-    {
-      name: 'Thoughts & Motivation',
-      path: '/thoughts',
-      icon: Lightbulb,
-      iconColor: '#EC4899',
-    },
-    {
-      name: 'Red Flags',
-      path: '/red-flags',
-      icon: Flag,
-      iconColor: '#EF4444',
-      badge: activeRedFlagsCount > 0 ? activeRedFlagsCount : null,
-      badgeColor: '#EF4444',
-    },
-    {
-      name: 'Mistakes & Deviations',
-      path: '/deviations',
-      icon: AlertCircle,
-      iconColor: '#F97316',
-    },
-    {
-      name: 'Work Requests',
-      path: '/requests',
-      icon: FileText,
-      iconColor: '#8B5CF6',
-      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
-      badgeColor: '#F59E0B',
-    },
-    { name: 'Monthly Schedule', path: '/monthly', icon: CalendarDays, iconColor: '#6366F1' },
-    { name: 'Calendar', path: '/calendar', icon: Calendar, iconColor: '#3B82F6' },
-    { name: 'Categories', path: '/categories', icon: Tags, iconColor: '#10B981' },
-    { name: 'Goals', path: '/goals', icon: Target, iconColor: '#EC4899' },
-    { name: 'Habits', path: '/habits', icon: Flame, iconColor: '#10B981' },
-    {
-      name: 'Reports',
-      path: '/reports',
-      icon: BarChart3,
-      iconColor: '#06B6D4',
-      hasSubmenu: true,
-      subItems: sortedReportsSubItems,
-    },
-    { name: 'Reports Archive', path: '/archive', icon: Archive, iconColor: '#64748B' },
-    { name: 'Settings', path: '/settings', icon: Settings, iconColor: '#94A3B8' },
-  ];
+  const allNavItems = useMemo(() => {
+    const badgesByPath = {
+      '/today': { badge: pendingActiveCount > 0 ? pendingActiveCount : null },
+      '/work-tracker': {
+        badge: isTrackingLive ? 'LIVE' : null,
+        badgeColor: isTrackingLive ? '#10B981' : undefined,
+      },
+      '/red-flags': {
+        badge: activeRedFlagsCount > 0 ? activeRedFlagsCount : null,
+        badgeColor: '#EF4444',
+      },
+      '/requests': {
+        badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+        badgeColor: '#F59E0B',
+      },
+    };
+
+    return SIDEBAR_NAV_ITEMS.map((item) => ({
+      ...item,
+      name: item.getDynamicName ? item.getDynamicName(isSelectedToday) : item.name,
+      ...(badgesByPath[item.path] || {}),
+      ...(item.path === '/reports' ? { subItems: sortedReportsSubItems } : {}),
+    }));
+  }, [isSelectedToday, pendingActiveCount, isTrackingLive, activeRedFlagsCount, pendingRequestsCount, sortedReportsSubItems]);
 
   // Dynamic ordering support from settings.navigationOrder and visibility filtering from settings.hiddenNavigationItems
   const visibleNavItems = useMemo(() => {

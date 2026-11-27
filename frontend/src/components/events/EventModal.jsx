@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Tag } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getTodayDateString } from '../../utils/dateUtils';
+import { CustomSelect } from '../common/CustomSelect';
 
 export function EventModal() {
   const { activeModal, closeModal, addEvent, updateEvent, categories, selectedDate } = useApp();
@@ -145,17 +146,17 @@ export function EventModal() {
                   <Tag size={14} style={{ display: 'inline', marginRight: '6px' }} />
                   Category
                 </label>
-                <select
-                  className="form-select"
+                <CustomSelect
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setCategoryId(val)}
+                  options={categories.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                    color: c.color,
+                  }))}
+                  placeholder="Select Category"
+                  showSearch={categories.length > 5}
+                />
               </div>
             </div>
 

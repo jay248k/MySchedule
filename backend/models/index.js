@@ -28,6 +28,7 @@ const TopicModel = require('./Topic');
 const SubtopicModel = require('./Subtopic');
 const ScreenTimeLimitModel = require('./ScreenTimeLimit');
 const ScreenTimeLogModel = require('./ScreenTimeLog');
+const DailyScreenTimeModel = require('./DailyScreenTime');
 
 // Initialize models
 const db = {
@@ -57,6 +58,7 @@ const db = {
   Subtopic: SubtopicModel(sequelize),
   ScreenTimeLimit: ScreenTimeLimitModel(sequelize),
   ScreenTimeLog: ScreenTimeLogModel(sequelize),
+  DailyScreenTime: DailyScreenTimeModel(sequelize),
 };
 
 // Establish associations

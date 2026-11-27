@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
+import { CustomSelect } from '../components/common/CustomSelect';
 import '../styles/pages/habits.css';
 
 const HABIT_COLORS = [
@@ -923,15 +924,12 @@ export function HabitsPage() {
                   <label className="form-label">
                     Category
                   </label>
-                  <select
-                    className="form-select"
+                  <CustomSelect
                     value={formCat}
-                    onChange={(e) => setFormCat(e.target.value)}
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFormCat(val)}
+                    options={CATEGORIES}
+                    showSearch={false}
+                  />
                 </div>
               </div>
 

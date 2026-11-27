@@ -218,6 +218,20 @@ export const api = {
   getDashboardSummary: (date) => apiClient.get('/dashboard/summary', { params: { date } }),
   getAnalyticsCharts: (params = {}) => apiClient.get('/dashboard/analytics/charts', { params }),
   getScreenTimeReport: (date, params = {}) => apiClient.get(`/dashboard/analytics/screen-time/${date}`, { params }),
+  saveScreenTime: (payload) => apiClient.post('/dashboard/analytics/screen-time', payload),
+  getScreenTimeLimits: () => apiClient.get('/dashboard/analytics/screen-time-limits'),
+  saveScreenTimeLimit: (payload) => apiClient.post('/dashboard/analytics/screen-time-limits', payload),
+
+  // Dedicated Mobile Screen Time Module (Total Screen Time + App Breakdowns)
+  getDailyScreenTimes: () => apiClient.get('/screen-time'),
+  getDailyScreenTimeByDate: (date) => apiClient.get(`/screen-time/${date}`),
+  saveDailyScreenTimeTotal: (payload) => apiClient.post('/screen-time/total', payload),
+  addAppUnderDailyScreenTime: (payload) => apiClient.post('/screen-time/app', payload),
+  deleteAppScreenTime: (id) => apiClient.delete(`/screen-time/app/${id}`),
+  deleteDailyScreenTime: (id) => apiClient.delete(`/screen-time/total/${id}`),
+  getScreenTimeApps: () => apiClient.get('/screen-time/apps/list'),
+  saveScreenTimeApp: (payload) => apiClient.post('/screen-time/apps', payload),
+  deleteScreenTimeApp: (id) => apiClient.delete(`/screen-time/apps/${id}`),
 
   // Plans
   getPlans: (params = {}) => apiClient.get('/plans', { params }),
